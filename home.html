@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreadWizard - Home</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .checkmark {
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <h1><a href="/index.html">ThreadWizard</a> — Simple User Guide</h1>
+    
+    <p>ThreadWizard lets you draw a family tree and add DNA match information visually. Think of it like a whiteboard for genealogy, but smarter.</p>
+    
+    <h2>1. The Big Picture</h2>
+    <ul>
+        <li>Boxes = people</li>
+        <li>Lines = family relationships</li>
+        <li>Extra side lines with labels = DNA comparisons (shared cM, relationship)</li>
+    </ul>
+    <p>Everything happens on one screen.</p>
+    
+    <h2>2. Getting Started</h2>
+    <p>When the page opens, you'll see a basic family tree already on the screen.</p>
+    
+    <h3>Move around</h3>
+    <ul>
+        <li>Click and drag → move the tree</li>
+        <li>Mouse wheel / trackpad → zoom in and out</li>
+        <li>Fit button → re-center everything</li>
+    </ul>
+    <p>Nothing is permanent — you can experiment freely. Undo mistakes easily.</p>
+    
+    <h2>3. Clicking a Person</h2>
+    <p>Click on any person box to open a panel and add information</p>
+    <p>This is where almost all editing happens.</p>
+    
+    <p>You can:</p>
+    <ul>
+        <li>Change names</li>
+        <li>Change text size or style</li>
+        <li>Change background color</li>
+        <li>Add relatives</li>
+        <li>Delete the person</li>
+    </ul>
+    
+    <h2>4. Building Your Family Tree</h2>
+    
+    <h3>Add a child</h3>
+    <ol>
+        <li>Click the parent</li>
+        <li>Type the child's name</li>
+        <li>Click Add Child</li>
+    </ol>
+    <p>The child appears below the parent.</p>
+    
+    <h3>Add a parent</h3>
+    <ol>
+        <li>Click the person</li>
+        <li>Type the parent's name</li>
+        <li>Click Add Parent</li>
+    </ol>
+    <p>The tree grows upward.</p>
+    
+    <h3>Add a spouse</h3>
+    <ol>
+        <li>Click a person</li>
+        <li>Type spouse's name</li>
+        <li>Click Add Spouse</li>
+    </ol>
+    <p>Spouses appear side-by-side.</p>
+    
+    <p>You can:</p>
+    <ul>
+        <li>Swap left/right</li>
+        <li>Remove the spouse later if needed</li>
+        <li>Add another spouse if needed.</li>
+    </ul>
+    
+    <h2>5. Re-ordering People</h2>
+    <p>Positioning can give new insights:</p>
+    <ol>
+        <li>Click the person</li>
+        <li>Use Move Left / Move Right</li>
+    </ol>
+    <p>This changes visual order only — all data stays safe.</p>
+    
+    <h2>6. Minimize Branches</h2>
+    <p>When the tree gets crowded:</p>
+    <ul>
+        <li>Collapse Descendants → hides children below a person</li>
+        <li>Collapse Ancestors → hides parents above a person</li>
+    </ul>
+    <p>Hover over a box to see the collapse icon.</p>
+    <p>You can always <strong>expand again</strong> later. "Expand all" in the tools panel makes this super easy.</p>
+    
+    <h2>7. Adding DNA Comparisons</h2>
+    <p>This is what makes ThreadWizard different.</p>
+    
+    <h3>How to add a DNA match</h3>
+    <ol>
+        <li>Click a dot to select a match/comparison</li>
+        <li>A DNA Comparison panel opens</li>
+    </ol>
+    
+    <p>Now enter:</p>
+    <ul>
+        <li>Shared cM (example: 225 <code>cM</code>)</li>
+        <li>Relationship (example: aunt, second cousin, <code>3C1R</code>)</li>
+    </ul>
+    
+    <p>Click Save</p>
+    <p>A label appears on the line.</p>
+    
+    <h3>Helpful extras</h3>
+    <ul>
+        <li>The tool reports the relationship automatically from the tree, but you can modify it.</li>
+        <li>The two people glow when you hover over their McGuire line (DNA line).</li>
+        <li>You can style the cM labels (size, color, bold)</li>
+    </ul>
+    
+    <h2>8. Understanding the Colored DNA Lines</h2>
+    <p>If enabled:</p>
+    <ul>
+        <li>Blue = small match</li>
+        <li>Green → Yellow → Orange → Red = increasing shared DNA</li>
+    </ul>
+    <p>This helps spot stronger vs weaker matches at a glance.</p>
+    <p>You can turn this on/off in Tools.</p>
+    
+    <h2>9. Tools Button (Global Controls)</h2>
+    <p>Click Tools at the top to adjust everything at once:</p>
+    
+    <p>You can:</p>
+    <ul>
+        <li>Change spacing between generations</li>
+        <li>Change box size</li>
+        <li>Change McGiuire line (DNA line) spacing</li>
+        <li>Change text styling for all people</li>
+        <li>Export images</li>
+    </ul>
+    <p>There is also a shading tool to highlight regions of the chart visually.</p>
+    
+    <h2>10. Saving, Undo, and Safety</h2>
+    <p>You are protected from mistakes:</p>
+    <ul>
+        <li>Undo / Redo buttons work</li>
+        <li>The tree auto-saves in your browser</li>
+    </ul>
+    
+    <h2>11. Exporting Your Work</h2>
+    <p>You can:</p>
+    <ul>
+        <li>Export JSON → reopen later or share with another user</li>
+        <li>Download PNG → <strong>image</strong> file for sharing, presentations, or research notes</li>
+        <li>Download SVG → for high-quality editing or publication</li>
+    </ul>
+    
+    <h2>12. What This Tool Is Best For</h2>
+    <p>Visualizing complex cousin relationships DNA triangulation thinking Seeing multiple matches across branches Teaching or explaining family connections</p>
+    <p>A complement to your other DNA tools.</p>
+    
+    <h2>One-Sentence Summary</h2>
+    <p>ThreadWizard lets you draw a family tree and DNA relationships in a way that makes complex connections easy to see.</p>
+</body>
+</html>
