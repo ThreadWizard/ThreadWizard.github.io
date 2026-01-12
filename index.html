@@ -1,0 +1,5728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ThreadWizard</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  body { font-family: sans-serif; margin: 0; overflow: hidden; }
+  svg { width: 100vw; height: 100vh; display: block; }
+
+  .node rect {
+    stroke-width: 2px;
+    cursor: pointer;
+  }
+  .node text {
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+  .link {
+    stroke: black;
+    stroke-width: 2px;
+    fill: none;
+  }
+  .spouse-link {
+    stroke: black;
+    stroke-width: 2px;
+    fill: none;
+  }
+  .terminal-line {
+    stroke-width: 2px;
+    fill: none;
+  }
+  .intersection-point {
+    fill: #ddd;
+    stroke: #999;
+    stroke-width: 1px;
+    cursor: pointer;
+  }
+  .intersection-point:hover {
+    fill: #ffeb3b;
+    stroke: #f57c00;
+    stroke-width: 2px;
+  }
+  .intersection-label-group:hover text {
+    fill: #f57c00;
+  }
+  .intersection-label {
+    font-size: 11px;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  .intersection-label.cm-value {
+    font-weight: bold;
+    fill: #0d47a1;
+  }
+  .intersection-label.relationship {
+    fill: #000;
+  }
+  .highlight {
+    stroke: orange !important;
+    stroke-width: 4px !important;
+    filter: drop-shadow(0 0 5px orange);
+  }
+  .dna-compare-highlight rect {
+    filter: drop-shadow(0 0 15px rgba(0, 100, 255, 1)) drop-shadow(0 0 30px rgba(0, 100, 255, 1)) drop-shadow(0 0 50px rgba(0, 100, 255, 0.9)) drop-shadow(0 0 70px rgba(0, 100, 255, 0.7));
+    stroke: #0066ff !important;
+    stroke-width: 5px !important;
+  }
+  
+  /* Collapse indicator */
+  .collapse-indicator {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+  }
+  .node:hover .collapse-indicator {
+    opacity: 1;
+  }
+  .collapse-indicator circle {
+    fill: #ff9800;
+    stroke: #e65100;
+    stroke-width: 1.5px;
+  }
+  .collapse-indicator text {
+    fill: white;
+    font-size: 32px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+  
+  /* Ancestor collapse indicator */
+  .ancestor-collapse-indicator {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+  }
+  .node:hover .ancestor-collapse-indicator {
+    opacity: 1;
+  }
+  .ancestor-collapse-indicator circle {
+    fill: #2196F3;
+    stroke: #0d47a1;
+    stroke-width: 1.5px;
+  }
+  .ancestor-collapse-indicator text {
+    fill: white;
+    font-size: 32px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+
+  /* Tooltip styles for nodes */
+  .tooltip {
+    position: fixed;
+    background: #4169E1;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 5000;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    line-height: 1.5;
+  }
+  .tooltip.visible {
+    opacity: 1;
+  }
+  .tooltip .tooltip-name {
+    font-weight: bold;
+    font-size: 15px;
+  }
+  .tooltip .tooltip-children {
+    color: rgba(255,255,255,0.85);
+    margin-top: 4px;
+  }
+  
+  /* Toolbar button tooltips - appear to the right */
+  #toolbar button {
+    position: relative;
+  }
+  #toolbar button[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    margin-left: 10px;
+    background: #4169E1;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 5000;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  }
+  #toolbar button[data-tooltip]:hover::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    margin-left: 2px;
+    border: 6px solid transparent;
+    border-right-color: #4169E1;
+    z-index: 5001;
+  }
+
+  /* Toolbar styling */
+  #toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #333;
+    color: white;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    z-index: 2000;
+    box-sizing: border-box;
+  }
+  #toolbar button {
+    margin-right: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    border: none;
+    border-left: 3px solid #3F51B5;
+    background: #f5f5f5;
+    color: #333;
+    border-radius: 3px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  #toolbar button:hover {
+    background: #e8e8e8;
+    border-left-color: #1A237E;
+  }
+  #toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  #toolbar .filename-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: left 0.15s ease, transform 0.15s ease;
+  }
+  #toolbar .filename-display {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+  }
+  #toolbar .filename-display:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  #toolbar .filename-input {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.3px;
+    padding: 4px 12px;
+    border: 2px solid #4a9eff;
+    border-radius: 4px;
+    background: #fff;
+    outline: none;
+    text-align: center;
+    min-width: 150px;
+  }
+  #toolbar .filename-input:focus {
+    border-color: #2d7dd2;
+    box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.3);
+  }
+  #toolbar p {
+    margin: 0;
+    margin-right: 10px;
+    font-size: 13px;
+  }
+
+  /* Sidebar styling - Node Edit */
+  #sidebar {
+    position: fixed;
+    top: 40px;
+    right: -100%;
+    width: 320px;
+    height: calc(100vh - 40px);
+    background-color: #e8f5e9;
+    border-left: 2px solid #43a047;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right 0.3s ease;
+    padding: 20px;
+    padding-bottom: 40px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  #sidebar.visible { right: 0; }
+
+  #sidebar h2 { 
+    margin-top: 0; 
+    color: #2e7d32;
+    margin-bottom: 15px;
+  }
+  #sidebar h3 { 
+    margin: 0;
+    color: #333;
+    font-size: 14px;
+  }
+  #sidebar .section {
+    background: #fff;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    border: 1px solid #a5d6a7;
+  }
+  #sidebar .section-title {
+    font-weight: bold;
+    color: #2e7d32;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  #sidebar input[type="text"],
+  #sidebar input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #a5d6a7;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+  }
+  #sidebar input[type="color"] {
+    width: 60px;
+    height: 35px;
+    padding: 2px;
+    border: 1px solid #a5d6a7;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #sidebar input[type="range"] {
+    flex: 1;
+    margin: 0 10px;
+  }
+  #sidebar input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  #sidebar label {
+    display: block;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: 13px;
+  }
+  #sidebar label.checkbox-label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  #sidebar .button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  #sidebar button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  #sidebar button.primary {
+    background: #43a047;
+    color: white;
+  }
+  #sidebar button.primary:hover {
+    background: #2e7d32;
+  }
+  #sidebar button.secondary {
+    background: #9e9e9e;
+    color: white;
+  }
+  #sidebar button.secondary:hover {
+    background: #757575;
+  }
+  #sidebar button.blue {
+    background: #2196F3;
+    color: white;
+  }
+  #sidebar button.blue:hover {
+    background: #1976D2;
+  }
+  #sidebar button.danger {
+    background: #f44336;
+    color: white;
+  }
+  #sidebar button.danger:hover {
+    background: #d32f2f;
+  }
+  #sidebar button.full-width {
+    width: 100%;
+  }
+  #sidebar .close-btn {
+    background: rgba(46, 125, 50, 0.2);
+    border: none;
+    color: #2e7d32;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  #sidebar .close-btn:hover {
+    background: rgba(46, 125, 50, 0.3);
+  }
+  #sidebar .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  #sidebar .slider-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  #sidebar .slider-row label {
+    flex: 0 0 90px;
+    margin-bottom: 0;
+    font-size: 12px;
+  }
+  #sidebar .slider-row input[type="range"] {
+    flex: 1;
+    margin: 0 10px 0 0;
+  }
+  #sidebar .slider-row button {
+    flex: 0 0 50px;
+    padding: 4px 8px;
+    font-size: 11px;
+    margin: 0;
+  }
+
+  /* DNA Data Sidebar */
+  #dna-sidebar {
+    position: fixed;
+    top: 40px;
+    right: -100%;
+    width: 320px;
+    height: calc(100vh - 40px);
+    background-color: #e8f4fd;
+    border-left: 2px solid #1976d2;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right 0.3s ease;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1001;
+  }
+  #dna-sidebar.visible { right: 0; }
+  #dna-sidebar h2 { 
+    margin-top: 0; 
+    margin-bottom: 0;
+    color: #1565c0; 
+  }
+  #dna-sidebar .close-btn {
+    background: rgba(25, 118, 210, 0.2) !important;
+    border: none;
+    color: #1565c0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    border-radius: 50% !important;
+    cursor: pointer;
+    font-size: 20px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    line-height: 1;
+    flex-shrink: 0 !important;
+    flex: none !important;
+  }
+  #dna-sidebar .close-btn:hover {
+    background: rgba(25, 118, 210, 0.3) !important;
+  }
+  #dna-sidebar .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  #dna-sidebar .comparison-names {
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #90caf9;
+  }
+  #dna-sidebar .comparison-names span {
+    font-weight: bold;
+    color: #1565c0;
+  }
+  #dna-sidebar input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #90caf9;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  #dna-sidebar label {
+    font-weight: bold;
+    display: block;
+    margin-top: 15px;
+    color: #333;
+  }
+  #dna-sidebar .button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  #dna-sidebar button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #dna-sidebar #save-dna {
+    background: #1976d2;
+    color: white;
+  }
+  #dna-sidebar #save-dna:hover {
+    background: #1565c0;
+  }
+  #dna-sidebar #clear-dna {
+    background: #f44336;
+    color: white;
+  }
+  #dna-sidebar #clear-dna:hover {
+    background: #d32f2f;
+  }
+  
+  /* Relationship auto-calculation styling */
+  #calculated-relationship {
+    margin-top: 5px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 1px solid #81c784;
+    border-radius: 6px;
+    display: none;
+  }
+  #calculated-relationship.visible {
+    display: block;
+  }
+  #calculated-relationship .calc-label {
+    font-size: 11px;
+    color: #558b2f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  #calculated-relationship .calc-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2e7d32;
+  }
+  #calculated-relationship .calc-details {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  #dna-sidebar .style-section {
+    background: #fff;
+    padding: 12px;
+    border-radius: 5px;
+    margin-top: 15px;
+    border: 1px solid #90caf9;
+  }
+  #dna-sidebar .style-section-title {
+    font-weight: bold;
+    color: #1565c0;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  #dna-sidebar .style-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  #dna-sidebar .style-row label {
+    margin: 0;
+    min-width: 80px;
+    font-weight: normal;
+    font-size: 12px;
+  }
+  #dna-sidebar .style-row input[type="number"] {
+    width: 60px;
+    padding: 4px;
+    margin: 0;
+  }
+  #dna-sidebar .style-row input[type="color"] {
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid #90caf9;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #dna-sidebar .checkbox-label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #dna-sidebar .checkbox-label input {
+    margin-right: 6px;
+  }
+  
+  /* cM Color Legend Styles */
+  .cm-legend {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+  }
+  .cm-legend-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+    color: #444;
+  }
+  .cm-legend-item:not(:last-child) {
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .cm-color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+  .cm-range {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+  }
+  .cm-color-name {
+    font-size: 11px;
+    color: #666;
+    text-align: right;
+    min-width: 45px;
+  }
+  
+  /* Tools Panel Styling */
+  #tools-panel {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    padding: 0;
+    z-index: 3000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    width: 480px;
+    max-width: 90vw;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  /* Hide scrollbar when not needed */
+  #tools-panel {
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+  #tools-panel::-webkit-scrollbar {
+    width: 8px;
+  }
+  #tools-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #tools-panel::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+  }
+  #tools-panel::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+  #tools-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+  }
+  #tools-panel.dragging {
+    transition: none;
+  }
+  #tools-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 2999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+  }
+  #tools-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  #tools-panel .tools-header {
+    background: linear-gradient(135deg, #3F51B5 0%, #1A237E 50%, #0D1B4D 100%);
+    box-shadow: inset 0 -2px 10px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.1);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
+  }
+  #tools-panel .tools-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #tools-panel .tools-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #tools-panel .tools-close:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  #tools-panel .tools-body {
+    padding: 16px;
+  }
+  #tools-panel .tools-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  #tools-panel .tools-section:last-child {
+    margin-bottom: 0;
+  }
+  #tools-panel .tools-section-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  #tools-panel .tools-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  #tools-panel .tools-row:last-child {
+    margin-bottom: 0;
+  }
+  #tools-panel .tools-row label {
+    min-width: 90px;
+    font-size: 12px;
+    color: #555;
+  }
+  #tools-panel .tools-row input[type="range"] {
+    flex: 1;
+  }
+  #tools-panel .tools-row input[type="number"] {
+    width: 55px;
+    padding: 5px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  #tools-panel .tools-row button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  #tools-panel .tools-row button:hover {
+    background: #f0f0f0;
+  }
+  #tools-panel .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  /* Shading tool styles */
+  .shade-tool-active {
+    cursor: crosshair !important;
+  }
+  .shade-tool-active * {
+    cursor: crosshair !important;
+  }
+  .shade-preview {
+    fill: rgba(0, 0, 0, 0.08);
+    stroke: rgba(0, 0, 0, 0.18);
+    stroke-width: 1;
+    stroke-dasharray: 4, 4;
+    pointer-events: none;
+  }
+  .shaded-region {
+    fill: rgba(0, 0, 0, 0.08);
+    pointer-events: none;
+  }
+  #tools-panel .shade-btn {
+    padding: 5px 10px;
+    border: 2px solid #6c757d;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  #tools-panel .shade-btn:hover {
+    background: #f0f0f0;
+  }
+  #tools-panel .shade-btn.active {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+  }
+  #tools-panel .shade-btn-clear {
+    padding: 5px 10px;
+    border: 1px solid #dc3545;
+    background: #fff;
+    color: #dc3545;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  #tools-panel .shade-btn-clear:hover {
+    background: #dc3545;
+    color: white;
+  }
+  #tools-panel .checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+  #tools-panel .checkbox-row label {
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    min-width: auto;
+  }
+  #tools-panel .cm-legend-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #tools-panel .cm-legend-compact .cm-legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px 8px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+  }
+  #tools-panel .cm-legend-compact .cm-color-dot {
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+  }
+  #tools-panel .style-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  #tools-panel .style-row:last-child {
+    margin-bottom: 0;
+  }
+  #tools-panel .style-row label.style-label {
+    min-width: 65px;
+    font-size: 12px;
+    color: #555;
+  }
+  #tools-panel .style-row input[type="color"] {
+    width: 32px;
+    height: 26px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 1px;
+  }
+  #tools-panel .style-row input[type="number"] {
+    width: 50px;
+    padding: 5px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  #tools-panel .style-row button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  #tools-panel .style-row button:hover {
+    background: #f0f0f0;
+  }
+  #tools-panel .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 12px;
+  }
+  #tools-panel .btn-secondary:hover {
+    background: #5a6268;
+  }
+  #tools-panel .btn-outline {
+    background: #fff;
+    color: #333;
+    border: 2px solid #667eea;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  #tools-panel .btn-outline:hover {
+    background: #f0f0ff;
+  }
+  #tools-panel .apply-btn,
+  #tools-panel .tools-row .apply-btn,
+  #tools-panel .style-row .apply-btn {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 11px;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.4), 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+    transition: all 0.15s ease;
+  }
+  #tools-panel .apply-btn:hover,
+  #tools-panel .tools-row .apply-btn:hover,
+  #tools-panel .style-row .apply-btn:hover {
+    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.5), 0 2px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+  }
+  #tools-panel .apply-btn:active,
+  #tools-panel .tools-row .apply-btn:active,
+  #tools-panel .style-row .apply-btn:active {
+    background: linear-gradient(180deg, #059669 0%, #047857 100%);
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3), inset 0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(0);
+  }
+  
+  /* Action row styling for Download and Tree View sections */
+  #tools-panel .action-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #tools-panel .action-label {
+    background: #9ca3af;
+    color: white;
+    padding: 6px 0;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 80px;
+    width: 80px;
+  }
+  #tools-panel .action-row .apply-btn {
+    width: 120px;
+    text-align: center;
+  }
+  #tools-panel .action-row .export-btn-equal {
+    width: 95px;
+    padding: 6px 8px;
+    text-align: center;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<!-- Toolbar -->
+<div id="toolbar">
+  <input type="file" id="import-input" style="display:none" />
+  <button id="import-btn" data-tooltip="Load a saved tree from JSON file">Import</button>
+  <button id="new-btn" data-tooltip="Reset to a new blank tree">New</button>
+  <button id="tools-btn">Tools</button>
+  <button id="fit-btn">Fit</button>
+  <button id="undo-btn">Undo</button>
+  <button id="redo-btn">Redo</button>
+  <p>ThreadWizard</p>
+  <div class="filename-container">
+    <span id="filename-display" class="filename-display" title="Click to rename">New Tree</span>
+    <input type="text" id="filename-input" class="filename-input" style="display: none;" />
+  </div>
+</div>
+
+<!-- Node Tooltip -->
+<div id="node-tooltip" class="tooltip"></div>
+
+<!-- DNA Comparison Tooltip -->
+<div id="dna-tooltip" class="tooltip"></div>
+
+<!-- Tools Panel Overlay -->
+<div id="tools-overlay"></div>
+
+<!-- Tools Panel -->
+<div id="tools-panel">
+  <div class="tools-header" id="tools-header">
+    <h2>Tools</h2>
+    <button class="tools-close" id="tools-close">×</button>
+  </div>
+  <div class="tools-body">
+    <!-- Text Styling Section -->
+    <div class="tools-section">
+      <div class="tools-section-title">Node Text Styling</div>
+      <div class="tools-row">
+        <label>Font Size:</label>
+        <input type="number" id="tools-font-size" min="8" max="24" value="12" />
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-font-bold" />
+          <label for="tools-font-bold">Bold</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-font-italic" />
+          <label for="tools-font-italic">Italic</label>
+        </div>
+        <div style="flex: 1;"></div>
+        <button id="tools-apply-style-all" class="apply-btn">Apply to All</button>
+      </div>
+    </div>
+
+    <!-- Layout Spacing Section -->
+    <div class="tools-section">
+      <div class="tools-section-title">Layout Spacing</div>
+      <div class="tools-row">
+        <label>Vertical:</label>
+        <input type="range" id="tools-vertical-spacing" min="50" max="200" step="10" value="100" />
+        <button id="tools-reset-vertical">Reset</button>
+      </div>
+      <div class="tools-row">
+        <label>Horizontal:</label>
+        <input type="range" id="tools-horizontal-spacing" min="80" max="250" step="10" value="140" />
+        <button id="tools-reset-horizontal">Reset</button>
+      </div>
+      <div class="tools-row">
+        <label>Node Width:</label>
+        <input type="range" id="tools-node-width" min="60" max="200" step="10" value="100" />
+        <button id="tools-reset-node-width">Reset</button>
+      </div>
+      <div class="tools-row">
+        <label>Node Height:</label>
+        <input type="range" id="tools-node-height" min="20" max="60" step="2" value="30" />
+        <button id="tools-reset-node-height">Reset</button>
+      </div>
+      <div class="tools-row">
+        <label>Line Spacing:</label>
+        <input type="range" id="tools-terminal-line-spacing" min="30" max="100" step="5" value="40" />
+        <button id="tools-reset-line-spacing">Reset</button>
+      </div>
+    </div>
+
+    <!-- Label Styling Section -->
+    <div class="tools-section">
+      <div class="tools-section-title">Label Styling</div>
+      <div class="style-row">
+        <label class="style-label">cM Font:</label>
+        <input type="number" id="tools-cm-font-size" min="8" max="24" value="11" style="width: 45px;" />
+        <input type="color" id="tools-cm-font-color" value="#0d47a1" />
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-cm-font-bold" checked />
+          <label for="tools-cm-font-bold">Bold</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-cm-font-italic" />
+          <label for="tools-cm-font-italic">Italic</label>
+        </div>
+      </div>
+      <div class="style-row">
+        <label class="style-label">Rel. Font:</label>
+        <input type="number" id="tools-rel-font-size" min="8" max="24" value="11" style="width: 45px;" />
+        <input type="color" id="tools-rel-font-color" value="#000000" />
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-rel-font-bold" />
+          <label for="tools-rel-font-bold">Bold</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-rel-font-italic" />
+          <label for="tools-rel-font-italic">Italic</label>
+        </div>
+        <div style="flex: 1;"></div>
+        <button id="tools-apply-label-style" class="apply-btn">Apply</button>
+      </div>
+    </div>
+
+    <!-- Centimorgans and Relationships Section -->
+    <div class="tools-section">
+      <div class="tools-section-title">Centimorgans and Relationships</div>
+      <div class="tools-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-auto-stroke-toggle" />
+          <label for="tools-auto-stroke-toggle">Enable Auto cM Stroke Colors</label>
+        </div>
+        <div style="flex: 1;"></div>
+        <label style="min-width: auto;">Stroke Width:</label>
+        <input type="range" id="tools-stroke-width-slider" min="0.5" max="5" step="0.5" value="1" style="width: 80px;" />
+        <span id="tools-stroke-width-value" style="min-width: 30px; font-size: 11px;">1px</span>
+      </div>
+      <div class="cm-legend-compact">
+        <div class="cm-legend-item"><span class="cm-color-dot" style="background: #301DFF;"></span>&lt;10</div>
+        <div class="cm-legend-item"><span class="cm-color-dot" style="background: #2EFF1B;"></span>10–19</div>
+        <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FFFF0B; border: 1px solid #ccc;"></span>20–49</div>
+        <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FFB300;"></span>50–99</div>
+        <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FD001A;"></span>≥100</div>
+      </div>
+      <div class="tools-row" style="margin-top: 8px;">
+        <div class="checkbox-row">
+          <input type="checkbox" id="tools-alternate-lines-toggle" />
+          <label for="tools-alternate-lines-toggle">Alternate Line Colors</label>
+        </div>
+      </div>
+      <div class="tools-row" style="gap: 8px;">
+        <button id="tools-shade-toggle" class="shade-btn">Shade Tool</button>
+        <button id="tools-shade-clear" class="shade-btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <!-- Download Section -->
+    <div class="tools-section">
+      <div class="action-row">
+        <div class="action-label">Download ▶</div>
+        <button id="tools-export-svg" class="apply-btn export-btn-equal">Download SVG</button>
+        <button id="tools-export-png" class="apply-btn export-btn-equal">Download PNG</button>
+        <button id="export-btn" class="apply-btn export-btn-equal">Export</button>
+      </div>
+    </div>
+
+    <!-- Tree View Section -->
+    <div class="tools-section">
+      <div class="action-row">
+        <div class="action-label">Tree View ▶</div>
+        <button id="expand-all-btn" class="apply-btn export-btn-equal">Expand All</button>
+      </div>
+      <div id="tools-home-person" style="font-size: 12px; color: #555; margin-top: 10px; padding: 8px; background: #f0f7ff; border-radius: 4px; border: 1px solid #d0e7ff; display: none;"></div>
+    </div>
+  </div>
+</div>
+
+<svg></svg>
+
+<!-- Node Edit Sidebar -->
+<div id="sidebar">
+  <div class="header-row">
+    <h2>Edit Node</h2>
+    <button class="close-btn" onclick="closeSidebar()">×</button>
+  </div>
+
+  <!-- Name Section -->
+  <div class="section">
+    <div class="section-title">Node Name</div>
+    <input type="text" id="node-name" placeholder="Enter name" />
+    <button id="update-name" class="primary full-width">Update Name</button>
+  </div>
+
+  <!-- Home Person Section -->
+  <div class="section">
+    <button id="set-home-person" class="blue full-width">Set as Home Person</button>
+  </div>
+
+  <!-- Styling Section -->
+  <div class="section">
+    <div class="section-title">Text Styling</div>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+      <label style="margin: 0; display: flex; align-items: center; gap: 5px;">Size <input type="number" id="font-size" min="8" max="24" value="12" style="width: 50px; margin: 0;" /></label>
+      <label class="checkbox-label" style="margin: 0;"><input type="checkbox" id="font-bold" /> Bold</label>
+      <label class="checkbox-label" style="margin: 0;"><input type="checkbox" id="font-italic" /> Italic</label>
+    </div>
+    <div class="button-row">
+      <button id="update-style" class="primary" style="flex: 1;">Apply to Node</button>
+      <button id="update-style-all" class="secondary" style="flex: 1;">Apply to All</button>
+    </div>
+  </div>
+
+  <!-- Background Color Section -->
+  <div class="section">
+    <div class="section-title">Background Color</div>
+    <div class="button-row" style="align-items: center;">
+      <input type="color" id="node-color" value="#ffffff" />
+      <button id="update-color" class="primary" style="flex: 1;">Apply Color</button>
+    </div>
+  </div>
+
+  <!-- Family Section -->
+  <div class="section">
+    <div class="section-title">Add Family Members</div>
+    <label>Add Child</label>
+    <input type="text" id="child-name" placeholder="Child's name" />
+    <button id="add-child" class="primary full-width">Add Child</button>
+    
+    <label style="margin-top: 12px;">Add Parent</label>
+    <input type="text" id="parent-name" placeholder="Parent's name" />
+    <button id="add-parent" class="primary full-width">Add Parent</button>
+    
+    <div id="spouse-section">
+      <label style="margin-top: 12px;">Add Spouse</label>
+      <input type="text" id="spouse-name" placeholder="Spouse's name" />
+      <button id="add-spouse" class="primary full-width">Add Spouse</button>
+    </div>
+  </div>
+  
+  <!-- Spouse Position Section -->
+  <div class="section" id="spouse-position-section" style="display: none;">
+    <div class="section-title">Spouse Position</div>
+    <div class="button-row">
+      <button id="swap-left" class="secondary" style="flex: 1;">← Swap Left</button>
+      <button id="swap-right" class="secondary" style="flex: 1;">Swap Right →</button>
+    </div>
+  </div>
+
+  <!-- Sibling Order Section -->
+  <div class="section" id="sibling-section" style="display: none;">
+    <div class="section-title">Sibling Order</div>
+    <div class="button-row">
+      <button id="move-left" class="secondary" style="flex: 1;">← Move Left</button>
+      <button id="move-right" class="secondary" style="flex: 1;">Move Right →</button>
+    </div>
+  </div>
+
+  <!-- Delete Section -->
+  <div class="section" id="delete-section">
+    <div class="section-title">Delete</div>
+    <div class="button-row">
+      <button id="delete-node" class="danger" style="flex: 1;">Delete Node</button>
+    </div>
+  </div>
+
+  <!-- Layout Spacing Section -->
+  <div class="section">
+    <div class="section-title">Layout Spacing</div>
+    <div class="slider-row">
+      <label>Vertical:</label>
+      <input type="range" id="vertical-spacing" min="50" max="200" step="10" value="100" />
+      <button class="secondary" onclick="document.getElementById('vertical-spacing').value=100; verticalSpacing=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Horizontal:</label>
+      <input type="range" id="horizontal-spacing" min="80" max="250" step="10" value="140" />
+      <button class="secondary" onclick="document.getElementById('horizontal-spacing').value=140; horizontalSpacing=140; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Node Width:</label>
+      <input type="range" id="node-width" min="60" max="200" step="10" value="100" />
+      <button class="secondary" onclick="document.getElementById('node-width').value=100; nodeWidth=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Node Height:</label>
+      <input type="range" id="node-height" min="20" max="60" step="2" value="30" />
+      <button class="secondary" onclick="document.getElementById('node-height').value=30; nodeHeight=30; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Line Spacing:</label>
+      <input type="range" id="terminal-line-spacing" min="30" max="100" step="5" value="40" />
+      <button class="secondary" onclick="document.getElementById('terminal-line-spacing').value=40; terminalLineSpacing=40; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+    </div>
+  </div>
+
+  <!-- Collapse Section -->
+  <div class="section">
+    <div class="section-title">Collapse Branches</div>
+    <button id="toggle-collapse" class="secondary full-width">Collapse Descendants</button>
+    <button id="toggle-ancestor-collapse" class="secondary full-width" style="margin-top: 8px;">Collapse Ancestors</button>
+  </div>
+</div>
+
+<!-- DNA Data Sidebar -->
+<div id="dna-sidebar">
+  <div class="header-row">
+    <h2>DNA Comparison</h2>
+    <button class="close-btn" onclick="closeDnaSidebar()">×</button>
+  </div>
+  <div class="comparison-names">
+    Comparing: <span id="person1-name">Person 1</span> ⟷ <span id="person2-name">Person 2</span>
+  </div>
+  
+  <label for="cm-input">Shared cM:</label>
+  <input type="text" id="cm-input" placeholder="e.g., 366 or 366 cM (2.5%)" />
+  
+  <label for="relationship-input">Relationship:</label>
+  <input type="text" id="relationship-input" placeholder="e.g., 1C1R, 2C, Half-1C" />
+  <div id="calculated-relationship">
+    <div class="calc-label">CALCULATED FROM TREE:</div>
+    <div class="calc-value" id="calc-rel-value"></div>
+    <div class="calc-details" id="calc-rel-details"></div>
+  </div>
+  
+  <div class="button-row">
+    <button id="save-dna">Save</button>
+    <button id="clear-dna">Clear</button>
+  </div>
+  
+  <div class="style-section">
+    <div class="style-section-title">Label Styling</div>
+    
+    <div class="style-row">
+      <label>cM Font Size:</label>
+      <input type="number" id="cm-font-size" min="8" max="24" value="11" />
+      <input type="color" id="cm-font-color" value="#0d47a1" />
+    </div>
+    <div class="style-row">
+      <label class="checkbox-label"><input type="checkbox" id="cm-font-bold" checked /> Bold</label>
+      <label class="checkbox-label"><input type="checkbox" id="cm-font-italic" /> Italic</label>
+    </div>
+    
+    <div class="style-row" style="margin-top: 12px;">
+      <label>Rel. Font Size:</label>
+      <input type="number" id="rel-font-size" min="8" max="24" value="11" />
+      <input type="color" id="rel-font-color" value="#000000" />
+    </div>
+    <div class="style-row">
+      <label class="checkbox-label"><input type="checkbox" id="rel-font-bold" /> Bold</label>
+      <label class="checkbox-label"><input type="checkbox" id="rel-font-italic" /> Italic</label>
+    </div>
+    
+    <div class="button-row" style="margin-top: 12px;">
+      <button id="apply-label-style">Apply Style</button>
+    </div>
+    
+    <div class="style-row" style="margin-top: 12px; border-top: 1px solid #90caf9; padding-top: 12px;">
+      <label class="checkbox-label" style="flex: 1;">
+        <input type="checkbox" id="auto-stroke-toggle" /> Auto cM Stroke Colors
+      </label>
+    </div>
+    <div class="style-row">
+      <label style="min-width: 70px;">Stroke Width:</label>
+      <input type="range" id="stroke-width-slider" min="0.5" max="5" step="0.5" value="1" style="flex: 1;" />
+      <span id="stroke-width-value" style="min-width: 30px; text-align: right; font-size: 11px;">2px</span>
+    </div>
+    <div class="cm-legend">
+      <div class="cm-legend-item"><span class="cm-color-dot" style="background: #301DFF;"></span><span class="cm-range">&lt; 10 cM</span><span class="cm-color-name">Blue</span></div>
+      <div class="cm-legend-item"><span class="cm-color-dot" style="background: #2EFF1B;"></span><span class="cm-range">10 – 19.9</span><span class="cm-color-name">Green</span></div>
+      <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FFFF0B; border: 1px solid #ccc;"></span><span class="cm-range">20 – 49.9</span><span class="cm-color-name">Yellow</span></div>
+      <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FFB300;"></span><span class="cm-range">50 – 99.9</span><span class="cm-color-name">Amber</span></div>
+      <div class="cm-legend-item"><span class="cm-color-dot" style="background: #FD001A;"></span><span class="cm-range">≥ 100 cM</span><span class="cm-color-name">Red</span></div>
+    </div>
+    
+    <div class="style-row" style="margin-top: 12px; border-top: 1px solid #90caf9; padding-top: 12px;">
+      <label class="checkbox-label" style="flex: 1;">
+        <input type="checkbox" id="alternate-lines-toggle" /> Alternate Line Colors
+      </label>
+    </div>
+    
+    <div class="style-row" style="margin-top: 12px;">
+      <label style="min-width: 70px;">Line Spacing:</label>
+      <input type="range" id="dna-line-spacing" min="30" max="100" step="5" value="40" style="flex: 1;" />
+      <button id="dna-line-spacing-reset" style="padding: 4px 8px; font-size: 11px; border: 1px solid #90caf9; background: #fff; border-radius: 4px; cursor: pointer;">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let data = {
+  name: "Grandparents",
+  color: "#ffffff",
+  fontSize: 12,
+  bold: false,
+  italic: false,
+  children: [
+    { name: "Parent A", color: "#ffffff", fontSize: 12, bold: false, italic: false, 
+      children: [
+        { name: "Cousin 1", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+        { name: "Cousin 2", color: "#ffffff", fontSize: 12, bold: false, italic: false }
+    ]},
+    { name: "Parent B", color: "#ffffff", fontSize: 12, bold: false, italic: false, children: [
+      { name: "Cousin 3", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+      { name: "Cousin 4", color: "#ffffff", fontSize: 12, bold: false, italic: false }
+    ]}
+  ]
+};
+
+// DNA comparisons stored separately
+let dnaComparisons = {};
+
+// DNA label styling
+let dnaLabelStyles = {
+  cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false },
+  relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
+};
+
+// Auto-stroke feature
+let autoStrokeEnabled = false;
+let autoStrokeWidth = 1;
+
+// Alternating terminal line colors
+let alternateLineColors = false;
+
+// Shading tool
+let shadeToolActive = false;
+let shadedRegion = null; // { x, y, width, height } in SVG coordinates
+let shadeDrawing = false;
+let shadeStartPoint = null;
+
+// Home person tracking
+let homePersonName = null;
+
+// Current filename
+let currentFilename = "New Tree";
+
+// Auto-save and auto-load functionality
+function autoSave() {
+  try {
+    const saveData = {
+      tree: data,
+      dnaComparisons: dnaComparisons,
+      dnaLabelStyles: dnaLabelStyles,
+      autoStrokeEnabled: autoStrokeEnabled,
+      autoStrokeWidth: autoStrokeWidth,
+      alternateLineColors: alternateLineColors,
+      shadedRegion: shadedRegion,
+      filename: currentFilename,
+      settings: {
+        verticalSpacing: verticalSpacing,
+        horizontalSpacing: horizontalSpacing,
+        terminalLineSpacing: terminalLineSpacing,
+        nodeWidth: nodeWidth,
+        nodeHeight: nodeHeight
+      }
+    };
+    localStorage.setItem('threadwizard-autosave', JSON.stringify(saveData));
+  } catch (e) {
+    console.error('Auto-save failed:', e);
+  }
+}
+
+function autoLoad() {
+  try {
+    const saved = localStorage.getItem('threadwizard-autosave');
+    if (saved) {
+      const loadedData = JSON.parse(saved);
+      if (loadedData.tree) {
+        data = loadedData.tree;
+        dnaComparisons = loadedData.dnaComparisons || {};
+        dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
+        autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
+        autoStrokeWidth = loadedData.autoStrokeWidth || 1;
+        alternateLineColors = loadedData.alternateLineColors || false;
+        shadedRegion = loadedData.shadedRegion || null;
+        currentFilename = loadedData.filename || "New Tree";
+        
+        if (loadedData.settings) {
+          verticalSpacing = loadedData.settings.verticalSpacing || 100;
+          horizontalSpacing = loadedData.settings.horizontalSpacing || 140;
+          terminalLineSpacing = loadedData.settings.terminalLineSpacing || 40;
+          nodeWidth = loadedData.settings.nodeWidth || 100;
+          nodeHeight = loadedData.settings.nodeHeight || 30;
+          spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+        }
+        
+        // Migrate old single-spouse format to new multi-spouse format
+        migrateToMultiSpouse(data);
+        
+        // Update UI elements
+        document.getElementById("filename-display").textContent = currentFilename;
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error('Auto-load failed:', e);
+  }
+  return false;
+}
+
+// Migration function: convert old single spouse format to new multi-spouse format
+function migrateToMultiSpouse(node) {
+  if (!node) return;
+  
+  // If node has old 'spouse' property, convert to 'spouses' array
+  if (node.spouse && !node.spouses) {
+    const spouseData = node.spouse;
+    // Generate a unique ID for this spouse
+    spouseData.id = generateSpouseId();
+    // Determine position (0 = first spouse on right, 1 = second on left, etc.)
+    spouseData.position = 0;
+    node.spouses = [spouseData];
+    
+    // Migrate spouseOnLeft to the spouse's position property
+    if (node.spouseOnLeft) {
+      spouseData.position = 0; // Will be rendered on left
+      spouseData.side = 'left';
+    } else {
+      spouseData.side = 'right';
+    }
+    
+    // Assign existing children to this spouse pair
+    if (node.children) {
+      node.children.forEach(child => {
+        if (!child.spouseId) {
+          child.spouseId = spouseData.id;
+        }
+      });
+    }
+    
+    // Clean up old properties
+    delete node.spouse;
+    delete node.spouseOnLeft;
+  }
+  
+  // Ensure spouses array exists if there are any spouse references
+  if (!node.spouses) {
+    node.spouses = [];
+  }
+  
+  // Recursively migrate children
+  if (node.children) {
+    node.children.forEach(child => migrateToMultiSpouse(child));
+  }
+  
+  // Also migrate spouses (they might have nested data in future)
+  if (node.spouses) {
+    node.spouses.forEach(spouse => {
+      if (spouse && typeof spouse === 'object') {
+        // Ensure spouse has an ID
+        if (!spouse.id) {
+          spouse.id = generateSpouseId();
+        }
+      }
+    });
+  }
+}
+
+// Generate unique spouse ID
+let spouseIdCounter = 0;
+function generateSpouseId() {
+  return 'spouse_' + Date.now() + '_' + (spouseIdCounter++);
+}
+
+// Get spouse by ID from a node
+function getSpouseById(node, spouseId) {
+  if (!node.spouses) return null;
+  return node.spouses.find(s => s.id === spouseId);
+}
+
+// Get the position offset for a spouse based on their index
+function getSpouseOffset(node, spouseIndex) {
+  if (!node.spouses || spouseIndex >= node.spouses.length) return 0;
+  
+  const spouse = node.spouses[spouseIndex];
+  const side = spouse.side || (spouseIndex % 2 === 0 ? 'right' : 'left');
+  
+  // Calculate which position on that side (0, 1, 2...)
+  const sameSideSpouses = node.spouses.filter((s, i) => {
+    const sSide = s.side || (i % 2 === 0 ? 'right' : 'left');
+    return sSide === side && i < spouseIndex;
+  });
+  const positionOnSide = sameSideSpouses.length;
+  
+  const offset = (nodeWidth + spouseGap) * (positionOnSide + 1);
+  return side === 'left' ? -offset : offset;
+}
+
+// Get all spouses with their computed offsets
+function getSpousesWithOffsets(node) {
+  if (!node.spouses || node.spouses.length === 0) return [];
+  
+  const result = [];
+  let leftCount = 0;
+  let rightCount = 0;
+  
+  node.spouses.forEach((spouse, index) => {
+    const side = spouse.side || (index % 2 === 0 ? 'right' : 'left');
+    let positionOnSide;
+    
+    if (side === 'left') {
+      positionOnSide = leftCount++;
+    } else {
+      positionOnSide = rightCount++;
+    }
+    
+    const offset = (nodeWidth + spouseGap) * (positionOnSide + 1);
+    result.push({
+      spouse: spouse,
+      index: index,
+      side: side,
+      offset: side === 'left' ? -offset : offset
+    });
+  });
+  
+  return result;
+}
+
+// Filename display functionality
+const filenameDisplay = document.getElementById("filename-display");
+const filenameInput = document.getElementById("filename-input");
+const filenameContainer = document.querySelector(".filename-container");
+const threadWizardText = document.querySelector("#toolbar p");
+const toolbar = document.getElementById("toolbar");
+
+// Check if filename overlaps with toolbar elements and reposition if necessary
+function checkFilenameOverlap() {
+  // Temporarily disable transitions for accurate repositioning
+  const originalTransition = filenameContainer.style.transition;
+  filenameContainer.style.transition = "none";
+  
+  // Reset to centered position
+  filenameContainer.style.left = "50%";
+  filenameContainer.style.transform = "translateX(-50%)";
+  
+  // Force layout recalculation
+  filenameContainer.offsetHeight;
+  
+  const filenameRect = filenameContainer.getBoundingClientRect();
+  const threadWizardRect = threadWizardText.getBoundingClientRect();
+  
+  // Add a small buffer (15px) for comfortable spacing
+  const buffer = 15;
+  
+  // Check if filename left edge is too close to ThreadWizard right edge
+  if (filenameRect.left < threadWizardRect.right + buffer) {
+    // Position it just to the right of ThreadWizard instead of centering
+    const newLeft = threadWizardRect.right + buffer;
+    filenameContainer.style.left = newLeft + "px";
+    filenameContainer.style.transform = "translateX(0)";
+  }
+  
+  // Re-enable transitions after a frame
+  requestAnimationFrame(() => {
+    filenameContainer.style.transition = originalTransition;
+  });
+}
+
+// Check on load and resize
+window.addEventListener("resize", checkFilenameOverlap);
+setTimeout(checkFilenameOverlap, 0);
+
+function startFilenameEdit() {
+  filenameInput.value = currentFilename;
+  filenameDisplay.style.display = "none";
+  filenameInput.style.display = "block";
+  filenameInput.focus();
+  filenameInput.select();
+}
+
+function finishFilenameEdit() {
+  const newName = filenameInput.value.trim();
+  if (newName) {
+    currentFilename = newName;
+    filenameDisplay.textContent = currentFilename;
+    autoSave(); // Save when filename changes
+  }
+  filenameInput.style.display = "none";
+  filenameDisplay.style.display = "block";
+  // Re-check overlap after name change (name might be longer/shorter)
+  setTimeout(checkFilenameOverlap, 0);
+}
+
+filenameDisplay.addEventListener("click", startFilenameEdit);
+
+filenameInput.addEventListener("blur", finishFilenameEdit);
+
+filenameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    finishFilenameEdit();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    filenameInput.value = currentFilename;
+    finishFilenameEdit();
+  }
+});
+
+// Tooltip functionality
+const nodeTooltip = document.getElementById("node-tooltip");
+
+function showNodeTooltip(event, nodeData, isSpouse = false) {
+  const name = nodeData.name || "Unnamed";
+  
+  let html = `<div class="tooltip-name">${name}</div>`;
+  
+  // Count children if any (only for non-spouse nodes)
+  if (!isSpouse && nodeData.children && nodeData.children.length > 0) {
+    const childCount = nodeData.children.length;
+    html += `<div class="tooltip-children">${childCount} ${childCount === 1 ? 'child' : 'children'} in tree</div>`;
+  }
+  
+  nodeTooltip.innerHTML = html;
+  nodeTooltip.classList.add("visible");
+  
+  // Position tooltip near cursor
+  const tooltipRect = nodeTooltip.getBoundingClientRect();
+  let x = event.clientX + 15;
+  let y = event.clientY + 15;
+  
+  // Keep tooltip within viewport
+  if (x + tooltipRect.width > window.innerWidth - 10) {
+    x = event.clientX - tooltipRect.width - 15;
+  }
+  if (y + tooltipRect.height > window.innerHeight - 10) {
+    y = event.clientY - tooltipRect.height - 15;
+  }
+  
+  nodeTooltip.style.left = x + "px";
+  nodeTooltip.style.top = y + "px";
+}
+
+function hideNodeTooltip() {
+  nodeTooltip.classList.remove("visible");
+}
+
+// DNA Comparison Tooltip functionality
+const dnaTooltip = document.getElementById("dna-tooltip");
+
+function highlightComparedNodes(person1, person2) {
+  // Remove any existing highlights first
+  d3.selectAll(".node").classed("dna-compare-highlight", false);
+  
+  // Add highlight to nodes matching the names
+  d3.selectAll(".node").each(function() {
+    const node = d3.select(this);
+    const nodeName = node.attr("data-name");
+    if (nodeName === person1 || nodeName === person2) {
+      node.classed("dna-compare-highlight", true);
+    }
+  });
+}
+
+function clearNodeHighlights() {
+  d3.selectAll(".node").classed("dna-compare-highlight", false);
+}
+
+function showDnaTooltip(event, person1, person2) {
+  dnaTooltip.innerHTML = `<span style="font-weight: bold;">${person1} ⟷ ${person2}</span>`;
+  dnaTooltip.classList.add("visible");
+  
+  // Highlight the compared nodes
+  highlightComparedNodes(person1, person2);
+  
+  // Position tooltip near cursor
+  const tooltipRect = dnaTooltip.getBoundingClientRect();
+  let x = event.clientX + 15;
+  let y = event.clientY + 15;
+  
+  // Keep tooltip within viewport
+  if (x + tooltipRect.width > window.innerWidth - 10) {
+    x = event.clientX - tooltipRect.width - 15;
+  }
+  if (y + tooltipRect.height > window.innerHeight - 10) {
+    y = event.clientY - tooltipRect.height - 15;
+  }
+  
+  dnaTooltip.style.left = x + "px";
+  dnaTooltip.style.top = y + "px";
+}
+
+function hideDnaTooltip() {
+  dnaTooltip.classList.remove("visible");
+  clearNodeHighlights();
+}
+
+// History system for undo/redo
+let historyStack = [];
+let redoStack = [];
+const MAX_HISTORY = 50;
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function saveState() {
+  // Save current state to history
+  historyStack.push({
+    data: deepClone(data),
+    dnaComparisons: deepClone(dnaComparisons)
+  });
+  // Limit history size
+  if (historyStack.length > MAX_HISTORY) {
+    historyStack.shift();
+  }
+  // Clear redo stack when new action is performed
+  redoStack = [];
+  updateUndoRedoButtons();
+}
+
+function undo() {
+  if (historyStack.length === 0) return;
+  
+  // Save current state to redo stack
+  redoStack.push({
+    data: deepClone(data),
+    dnaComparisons: deepClone(dnaComparisons)
+  });
+  
+  // Restore previous state
+  const previousState = historyStack.pop();
+  data = previousState.data;
+  dnaComparisons = previousState.dnaComparisons;
+  
+  // Close sidebar and redraw
+  closeSidebar();
+  closeDnaSidebar();
+  selectedNode = null;
+  drawTree(d3.zoomTransform(svg.node()));
+  updateUndoRedoButtons();
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  
+  // Save current state to history stack
+  historyStack.push({
+    data: deepClone(data),
+    dnaComparisons: deepClone(dnaComparisons)
+  });
+  
+  // Restore redo state
+  const redoState = redoStack.pop();
+  data = redoState.data;
+  dnaComparisons = redoState.dnaComparisons;
+  
+  // Close sidebar and redraw
+  closeSidebar();
+  closeDnaSidebar();
+  selectedNode = null;
+  drawTree(d3.zoomTransform(svg.node()));
+  updateUndoRedoButtons();
+}
+
+// Helper function to find the parent of a node in the tree
+function findParent(tree, targetNode) {
+  if (!tree.children) return null;
+  
+  for (const child of tree.children) {
+    if (child === targetNode) {
+      return tree;
+    }
+    const foundInChild = findParent(child, targetNode);
+    if (foundInChild) return foundInChild;
+  }
+  return null;
+}
+
+function updateUndoRedoButtons() {
+  // Buttons stay enabled - they just won't do anything if stacks are empty
+  document.getElementById("undo-btn").disabled = false;
+  document.getElementById("redo-btn").disabled = false;
+}
+
+function getCmStrokeColor(cmValue) {
+  // Parse numeric value from string (handles "366 cM (2.5%)" format)
+  const num = parseFloat(cmValue);
+  if (isNaN(num)) return null;
+  
+  // No color for 0 cM (no DNA shared)
+  if (num === 0) return null;
+  
+  if (num < 10) return "#301DFF";       // blue
+  if (num < 20) return "#2EFF1B";       // green
+  if (num < 50) return "#FFFF0B";       // yellow
+  if (num < 100) return "#FFB300";      // amber/light orange
+  return "#FD001A";                      // red (100+)
+}
+
+// Tree-based relationship calculator
+// Builds a map of all nodes with their depths and paths to root
+function buildNodeMap(tree, depth = 0, path = [], parentName = null, parentSpouseId = null) {
+  const nodeMap = new Map();
+  
+  // Add current node
+  nodeMap.set(tree.name, {
+    name: tree.name,
+    depth: depth,
+    path: [...path, tree.name],
+    parent: parentName,
+    spouseId: tree.spouseId || null, // Track which spouse this child belongs to
+    parentSpouseId: parentSpouseId // Track the spouseId used to reach this node
+  });
+  
+  // Add all spouses at same depth
+  if (tree.spouses && tree.spouses.length > 0) {
+    tree.spouses.forEach(spouse => {
+      nodeMap.set(spouse.name, {
+        name: spouse.name,
+        depth: depth,
+        path: [...path, tree.name, spouse.name],
+        parent: tree.name, // Spouse connects through the main node
+        isSpouse: true,
+        spouseOf: tree.name,
+        spouseId: spouse.id // The spouse's own ID
+      });
+    });
+  }
+  
+  // Recursively add children
+  if (tree.children) {
+    for (const child of tree.children) {
+      const childMap = buildNodeMap(child, depth + 1, [...path, tree.name], tree.name, child.spouseId || null);
+      for (const [key, value] of childMap) {
+        nodeMap.set(key, value);
+      }
+    }
+  }
+  
+  return nodeMap;
+}
+
+// Find the Lowest Common Ancestor (LCA) of two nodes
+function findLCA(nodeMap, name1, name2) {
+  const node1 = nodeMap.get(name1);
+  const node2 = nodeMap.get(name2);
+  
+  if (!node1 || !node2) return null;
+  
+  const path1 = node1.path;
+  const path2 = node2.path;
+  
+  // Find the last common element in both paths
+  let lcaIndex = -1;
+  for (let i = 0; i < Math.min(path1.length, path2.length); i++) {
+    if (path1[i] === path2[i]) {
+      lcaIndex = i;
+    } else {
+      break;
+    }
+  }
+  
+  if (lcaIndex === -1) return null;
+  
+  const lcaName = path1[lcaIndex];
+  const lca = nodeMap.get(lcaName);
+  
+  // Calculate generations from LCA to each person
+  // For spouses, we need to handle them specially - they're at the same generation as their spouse
+  let gen1 = path1.length - lcaIndex - 1;
+  let gen2 = path2.length - lcaIndex - 1;
+  
+  // If a person IS the LCA (or LCA's spouse), their generation distance is 0
+  // But we need to account for spouse paths that add an extra step
+  if (node1.isSpouse && path1[lcaIndex] === node1.spouseOf) {
+    gen1 = 0;
+  }
+  if (node2.isSpouse && path2[lcaIndex] === node2.spouseOf) {
+    gen2 = 0;
+  }
+  
+  // Detect half-relationship: check if the immediate children of the LCA 
+  // (first step down from LCA towards each person) have different spouseIds
+  let isHalfRelationship = false;
+  
+  // Only check for half-relationship if both people descend from the LCA (not the LCA itself)
+  if (gen1 > 0 && gen2 > 0) {
+    // Get the first descendant in each path after the LCA
+    const firstDescendant1 = path1[lcaIndex + 1];
+    const firstDescendant2 = path2[lcaIndex + 1];
+    
+    if (firstDescendant1 && firstDescendant2 && firstDescendant1 !== firstDescendant2) {
+      const desc1Node = nodeMap.get(firstDescendant1);
+      const desc2Node = nodeMap.get(firstDescendant2);
+      
+      if (desc1Node && desc2Node) {
+        // Check if they're both spouses (in which case, not half-siblings)
+        const bothSpouses = desc1Node.isSpouse && desc2Node.isSpouse;
+        
+        if (!bothSpouses) {
+          // Get the spouseId each child belongs to
+          const spouseId1 = desc1Node.spouseId || desc1Node.parentSpouseId;
+          const spouseId2 = desc2Node.spouseId || desc2Node.parentSpouseId;
+          
+          // If one is a spouse, they share both parents with children of that spouse
+          const oneIsSpouse = desc1Node.isSpouse || desc2Node.isSpouse;
+          
+          if (!oneIsSpouse) {
+            // Both are children - check if they have different spouseIds
+            // Half-relationship if: different spouseIds, OR one/both have no spouseId (unknown other parent)
+            if (spouseId1 !== spouseId2) {
+              isHalfRelationship = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return {
+    lca: lcaName,
+    gen1: gen1,
+    gen2: gen2,
+    depth1: node1.depth,
+    depth2: node2.depth,
+    isHalfRelationship: isHalfRelationship
+  };
+}
+
+// Convert generation distances to relationship label
+function getRelationshipLabel(gen1, gen2, isHalfRelationship = false) {
+  // Sort so minGen <= maxGen
+  const [minGen, maxGen] = gen1 <= gen2 ? [gen1, gen2] : [gen2, gen1];
+  const removed = maxGen - minGen;
+  const halfPrefix = isHalfRelationship ? "Half " : "";
+  
+  // Same person
+  if (minGen === 0 && maxGen === 0) return "Self";
+  
+  // Direct line relationships (one person is ancestor of the other)
+  // Note: Direct line relationships can't be "half" - you either are or aren't descended from someone
+  if (minGen === 0) {
+    if (maxGen === 1) return "Parent/Child";
+    if (maxGen === 2) return "Grandparent/GC";
+    if (maxGen === 3) return "Great-GP/GGC";
+    if (maxGen === 4) return "2x Great-GP/GGC";
+    if (maxGen === 5) return "3x Great-GP/GGC";
+    if (maxGen === 6) return "4x Great-GP/GGC";
+    const greats = maxGen - 2;
+    return `${greats}x Great-GP/GGC`;
+  }
+  
+  // Siblings (both 1 generation from common ancestor = their parents)
+  if (minGen === 1 && maxGen === 1) return `${halfPrefix}Sibling`;
+  
+  // Aunt/Uncle - Niece/Nephew (1 gen and 2 gen from common ancestor)
+  if (minGen === 1 && maxGen === 2) return `${halfPrefix}Aunt/Uncle`;
+  
+  // Great Aunt/Uncle etc.
+  if (minGen === 1) {
+    const greats = maxGen - 2;
+    if (greats === 1) return `${halfPrefix}Great Aunt/Uncle`;
+    return `${halfPrefix}${greats}x Great Aunt/Uncle`;
+  }
+  
+  // Cousins: both minGen >= 2
+  // Cousin number is (smaller generation - 1)
+  const cousinNumber = minGen - 1;
+  
+  // Format cousin number
+  const cousinLabel = `${halfPrefix}${cousinNumber}C`;
+  
+  // Add removed if applicable
+  if (removed === 0) {
+    return cousinLabel;
+  } else {
+    return `${cousinLabel}${removed}R`;
+  }
+}
+
+// Main function to get relationship between two people by name
+function calculateTreeRelationship(name1, name2) {
+  const nodeMap = buildNodeMap(data);
+  const result = findLCA(nodeMap, name1, name2);
+  
+  if (!result) return null;
+  
+  return {
+    label: getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship),
+    commonAncestor: result.lca,
+    gen1: result.gen1,
+    gen2: result.gen2,
+    depth1: result.depth1,
+    depth2: result.depth2,
+    isHalfRelationship: result.isHalfRelationship
+  };
+}
+
+let selectedNode = null;
+let selectedSpouse = null;
+let selectedSpouseIndex = -1;
+let selectedIntersection = null;
+let svg = d3.select("svg");
+let zoom = null;
+let verticalSpacing = 100;
+let horizontalSpacing = 140;
+let terminalLineSpacing = 40;
+let nodeWidth = 100;
+let nodeHeight = 30;
+let spouseGap = 40;
+
+function getDnaKey(name1, name2) {
+  if (name1 < name2) {
+    return `${name1}|${name2}`;
+  } else {
+    return `${name2}|${name1}`;
+  }
+}
+
+function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
+  closeDnaSidebar();
+  selectedNode = d3Node;
+  selectedSpouse = isSpouse ? nodeData : null;
+  selectedSpouseIndex = spouseIndex;
+  
+  const editData = isSpouse ? nodeData : d3Node.data;
+  
+  document.getElementById("node-name").value = editData.name;
+  document.getElementById("child-name").value = "";
+  document.getElementById("parent-name").value = "";
+  document.getElementById("spouse-name").value = "";
+  document.getElementById("node-color").value = editData.color || "#ffffff";
+  document.getElementById("font-size").value = editData.fontSize || 12;
+  document.getElementById("font-bold").checked = editData.bold || false;
+  document.getElementById("font-italic").checked = editData.italic || false;
+  
+  const deleteBtn = document.getElementById("delete-node");
+  const deleteSection = document.getElementById("delete-section");
+  
+  // Check if home person exists (allows deleting root if home person is set)
+  const homePersonExists = findHomePersonInSubtree(data);
+  const isRoot = !d3Node.parent;
+  const canDelete = d3Node.parent || isSpouse || (isRoot && homePersonExists && !editData.isHomePerson);
+  
+  if (canDelete) {
+    deleteSection.style.display = "block";
+    deleteBtn.style.display = "inline-block";
+  } else {
+    deleteSection.style.display = "none";
+  }
+  
+  const spouseSection = document.getElementById("spouse-section");
+  
+  if (isSpouse) {
+    // Editing a spouse - hide add spouse
+    spouseSection.style.display = "none";
+  } else {
+    // Editing main node - always allow adding more spouses
+    spouseSection.style.display = "block";
+  }
+  
+  const spousePositionSection = document.getElementById("spouse-position-section");
+  const siblingSection = document.getElementById("sibling-section");
+  const swapLeftBtn = document.getElementById("swap-left");
+  const swapRightBtn = document.getElementById("swap-right");
+  const moveLeftBtn = document.getElementById("move-left");
+  const moveRightBtn = document.getElementById("move-right");
+  
+  // Spouse position section - show only if:
+  // - This is a spouse being edited and the main node has exactly 1 spouse, OR
+  // - This is a main node with exactly 1 spouse
+  // Hide when there are multiple spouses to avoid layout confusion
+  const mainNodeSpouses = d3Node.data.spouses || [];
+  const hasExactlyOneSpouse = mainNodeSpouses.length === 1;
+  
+  if ((isSpouse && hasExactlyOneSpouse) || (!isSpouse && hasExactlyOneSpouse)) {
+    spousePositionSection.style.display = "block";
+  } else {
+    spousePositionSection.style.display = "none";
+  }
+  
+  // Sibling order section - show if this node has siblings (and is not a spouse)
+  if (!isSpouse && d3Node.parent && d3Node.parent.data.children && d3Node.parent.data.children.length > 1) {
+    const siblings = d3Node.parent.data.children;
+    const currentIndex = siblings.indexOf(d3Node.data);
+    siblingSection.style.display = "block";
+    moveLeftBtn.disabled = currentIndex === 0;
+    moveRightBtn.disabled = currentIndex === siblings.length - 1;
+  } else {
+    siblingSection.style.display = "none";
+  }
+  
+  // Set as Home Person button - hide if already the home person
+  const setHomeBtn = document.getElementById("set-home-person");
+  const targetData = isSpouse ? nodeData : d3Node.data;
+  setHomeBtn.style.display = targetData.isHomePerson ? "none" : "block";
+  
+  // Collapse/Expand button - only show for nodes with children or spouses, and not for spouses
+  const toggleCollapseBtn = document.getElementById("toggle-collapse");
+  const mainNodeData = d3Node.data;
+  const hasDescendants = (mainNodeData.children && mainNodeData.children.length > 0) || (mainNodeData.spouses && mainNodeData.spouses.length > 0);
+  
+  if (!isSpouse && hasDescendants) {
+    toggleCollapseBtn.style.display = "block";
+    toggleCollapseBtn.textContent = mainNodeData.collapsed ? "Expand Descendants" : "Collapse Descendants";
+  } else {
+    toggleCollapseBtn.style.display = "none";
+  }
+  
+  // Ancestor Collapse/Expand button - only show for nodes with a parent, and not for spouses
+  const toggleAncestorCollapseBtn = document.getElementById("toggle-ancestor-collapse");
+  const hasParent = findParent(data, mainNodeData);
+  
+  if (!isSpouse && hasParent) {
+    toggleAncestorCollapseBtn.style.display = "block";
+    toggleAncestorCollapseBtn.textContent = mainNodeData.ancestorsCollapsed ? "Expand Ancestors" : "Collapse Ancestors";
+  } else {
+    toggleAncestorCollapseBtn.style.display = "none";
+  }
+  
+  document.getElementById("sidebar").classList.add("visible");
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("visible");
+  selectedNode = null;
+  selectedSpouse = null;
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
+function showDnaSidebar(person1Name, person2Name) {
+  closeSidebar();
+  selectedIntersection = { person1: person1Name, person2: person2Name };
+  
+  document.getElementById("person1-name").textContent = person1Name;
+  document.getElementById("person2-name").textContent = person2Name;
+  
+  const key = getDnaKey(person1Name, person2Name);
+  const existingData = dnaComparisons[key];
+  
+  if (existingData) {
+    document.getElementById("cm-input").value = existingData.cm || "";
+    document.getElementById("relationship-input").value = existingData.relationship || "";
+  } else {
+    document.getElementById("cm-input").value = "";
+    document.getElementById("relationship-input").value = "";
+  }
+  
+  document.getElementById("cm-font-size").value = dnaLabelStyles.cm.fontSize;
+  document.getElementById("cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("cm-font-bold").checked = dnaLabelStyles.cm.bold;
+  document.getElementById("cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  
+  document.getElementById("rel-font-size").value = dnaLabelStyles.relationship.fontSize;
+  document.getElementById("rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("rel-font-bold").checked = dnaLabelStyles.relationship.bold;
+  document.getElementById("rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  
+  document.getElementById("auto-stroke-toggle").checked = autoStrokeEnabled;
+  document.getElementById("stroke-width-slider").value = autoStrokeWidth;
+  document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
+  document.getElementById("alternate-lines-toggle").checked = alternateLineColors;
+  document.getElementById("dna-line-spacing").value = terminalLineSpacing;
+  
+  // Calculate and display the tree-based relationship
+  updateCalculatedRelationship(person1Name, person2Name);
+  
+  document.getElementById("dna-sidebar").classList.add("visible");
+}
+
+function closeDnaSidebar() {
+  document.getElementById("dna-sidebar").classList.remove("visible");
+  selectedIntersection = null;
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
+document.getElementById("save-dna").addEventListener("click", () => {
+  if (selectedIntersection) {
+    saveState();
+    const key = getDnaKey(selectedIntersection.person1, selectedIntersection.person2);
+    const cm = document.getElementById("cm-input").value.trim();
+    const relationship = document.getElementById("relationship-input").value.trim();
+    
+    if (cm || relationship) {
+      dnaComparisons[key] = { cm, relationship };
+    } else {
+      delete dnaComparisons[key];
+    }
+    
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+document.getElementById("clear-dna").addEventListener("click", () => {
+  if (selectedIntersection) {
+    saveState();
+    const key = getDnaKey(selectedIntersection.person1, selectedIntersection.person2);
+    delete dnaComparisons[key];
+    document.getElementById("cm-input").value = "";
+    document.getElementById("relationship-input").value = "";
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Tree-based relationship calculation UI
+const relationshipInput = document.getElementById("relationship-input");
+const calcRelContainer = document.getElementById("calculated-relationship");
+const calcRelValue = document.getElementById("calc-rel-value");
+const calcRelDetails = document.getElementById("calc-rel-details");
+
+let currentCalculatedRelationship = null;
+
+function updateCalculatedRelationship(person1Name, person2Name) {
+  const result = calculateTreeRelationship(person1Name, person2Name);
+  
+  if (result && result.label && result.label !== "Self") {
+    currentCalculatedRelationship = result.label;
+    calcRelValue.textContent = result.label;
+    
+    // Show details about the calculation
+    const details = `via ${result.commonAncestor} • ${person1Name}: ${result.gen1} gen (depth ${result.depth1}) • ${person2Name}: ${result.gen2} gen (depth ${result.depth2})`;
+    calcRelDetails.textContent = details;
+    
+    calcRelContainer.classList.add("visible");
+    
+    // Auto-populate the relationship field if it's empty
+    if (!relationshipInput.value.trim()) {
+      relationshipInput.value = result.label;
+    }
+  } else {
+    currentCalculatedRelationship = null;
+    calcRelContainer.classList.remove("visible");
+  }
+}
+
+document.getElementById("auto-stroke-toggle").addEventListener("change", (e) => {
+  autoStrokeEnabled = e.target.checked;
+  
+  // When auto stroke is enabled, default to non-bold black text for cleaner appearance
+  if (autoStrokeEnabled) {
+    dnaLabelStyles.cm.bold = false;
+    dnaLabelStyles.cm.color = "#000000";
+    dnaLabelStyles.relationship.bold = false;
+    dnaLabelStyles.relationship.color = "#000000";
+    
+    // Update the UI controls to reflect the new values
+    document.getElementById("cm-font-bold").checked = false;
+    document.getElementById("cm-font-color").value = "#000000";
+    document.getElementById("rel-font-bold").checked = false;
+    document.getElementById("rel-font-color").value = "#000000";
+  }
+  
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("stroke-width-slider").addEventListener("input", (e) => {
+  autoStrokeWidth = parseFloat(e.target.value);
+  document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("alternate-lines-toggle").addEventListener("change", (e) => {
+  alternateLineColors = e.target.checked;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("dna-line-spacing").addEventListener("input", (e) => {
+  terminalLineSpacing = parseFloat(e.target.value);
+  document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("dna-line-spacing-reset").addEventListener("click", () => {
+  terminalLineSpacing = 40;
+  document.getElementById("dna-line-spacing").value = 40;
+  document.getElementById("terminal-line-spacing").value = 40;
+  document.getElementById("tools-terminal-line-spacing").value = 40;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("apply-label-style").addEventListener("click", () => {
+  dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("cm-font-size").value);
+  dnaLabelStyles.cm.color = document.getElementById("cm-font-color").value;
+  dnaLabelStyles.cm.bold = document.getElementById("cm-font-bold").checked;
+  dnaLabelStyles.cm.italic = document.getElementById("cm-font-italic").checked;
+  
+  dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById("rel-font-size").value);
+  dnaLabelStyles.relationship.color = document.getElementById("rel-font-color").value;
+  dnaLabelStyles.relationship.bold = document.getElementById("rel-font-bold").checked;
+  dnaLabelStyles.relationship.italic = document.getElementById("rel-font-italic").checked;
+  
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+function deleteNodeFromTree(tree, nodeToDelete) {
+  if (!tree.children) return false;
+  
+  const index = tree.children.findIndex(child => child === nodeToDelete);
+  if (index !== -1) {
+    tree.children.splice(index, 1);
+    if (tree.children.length === 0) {
+      delete tree.children;
+    }
+    return true;
+  }
+  
+  for (let child of tree.children) {
+    if (deleteNodeFromTree(child, nodeToDelete)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Check if home person exists in a subtree
+function findHomePersonInSubtree(node) {
+  if (node.isHomePerson) return node;
+  if (node.spouses) {
+    for (const spouse of node.spouses) {
+      if (spouse.isHomePerson) return spouse;
+    }
+  }
+  
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findHomePersonInSubtree(child);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Find the path from a node to the home person (returns array of nodes)
+function findPathToHomePerson(node, path = []) {
+  if (node.isHomePerson) return [...path, node];
+  if (node.spouses) {
+    for (const spouse of node.spouses) {
+      if (spouse.isHomePerson) return [...path, node];
+    }
+  }
+  
+  if (node.children) {
+    for (const child of node.children) {
+      const result = findPathToHomePerson(child, [...path, node]);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+// Update home person display in Tools panel
+function updateToolsHomePerson() {
+  const toolsHomePersonDiv = document.getElementById("tools-home-person");
+  if (!toolsHomePersonDiv) return;
+  
+  const homePerson = findHomePersonInSubtree(data);
+  if (homePerson) {
+    toolsHomePersonDiv.textContent = `Home Person: ${homePerson.name}`;
+    toolsHomePersonDiv.style.display = "block";
+  } else {
+    toolsHomePersonDiv.textContent = "";
+    toolsHomePersonDiv.style.display = "none";
+  }
+}
+
+// Count ancestors of a node
+function countAncestors(node, rootNode) {
+  // Find the node in the tree starting from root
+  function findNodeInTree(searchNode, target) {
+    if (searchNode === target) return 0;
+    if (searchNode.spouses) {
+      for (const spouse of searchNode.spouses) {
+        if (spouse === target) return 0;
+      }
+    }
+    
+    if (searchNode.children) {
+      for (const child of searchNode.children) {
+        const result = findNodeInTree(child, target);
+        if (result !== null) return result + 1;
+      }
+    }
+    return null;
+  }
+  
+  const depth = findNodeInTree(rootNode, node);
+  return depth !== null ? depth : 0;
+}
+
+// Count descendants of a node
+function countDescendants(node) {
+  if (!node.children || node.children.length === 0) return 0;
+  
+  let count = node.children.length;
+  for (const child of node.children) {
+    count += countDescendants(child);
+  }
+  return count;
+}
+
+// Get horizontal position (leftmost = 0)
+function getHorizontalPosition(node, rootNode, position = 0) {
+  function traverse(searchNode, currentPos) {
+    if (searchNode === node) return currentPos;
+    if (searchNode.spouses) {
+      for (const spouse of searchNode.spouses) {
+        if (spouse === node) return currentPos;
+      }
+    }
+    
+    let pos = currentPos;
+    if (searchNode.children) {
+      for (let i = 0; i < searchNode.children.length; i++) {
+        const result = traverse(searchNode.children[i], pos);
+        if (result !== null) return result;
+        pos++;
+      }
+    }
+    return null;
+  }
+  
+  const result = traverse(rootNode, position);
+  return result !== null ? result : 0;
+}
+
+// Automatically set home person if none is defined
+function autoSetHomePerson() {
+  // Check if home person already exists
+  const existingHomePerson = findHomePersonInSubtree(data);
+  if (existingHomePerson) return; // User's choice overrides all
+  
+  // Collect all people in the tree
+  const allPeople = [];
+  function collectPeople(node) {
+    allPeople.push(node);
+    if (node.spouses) {
+      node.spouses.forEach(spouse => allPeople.push(spouse));
+    }
+    if (node.children) {
+      node.children.forEach(child => collectPeople(child));
+    }
+  }
+  collectPeople(data);
+  
+  // Calculate scores for each person
+  const candidates = allPeople.map(person => {
+    const ancestors = countAncestors(person, data);
+    const descendants = countDescendants(person);
+    const totalRelatives = ancestors + descendants;
+    const distanceFromRoot = ancestors; // closer to root = smaller number
+    const horizontalPos = getHorizontalPosition(person, data);
+    
+    return {
+      person,
+      totalRelatives,
+      distanceFromRoot,
+      horizontalPos
+    };
+  });
+  
+  // Sort by priority:
+  // 1. Most total relatives (desc)
+  // 2. Closest to root / smallest distance from root (asc)
+  // 3. Leftmost position (asc)
+  candidates.sort((a, b) => {
+    if (b.totalRelatives !== a.totalRelatives) {
+      return b.totalRelatives - a.totalRelatives; // More relatives first
+    }
+    if (a.distanceFromRoot !== b.distanceFromRoot) {
+      return a.distanceFromRoot - b.distanceFromRoot; // Closer to root first
+    }
+    return a.horizontalPos - b.horizontalPos; // Leftmost first
+  });
+  
+  // Set the winner as home person
+  if (candidates.length > 0) {
+    candidates[0].person.isHomePerson = true;
+  }
+}
+
+// Delete node but preserve home person branch
+function deleteNodePreservingHomePerson(tree, nodeToDelete) {
+  if (!tree.children) return false;
+  
+  const index = tree.children.findIndex(child => child === nodeToDelete);
+  if (index !== -1) {
+    // Found the node to delete - check if home person is in its subtree
+    const homePerson = findHomePersonInSubtree(nodeToDelete);
+    
+    if (homePerson) {
+      // Find path from nodeToDelete to home person
+      const path = findPathToHomePerson(nodeToDelete);
+      
+      if (path && path.length > 1) {
+        // Prune the path - keep only nodes on the path to home person
+        // For each node in path, remove children not on the path
+        for (let i = 0; i < path.length - 1; i++) {
+          const currentNode = path[i];
+          const nextNode = path[i + 1];
+          
+          // Check if next node is a spouse (home person is spouse)
+          let isNextSpouse = false;
+          if (currentNode.spouses) {
+            isNextSpouse = currentNode.spouses.some(s => s === nextNode || s.isHomePerson);
+          }
+          
+          if (isNextSpouse) {
+            // Keep spouses, clear children not leading to home person
+            if (currentNode.children) {
+              // Check if any child leads to home person
+              const childOnPath = currentNode.children.find(c => path.includes(c));
+              if (childOnPath) {
+                currentNode.children = [childOnPath];
+              } else {
+                delete currentNode.children;
+              }
+            }
+          } else {
+            // Next node is a child
+            currentNode.children = [nextNode];
+            // Remove spouses unless one is the home person
+            if (currentNode.spouses) {
+              currentNode.spouses = currentNode.spouses.filter(s => s.isHomePerson);
+              if (currentNode.spouses.length === 0) {
+                delete currentNode.spouses;
+              }
+            }
+          }
+        }
+        
+        // The pruned nodeToDelete now only contains the home person branch
+        // It stays in place
+        return true;
+      }
+    }
+    
+    // No home person in subtree, delete normally
+    tree.children.splice(index, 1);
+    if (tree.children.length === 0) {
+      delete tree.children;
+    }
+    return true;
+  }
+  
+  for (let child of tree.children) {
+    if (deleteNodePreservingHomePerson(child, nodeToDelete)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getTerminalNodesInOrder(node) {
+  const terminals = [];
+  
+  function traverse(n) {
+    // Skip collapsed nodes entirely
+    if (n.data && n.data.collapsed) {
+      return;
+    }
+    
+    if (!n.children || n.children.length === 0) {
+      // Don't include spouses if node is collapsed
+      const showSpouses = n.data && n.data.spouses && n.data.spouses.length > 0 && !n.data.collapsed;
+      
+      // Collect spouses on left side first (sorted by offset)
+      if (showSpouses) {
+        const spousesWithOffsets = getSpousesWithOffsets(n.data);
+        const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left').sort((a, b) => a.offset - b.offset);
+        const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right').sort((a, b) => a.offset - b.offset);
+        
+        // Add left spouses (leftmost first)
+        leftSpouses.forEach(sp => {
+          terminals.push({ 
+            data: sp.spouse, 
+            x: n.x + sp.offset,
+            y: n.y,
+            isSpouse: true,
+            parentNode: n,
+            spouseIndex: sp.index
+          });
+        });
+        
+        // Add main node
+        terminals.push(n);
+        
+        // Add right spouses
+        rightSpouses.forEach(sp => {
+          terminals.push({ 
+            data: sp.spouse, 
+            x: n.x + sp.offset,
+            y: n.y,
+            isSpouse: true,
+            parentNode: n,
+            spouseIndex: sp.index
+          });
+        });
+      } else {
+        terminals.push(n);
+      }
+    } else {
+      for (const child of n.children) {
+        traverse(child);
+      }
+    }
+  }
+  
+  traverse(node);
+  return terminals;
+}
+
+function getAllTerminalPositions(root) {
+  const positions = [];
+  
+  function traverse(n) {
+    const isTerminal = !n.children || n.children.length === 0;
+    
+    // Skip collapsed nodes entirely - they shouldn't have terminal lines
+    if (n.data.collapsed) {
+      return;
+    }
+    
+    if (isTerminal) {
+      // Don't include spouses if node is collapsed
+      const showSpouses = n.data.spouses && n.data.spouses.length > 0 && !n.data.collapsed;
+      
+      if (showSpouses) {
+        const spousesWithOffsets = getSpousesWithOffsets(n.data);
+        const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left').sort((a, b) => a.offset - b.offset);
+        const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right').sort((a, b) => a.offset - b.offset);
+        
+        // Add left spouses first (for correct left-to-right ordering)
+        leftSpouses.forEach(sp => {
+          positions.push({
+            x: n.x + sp.offset,
+            y: n.y,
+            name: sp.spouse.name,
+            node: n,
+            isSpouse: true,
+            spouseIndex: sp.index
+          });
+        });
+        
+        // Add main node
+        positions.push({
+          x: n.x,
+          y: n.y,
+          name: n.data.name,
+          node: n
+        });
+        
+        // Add right spouses
+        rightSpouses.forEach(sp => {
+          positions.push({
+            x: n.x + sp.offset,
+            y: n.y,
+            name: sp.spouse.name,
+            node: n,
+            isSpouse: true,
+            spouseIndex: sp.index
+          });
+        });
+      } else {
+        positions.push({
+          x: n.x,
+          y: n.y,
+          name: n.data.name,
+          node: n
+        });
+      }
+    }
+    
+    if (n.children) {
+      for (const child of n.children) {
+        traverse(child);
+      }
+    }
+  }
+  
+  traverse(root);
+  positions.sort((a, b) => a.x - b.x);
+  return positions;
+}
+
+function computeLayout(root) {
+  let currentX = 0;
+  
+  // ============================================
+  // PHASE 1: Initial layout (standard bottom-up)
+  // ============================================
+  
+  function assignX(node) {
+    if (!node.children || node.children.length === 0) {
+      // Leaf node
+      const showSpouses = node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed;
+      
+      let leftSpaceNeeded = 0;
+      let rightSpaceNeeded = 0;
+      
+      if (showSpouses) {
+        const spousesWithOffsets = getSpousesWithOffsets(node.data);
+        const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
+        const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
+        leftSpaceNeeded = leftSpouses.length * (nodeWidth + spouseGap);
+        rightSpaceNeeded = rightSpouses.length * (nodeWidth + spouseGap);
+      }
+      
+      // Position main node: account for left spouses first
+      currentX += leftSpaceNeeded;
+      node.x = currentX;
+      
+      // Advance currentX: use nodeWidth + spouseGap as the base unit for consistent spacing
+      // This ensures the gap between this node's rightmost element and the next node's
+      // leftmost element is always spouseGap (same as between spouse and main node)
+      currentX += nodeWidth + spouseGap;
+      currentX += rightSpaceNeeded;
+    } else {
+      // Node with children
+      const hasMultipleSpouses = node.data.spouses && node.data.spouses.length > 1;
+      const hasSpouse = node.data.spouses && node.data.spouses.length > 0;
+      const hasUnassignedChildren = node.children.some(c => !c.data.spouseId);
+      const hasAssignedChildren = node.children.some(c => c.data.spouseId);
+      const hasMixedChildren = hasSpouse && hasUnassignedChildren && hasAssignedChildren;
+      
+      if ((hasMultipleSpouses || hasMixedChildren) && !node.data.collapsed) {
+        // GROUP CHILDREN BY SPOUSE
+        const spousesWithOffsets = getSpousesWithOffsets(node.data);
+        const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left').sort((a, b) => a.offset - b.offset);
+        const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right').sort((a, b) => a.offset - b.offset);
+        
+        const childrenBySpouse = new Map();
+        const childrenNoSpouse = [];
+        
+        for (const child of node.children) {
+          const spouseId = child.data.spouseId;
+          if (spouseId) {
+            if (!childrenBySpouse.has(spouseId)) {
+              childrenBySpouse.set(spouseId, []);
+            }
+            childrenBySpouse.get(spouseId).push(child);
+          } else {
+            childrenNoSpouse.push(child);
+          }
+        }
+        
+        const spouseGroupCenters = [];
+        let unassignedChildrenCenter = null;
+        
+        // Process left spouse children
+        for (const sp of leftSpouses) {
+          const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
+          if (spouseChildren.length > 0) {
+            for (const child of spouseChildren) {
+              assignX(child);
+            }
+            const groupXPositions = spouseChildren.map(c => c.x);
+            spouseGroupCenters.push({
+              spouse: sp,
+              center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+            });
+          }
+        }
+        
+        // Process unassigned children
+        if (childrenNoSpouse.length > 0) {
+          for (const child of childrenNoSpouse) {
+            assignX(child);
+          }
+          const groupXPositions = childrenNoSpouse.map(c => c.x);
+          unassignedChildrenCenter = {
+            center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+          };
+        }
+        
+        // Process right spouse children
+        for (const sp of rightSpouses) {
+          const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
+          if (spouseChildren.length > 0) {
+            for (const child of spouseChildren) {
+              assignX(child);
+            }
+            const groupXPositions = spouseChildren.map(c => c.x);
+            spouseGroupCenters.push({
+              spouse: sp,
+              center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+            });
+          }
+        }
+        
+        // Position parent node
+        if (spouseGroupCenters.length > 0 || unassignedChildrenCenter) {
+          let sumNodeX = 0;
+          let count = 0;
+          
+          for (const gc of spouseGroupCenters) {
+            sumNodeX += gc.center - gc.spouse.offset / 2;
+            count++;
+          }
+          
+          if (unassignedChildrenCenter) {
+            sumNodeX += unassignedChildrenCenter.center;
+            count++;
+          }
+          
+          node.x = sumNodeX / count;
+          
+          // Update currentX to account for this node's rightmost extent (including right spouses)
+          const spousesWithOffsetsForExtent = getSpousesWithOffsets(node.data);
+          const rightSpousesForExtent = spousesWithOffsetsForExtent.filter(s => s.side === 'right');
+          const totalRightWidthForExtent = rightSpousesForExtent.length * (nodeWidth + spouseGap);
+          const rightmostExtent = node.x + totalRightWidthForExtent + nodeWidth / 2 + spouseGap;
+          if (rightmostExtent > currentX) {
+            currentX = rightmostExtent;
+          }
+        } else {
+          // No children assigned to spouse groups - position based on spouse layout
+          const spousesWithOffsets2 = getSpousesWithOffsets(node.data);
+          const leftSp = spousesWithOffsets2.filter(s => s.side === 'left');
+          const rightSp = spousesWithOffsets2.filter(s => s.side === 'right');
+          // Use consistent spacing: nodeWidth + spouseGap per unit
+          currentX += leftSp.length * (nodeWidth + spouseGap);
+          node.x = currentX;
+          currentX += nodeWidth + spouseGap + rightSp.length * (nodeWidth + spouseGap);
+        }
+        
+      } else {
+        // Single spouse or no spouses - original logic
+        const childXPositions = [];
+        for (const child of node.children) {
+          assignX(child);
+          childXPositions.push(child.x);
+        }
+        const minX = Math.min(...childXPositions);
+        const maxX = Math.max(...childXPositions);
+        
+        if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
+          const childrenCenter = (minX + maxX) / 2;
+          const spousesWithOffsets = getSpousesWithOffsets(node.data);
+          const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
+          const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
+          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
+          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+          
+          // Update currentX to account for this node's rightmost extent (including right spouses)
+          // This ensures the next sibling subtree starts far enough to the right
+          const rightmostExtent = node.x + totalRightWidth + nodeWidth / 2 + spouseGap;
+          if (rightmostExtent > currentX) {
+            currentX = rightmostExtent;
+          }
+        } else {
+          node.x = (minX + maxX) / 2;
+        }
+      }
+    }
+  }
+  
+  assignX(root);
+  
+  // Set Y coordinates
+  root.descendants().forEach(node => {
+    node.y = node.depth * verticalSpacing;
+  });
+  
+  // ============================================
+  // PHASE 2: Detect and fix collisions by moving entire subtrees
+  // ============================================
+  
+  const allNodes = root.descendants();
+  const minGap = spouseGap; // Minimum gap between node bounds - matches spouse spacing for visual consistency
+  const scootUnit = nodeWidth + spouseGap; // One "unit" of scooting
+  
+  // Get the bounding box of a node (including its spouses)
+  function getNodeBounds(node) {
+    let left = node.x - nodeWidth / 2;
+    let right = node.x + nodeWidth / 2;
+    
+    if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
+      const spousesWithOffsets = getSpousesWithOffsets(node.data);
+      for (const sp of spousesWithOffsets) {
+        const spouseX = node.x + sp.offset;
+        left = Math.min(left, spouseX - nodeWidth / 2);
+        right = Math.max(right, spouseX + nodeWidth / 2);
+      }
+    }
+    
+    return { left, right };
+  }
+  
+  // Shift a node and ALL its descendants by a given amount
+  function shiftSubtree(node, amount) {
+    node.x += amount;
+    if (node.children) {
+      for (const child of node.children) {
+        shiftSubtree(child, amount);
+      }
+    }
+  }
+  
+  // Find the root-level subtree that contains a given node
+  // (i.e., which child of root is the ancestor of this node)
+  function findRootSubtree(node) {
+    let current = node;
+    while (current.parent && current.parent !== root) {
+      current = current.parent;
+    }
+    return current;
+  }
+  
+  // Get all root-level subtrees, sorted by their leftmost x position
+  function getRootSubtreesSorted() {
+    if (!root.children) return [];
+    
+    const subtrees = root.children.map(child => {
+      // Find the leftmost x position in this subtree
+      const descendants = child.descendants();
+      let minX = Infinity;
+      for (const d of descendants) {
+        const bounds = getNodeBounds(d);
+        minX = Math.min(minX, bounds.left);
+      }
+      return { subtree: child, minX };
+    });
+    
+    subtrees.sort((a, b) => a.minX - b.minX);
+    return subtrees.map(s => s.subtree);
+  }
+  
+  // Find collisions at any depth level
+  function findCollisions() {
+    const nodesByDepth = new Map();
+    
+    // Group nodes by depth
+    for (const node of allNodes) {
+      if (!nodesByDepth.has(node.depth)) {
+        nodesByDepth.set(node.depth, []);
+      }
+      nodesByDepth.get(node.depth).push(node);
+    }
+    
+    const collisions = [];
+    
+    // Check each depth level for collisions
+    for (const [depth, nodes] of nodesByDepth) {
+      // Sort by x position
+      nodes.sort((a, b) => a.x - b.x);
+      
+      // Check adjacent pairs
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const leftNode = nodes[i];
+        const rightNode = nodes[i + 1];
+        
+        const leftBounds = getNodeBounds(leftNode);
+        const rightBounds = getNodeBounds(rightNode);
+        
+        const overlap = leftBounds.right + minGap - rightBounds.left;
+        
+        if (overlap > 0) {
+          collisions.push({
+            depth,
+            leftNode,
+            rightNode,
+            overlap
+          });
+        }
+      }
+    }
+    
+    return collisions;
+  }
+  
+  // Fix collisions by shifting root-level subtrees
+  const maxPasses = 30;
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const collisions = findCollisions();
+    
+    if (collisions.length === 0) {
+      break; // No more collisions
+    }
+    
+    // Process the first collision
+    const collision = collisions[0];
+    
+    // Find which root-level subtrees these nodes belong to
+    const leftSubtree = findRootSubtree(collision.leftNode);
+    const rightSubtree = findRootSubtree(collision.rightNode);
+    
+    if (leftSubtree === rightSubtree) {
+      // Both nodes are in the same root subtree - need to go deeper
+      // Find the lowest common ancestor and shift from there
+      let leftAncestor = collision.leftNode;
+      let rightAncestor = collision.rightNode;
+      
+      // Build path to root for left node
+      const leftPath = [];
+      let n = collision.leftNode;
+      while (n) {
+        leftPath.push(n);
+        n = n.parent;
+      }
+      const leftPathSet = new Set(leftPath);
+      
+      // Find LCA
+      n = collision.rightNode;
+      let lca = null;
+      while (n) {
+        if (leftPathSet.has(n)) {
+          lca = n;
+          break;
+        }
+        n = n.parent;
+      }
+      
+      if (lca && lca.children) {
+        // Find which children of LCA lead to each colliding node
+        let leftChild = collision.leftNode;
+        while (leftChild.parent !== lca) {
+          leftChild = leftChild.parent;
+        }
+        
+        let rightChild = collision.rightNode;
+        while (rightChild.parent !== lca) {
+          rightChild = rightChild.parent;
+        }
+        
+        // Shift the right child's subtree
+        shiftSubtree(rightChild, collision.overlap);
+      }
+    } else {
+      // Different root subtrees - shift the right one
+      shiftSubtree(rightSubtree, collision.overlap);
+    }
+  }
+  
+  // ============================================
+  // PHASE 3: Re-center all parents over their children (bottom-up)
+  // ============================================
+  
+  const maxDepth = Math.max(...allNodes.map(n => n.depth));
+  
+  for (let depth = maxDepth - 1; depth >= 0; depth--) {
+    const nodesAtDepth = allNodes.filter(n => n.depth === depth);
+    
+    for (const node of nodesAtDepth) {
+      if (node.children && node.children.length > 0) {
+        const childXPositions = node.children.map(c => c.x);
+        const minX = Math.min(...childXPositions);
+        const maxX = Math.max(...childXPositions);
+        const childrenCenter = (minX + maxX) / 2;
+        
+        if (node.data.spouses && node.data.spouses.length > 0) {
+          const spousesWithOffsets = getSpousesWithOffsets(node.data);
+          const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
+          const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
+          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
+          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+        } else {
+          node.x = childrenCenter;
+        }
+      }
+    }
+  }
+  
+  // ============================================
+  // PHASE 4: Run collision detection again after re-centering
+  // (Re-centering might have caused new collisions)
+  // ============================================
+  
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const collisions = findCollisions();
+    
+    if (collisions.length === 0) {
+      break;
+    }
+    
+    const collision = collisions[0];
+    
+    const leftSubtree = findRootSubtree(collision.leftNode);
+    const rightSubtree = findRootSubtree(collision.rightNode);
+    
+    if (leftSubtree === rightSubtree) {
+      // Same subtree - find LCA and shift
+      const leftPath = [];
+      let n = collision.leftNode;
+      while (n) {
+        leftPath.push(n);
+        n = n.parent;
+      }
+      const leftPathSet = new Set(leftPath);
+      
+      n = collision.rightNode;
+      let lca = null;
+      while (n) {
+        if (leftPathSet.has(n)) {
+          lca = n;
+          break;
+        }
+        n = n.parent;
+      }
+      
+      if (lca && lca.children) {
+        let rightChild = collision.rightNode;
+        while (rightChild.parent !== lca) {
+          rightChild = rightChild.parent;
+        }
+        shiftSubtree(rightChild, collision.overlap);
+      }
+    } else {
+      shiftSubtree(rightSubtree, collision.overlap);
+    }
+    
+    // Re-center after each shift
+    for (let depth = maxDepth - 1; depth >= 0; depth--) {
+      const nodesAtDepth = allNodes.filter(n => n.depth === depth);
+      for (const node of nodesAtDepth) {
+        if (node.children && node.children.length > 0) {
+          const childXPositions = node.children.map(c => c.x);
+          const childrenCenter = (Math.min(...childXPositions) + Math.max(...childXPositions)) / 2;
+          
+          if (node.data.spouses && node.data.spouses.length > 0) {
+            const spousesWithOffsets = getSpousesWithOffsets(node.data);
+            const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
+            const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
+            const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
+            const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+            node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+          } else {
+            node.x = childrenCenter;
+          }
+        }
+      }
+    }
+  }
+}
+
+function autoLayout() {
+  // Save state for undo support
+  saveState();
+  
+  // Analyze tree structure
+  const root = d3.hierarchy(data);
+  const nodes = root.descendants();
+  const maxDepth = d3.max(nodes, d => d.depth) + 1;
+  const terminalNodes = nodes.filter(n => !n.children || n.children.length === 0);
+  const terminalCount = terminalNodes.length;
+  
+  // ============================================
+  // STEP 1: Calculate optimal NODE WIDTH based on names
+  // ============================================
+  
+  let maxNameLength = 0;
+  nodes.forEach(node => {
+    if (node.data.name) {
+      maxNameLength = Math.max(maxNameLength, node.data.name.length);
+    }
+    if (node.data.spouses) {
+      node.data.spouses.forEach(spouse => {
+        if (spouse.name) {
+          maxNameLength = Math.max(maxNameLength, spouse.name.length);
+        }
+      });
+    }
+  });
+  
+  // Calculate node width: ~8px per character + padding, with min/max limits
+  const calculatedNodeWidth = Math.min(150, Math.max(70, maxNameLength * 8 + 16));
+  nodeWidth = calculatedNodeWidth;
+  
+  // ============================================
+  // STEP 2: Calculate HORIZONTAL SPACING
+  // ============================================
+  
+  // Horizontal spacing = node width + gap between nodes
+  // Gap scales slightly with node width for visual balance
+  const horizontalGap = Math.max(25, nodeWidth * 0.3);
+  horizontalSpacing = Math.round(nodeWidth + horizontalGap);
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  
+  // ============================================
+  // STEP 3: Calculate VERTICAL SPACING
+  // ============================================
+  
+  // Base vertical spacing on node height (30px) + room for connectors + gap
+  // Deeper trees can be slightly tighter
+  if (maxDepth <= 5) {
+    verticalSpacing = 100;
+  } else if (maxDepth <= 8) {
+    verticalSpacing = 85;
+  } else {
+    verticalSpacing = 75;
+  }
+  
+  // ============================================
+  // STEP 4: Calculate TERMINAL LINE SPACING
+  // ============================================
+  
+  // Line spacing needs to prevent overlap of cM labels
+  // More lines = can be slightly tighter, but never too tight
+  if (terminalCount <= 6) {
+    terminalLineSpacing = 45;
+  } else if (terminalCount <= 15) {
+    terminalLineSpacing = 38;
+  } else if (terminalCount <= 25) {
+    terminalLineSpacing = 32;
+  } else {
+    terminalLineSpacing = 28;
+  }
+  
+  // ============================================
+  // UPDATE UI CONTROLS
+  // ============================================
+  
+  document.getElementById("vertical-spacing").value = verticalSpacing;
+  document.getElementById("horizontal-spacing").value = horizontalSpacing;
+  document.getElementById("node-width").value = nodeWidth;
+  document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+  
+  document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+  document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+  document.getElementById("tools-node-width").value = nodeWidth;
+  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+  
+  document.getElementById("dna-line-spacing").value = terminalLineSpacing;
+  
+  // ============================================
+  // REDRAW AND FIT TO VIEWPORT
+  // ============================================
+  
+  drawTree();
+  
+  // Recalculate bounds with new settings
+  const newRoot = d3.hierarchy(data);
+  computeLayout(newRoot);
+  const newNodes = newRoot.descendants();
+  
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  
+  newNodes.forEach(node => {
+    minX = Math.min(minX, node.x - nodeWidth / 2);
+    maxX = Math.max(maxX, node.x + nodeWidth / 2);
+    minY = Math.min(minY, node.y - 15);
+    maxY = Math.max(maxY, node.y + 15);
+    
+    if (node.data.spouses && node.data.spouses.length > 0) {
+      const spousesWithOffsets = getSpousesWithOffsets(node.data);
+      spousesWithOffsets.forEach(sp => {
+        const spouseX = node.x + sp.offset;
+        minX = Math.min(minX, spouseX - nodeWidth / 2);
+        maxX = Math.max(maxX, spouseX + nodeWidth / 2);
+      });
+    }
+  });
+  
+  // Account for terminal lines
+  const newTerminalNodes = newNodes.filter(n => !n.children || n.children.length === 0);
+  if (newTerminalNodes.length > 1) {
+    maxY += (newTerminalNodes.length - 1) * terminalLineSpacing + 60;
+    maxX += 80;
+  }
+  
+  // Add padding
+  const padding = 50;
+  minX -= padding;
+  maxX += padding;
+  minY -= padding;
+  maxY += padding;
+  
+  // Fit to viewport
+  const treeWidth = maxX - minX;
+  const treeHeight = maxY - minY;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight - 40;
+  
+  const scaleX = viewportWidth / treeWidth;
+  const scaleY = viewportHeight / treeHeight;
+  const scale = Math.min(scaleX, scaleY, 1.5);
+  
+  const treeCenterX = (minX + maxX) / 2;
+  const treeCenterY = (minY + maxY) / 2;
+  
+  const translateX = (viewportWidth / 2) - (treeCenterX * scale) - (50 * scale) + 50;
+  const translateY = (viewportHeight / 2) - (treeCenterY * scale) - (80 * scale) + 80 + 40;
+  
+  const transform = d3.zoomIdentity
+    .translate(translateX, translateY)
+    .scale(scale);
+  
+  svg.transition()
+    .duration(500)
+    .call(zoom.transform, transform);
+}
+
+function drawTree(savedTransform = null) {
+  svg.selectAll("*").remove();
+  const g = svg.append("g").attr("transform", "translate(50,80)");
+
+  // Draw shaded region first (so it's behind everything else)
+  if (shadedRegion) {
+    g.append("rect")
+      .attr("class", "shaded-region")
+      .attr("x", shadedRegion.x)
+      .attr("y", shadedRegion.y)
+      .attr("width", shadedRegion.width)
+      .attr("height", shadedRegion.height);
+  }
+
+  zoom = d3.zoom()
+      .scaleExtent([0.3, 3])
+      .on("zoom", (event) => g.attr("transform", event.transform));
+
+  // Conditionally apply zoom based on shade tool state
+  if (shadeToolActive) {
+    svg.on(".zoom", null); // Disable zoom when shade tool is active
+  } else {
+    svg.call(zoom);
+  }
+  if (savedTransform) svg.call(zoom.transform, savedTransform);
+
+  // Find the deepest node with ancestorsCollapsed = true
+  let deepestCollapsedAncestorNode = null;
+  let maxDepth = -1;
+  
+  function findDeepestCollapsedAncestor(node, depth = 0) {
+    if (node.ancestorsCollapsed && depth > maxDepth) {
+      deepestCollapsedAncestorNode = node;
+      maxDepth = depth;
+    }
+    if (node.children) {
+      node.children.forEach(child => findDeepestCollapsedAncestor(child, depth + 1));
+    }
+  }
+  findDeepestCollapsedAncestor(data);
+  
+  // Determine the effective root for rendering
+  let effectiveRoot = data;
+  if (deepestCollapsedAncestorNode) {
+    effectiveRoot = deepestCollapsedAncestorNode;
+  }
+  
+  // Use children accessor to filter out collapsed nodes' children
+  const root = d3.hierarchy(effectiveRoot, d => d.collapsed ? null : d.children);
+  computeLayout(root);
+
+  // For collapsed nodes, also hide spouses
+  const nodesWithSpouses = root.descendants().filter(d => d.data.spouses && d.data.spouses.length > 0 && !d.data.collapsed);
+  
+  g.selectAll(".link")
+    .data(root.descendants().slice(1))
+    .join("path")
+    .attr("class", "link")
+    .attr("d", d => {
+      let px = d.parent.x;
+      let py = d.parent.y + nodeHeight/2;
+      
+      // If parent has spouses, find the correct center point for the child connection
+      if (d.parent.data.spouses && d.parent.data.spouses.length > 0) {
+        const childSpouseId = d.data.spouseId;
+        const spousesWithOffsets = getSpousesWithOffsets(d.parent.data);
+        
+        if (childSpouseId) {
+          // Child is assigned to a specific spouse - find that spouse
+          const spouseData = spousesWithOffsets.find(s => s.spouse.id === childSpouseId);
+          if (spouseData) {
+            // Midpoint between parent node and that specific spouse
+            px = d.parent.x + spouseData.offset / 2;
+          } else {
+            // spouseId doesn't match any current spouse - connect directly to parent
+            // (the spouse was likely deleted)
+            px = d.parent.x;
+          }
+        } else {
+          // No spouseId assigned - connect directly to parent node
+          // These are children of the main person only, not from any spouse relationship
+          px = d.parent.x;
+        }
+      }
+      
+      const cx = d.x;
+      const cy = d.y - nodeHeight/2;
+      const midY = (py + cy) / 2;
+      return `M${px},${py} V${midY} H${cx} V${cy}`;
+    });
+
+  // Draw spouse links for all spouses
+  nodesWithSpouses.forEach(d => {
+    const spouseLineY = d.y;
+    const spousesWithOffsets = getSpousesWithOffsets(d.data);
+    
+    spousesWithOffsets.forEach(sp => {
+      const spouseOffset = sp.offset;
+      const spouseX = d.x + spouseOffset;
+      
+      // Draw horizontal line between main node and spouse
+      const mainEdgeX = sp.side === 'left' ? d.x - nodeWidth/2 : d.x + nodeWidth/2;
+      const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+      
+      g.append("line")
+        .attr("class", "spouse-link")
+        .attr("x1", mainEdgeX)
+        .attr("y1", spouseLineY)
+        .attr("x2", spouseEdgeX)
+        .attr("y2", spouseLineY);
+      
+      // Draw vertical line down to children (only if this spouse pair has children)
+      if (d.children && d.children.length > 0) {
+        // Check if any children belong to this spouse
+        const childrenOfThisSpouse = d.children.filter(c => c.data.spouseId === sp.spouse.id);
+        
+        // Draw vertical line only if there are children explicitly assigned to this spouse
+        // Children without spouseId connect directly to the main node, not via spouse pairs
+        const shouldDrawVertical = childrenOfThisSpouse.length > 0;
+        
+        if (shouldDrawVertical) {
+          const childY = d.children[0].y - nodeHeight/2;
+          const branchY = (spouseLineY + nodeHeight/2 + childY) / 2;
+          const midX = d.x + spouseOffset / 2;
+          
+          g.append("line")
+            .attr("class", "spouse-link")
+            .attr("x1", midX)
+            .attr("y1", spouseLineY)
+            .attr("x2", midX)
+            .attr("y2", branchY);
+        }
+      }
+    });
+  });
+  
+  // Draw vertical line from main node for children without spouseId
+  nodesWithSpouses.forEach(d => {
+    if (d.children && d.children.length > 0) {
+      const childrenWithNoSpouse = d.children.filter(c => !c.data.spouseId);
+      if (childrenWithNoSpouse.length > 0) {
+        const childY = d.children[0].y - nodeHeight/2;
+        const branchY = (d.y + nodeHeight/2 + childY) / 2;
+        
+        g.append("line")
+          .attr("class", "link")
+          .attr("x1", d.x)
+          .attr("y1", d.y + nodeHeight/2)
+          .attr("x2", d.x)
+          .attr("y2", branchY);
+      }
+    }
+  });
+
+  const terminalPositions = getAllTerminalPositions(root);
+  const terminalPositionsForLines = terminalPositions.slice(0, -1);
+  const rightmostPosition = terminalPositions.length > 0 ? terminalPositions[terminalPositions.length - 1] : null;
+  const maxX = rightmostPosition ? rightmostPosition.x : 0;
+  // End lines flush with right edge of rightmost node
+  const lineEndX = maxX + nodeWidth / 2;
+  const rightmostNodeBottomY = rightmostPosition 
+    ? rightmostPosition.y + nodeHeight/2 : 0;
+  const topLineY = rightmostNodeBottomY + terminalLineSpacing;
+  
+  g.selectAll(".terminal-line")
+    .data(terminalPositionsForLines)
+    .join("path")
+    .attr("class", "terminal-line")
+    .attr("stroke", (d, i) => {
+      if (alternateLineColors) {
+        return i % 2 === 0 ? "black" : "#0066cc";
+      }
+      return "black";
+    })
+    .attr("d", (d, i) => {
+      const startX = d.x;
+      const startY = d.y + nodeHeight/2;
+      const endX = lineEndX;
+      const lineIndex = terminalPositionsForLines.length - 1 - i;
+      const horizontalY = topLineY + (lineIndex * terminalLineSpacing);
+      return `M${startX},${startY} V${horizontalY} H${endX}`;
+    });
+
+  const intersections = [];
+  terminalPositionsForLines.forEach((linePos, lineIdx) => {
+    const lineIndex = terminalPositionsForLines.length - 1 - lineIdx;
+    const horizontalY = topLineY + (lineIndex * terminalLineSpacing);
+    const posIndex = terminalPositions.indexOf(linePos);
+    
+    for (let j = posIndex + 1; j < terminalPositions.length; j++) {
+      const targetPos = terminalPositions[j];
+      intersections.push({
+        x: targetPos.x,
+        y: horizontalY,
+        person1: linePos.name,
+        person2: targetPos.name
+      });
+    }
+  });
+
+  const emptyIntersections = intersections.filter(d => {
+    const key = getDnaKey(d.person1, d.person2);
+    return !dnaComparisons[key];
+  });
+  
+  g.selectAll(".intersection-point")
+    .data(emptyIntersections)
+    .join("circle")
+    .attr("class", "intersection-point")
+    .attr("cx", d => d.x)
+    .attr("cy", d => d.y)
+    .attr("r", 5)
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      showDnaSidebar(d.person1, d.person2);
+    })
+    .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1, d.person2))
+    .on("mousemove", (event, d) => showDnaTooltip(event, d.person1, d.person2))
+    .on("mouseleave", hideDnaTooltip);
+
+  intersections.forEach(intersection => {
+    const key = getDnaKey(intersection.person1, intersection.person2);
+    const dnaData = dnaComparisons[key];
+    
+    if (dnaData) {
+      const labelGroup = g.append("g")
+        .attr("class", "intersection-label-group")
+        .style("cursor", "pointer")
+        .on("click", (event) => {
+          event.stopPropagation();
+          showDnaSidebar(intersection.person1, intersection.person2);
+        })
+        .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
+        .on("mousemove", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
+        .on("mouseleave", hideDnaTooltip);
+      
+      labelGroup.append("rect")
+        .attr("x", intersection.x - 30)
+        .attr("y", intersection.y - 16)
+        .attr("width", 60)
+        .attr("height", 32)
+        .attr("fill", "transparent")
+        .style("cursor", "pointer");
+      
+      if (dnaData.cm) {
+        const cmFontSize = dnaLabelStyles.cm.fontSize;
+        const relFontSize = dnaLabelStyles.relationship.fontSize;
+        // Smaller base offset to keep cM values close to the line
+        const cmOffset = 2 + (cmFontSize - 11) * 0.15;
+        const cmText = labelGroup.append("text")
+          .attr("class", "intersection-label cm-value")
+          .attr("x", intersection.x)
+          .attr("y", intersection.y - cmOffset)
+          .style("font-size", `${cmFontSize}px`)
+          .style("fill", dnaLabelStyles.cm.color)
+          .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
+          .style("font-style", dnaLabelStyles.cm.italic ? "italic" : "normal")
+          .text(dnaData.cm);
+        
+        if (autoStrokeEnabled) {
+          const strokeColor = getCmStrokeColor(dnaData.cm);
+          if (strokeColor) {
+            cmText
+              .style("stroke", strokeColor)
+              .style("stroke-width", `${autoStrokeWidth}px`)
+              .style("paint-order", "stroke fill");
+          }
+        }
+      }
+      
+      if (dnaData.relationship) {
+        const cmFontSize = dnaLabelStyles.cm.fontSize;
+        const relFontSize = dnaLabelStyles.relationship.fontSize;
+        // Base offset plus scaling based on both font sizes to prevent overlap
+        const relOffset = 12 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+        labelGroup.append("text")
+          .attr("class", "intersection-label relationship")
+          .attr("x", intersection.x)
+          .attr("y", intersection.y + relOffset)
+          .style("font-size", `${relFontSize}px`)
+          .style("fill", dnaLabelStyles.relationship.color)
+          .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
+          .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
+          .text(dnaData.relationship);
+      }
+    }
+  });
+
+  const node = g.selectAll(".node:not(.spouse-node)")
+    .data(root.descendants())
+    .join("g")
+    .attr("class", "node")
+    .attr("data-name", d => d.data.name)
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .on("click", (event, d) => showSidebar(d.data, d, false))
+    .on("mouseenter", (event, d) => showNodeTooltip(event, d.data, false))
+    .on("mousemove", (event, d) => showNodeTooltip(event, d.data, false))
+    .on("mouseleave", hideNodeTooltip);
+
+  const halfWidth = nodeWidth / 2;
+  
+  // Helper function to fit name within node width
+  function fitName(name, fontSize, isBold) {
+    // Approximate character width based on font size (bold is ~10% wider)
+    const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
+    const availableWidth = nodeWidth - 10; // padding
+    const maxChars = Math.floor(availableWidth / avgCharWidth);
+    
+    if (name.length <= maxChars) {
+      return name;
+    }
+    
+    // Name doesn't fit: use initials
+    const words = name.split(' ').filter(w => w.length > 0);
+    return words.map(word => word[0]).join('').toUpperCase();
+  }
+  
+  node.append("rect")
+      .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
+      .attr("rx", 5).attr("ry", 5)
+      .attr("fill", d => d.data.color || "#ffffff")
+      .attr("stroke", "black")
+      .attr("stroke-width", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2)
+      .style("filter", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none");
+
+  node.append("text")
+      .text(d => {
+        const name = d.data.name;
+        const fontSize = d.data.fontSize || 12;
+        const isBold = d.data.bold || false;
+        return fitName(name, fontSize, isBold);
+      })
+      .style("font-size", d => `${d.data.fontSize || 12}px`)
+      .style("font-weight", d => d.data.bold ? "bold" : "normal")
+      .style("font-style", d => d.data.italic ? "italic" : "normal");
+
+  // Add collapse indicator for collapsed nodes
+  const collapsedNodes = node.filter(d => d.data.collapsed);
+  const collapseIndicator = collapsedNodes.append("g")
+      .attr("class", "collapse-indicator")
+      .attr("transform", `translate(0, ${nodeHeight/2 + 30})`);
+  
+  collapseIndicator.append("circle")
+      .attr("r", 24);
+  
+  collapseIndicator.append("text")
+      .text("+");
+  
+  // Add ancestor collapse indicator for nodes with collapsed ancestors
+  const ancestorCollapsedNodes = node.filter(d => d.data.ancestorsCollapsed);
+  const ancestorCollapseIndicator = ancestorCollapsedNodes.append("g")
+      .attr("class", "ancestor-collapse-indicator")
+      .attr("transform", `translate(0, ${-nodeHeight/2 - 30})`);
+  
+  ancestorCollapseIndicator.append("circle")
+      .attr("r", 24);
+  
+  ancestorCollapseIndicator.append("text")
+      .text("+");
+
+  // Create data for all spouse nodes
+  const allSpouseData = [];
+  nodesWithSpouses.forEach(d => {
+    const spousesWithOffsets = getSpousesWithOffsets(d.data);
+    spousesWithOffsets.forEach(sp => {
+      allSpouseData.push({
+        parentNode: d,
+        spouse: sp.spouse,
+        offset: sp.offset,
+        index: sp.index,
+        side: sp.side
+      });
+    });
+  });
+
+  const spouseNodes = g.selectAll(".spouse-node")
+    .data(allSpouseData)
+    .join("g")
+    .attr("class", "node spouse-node")
+    .attr("data-name", d => d.spouse.name)
+    .attr("transform", d => {
+      return `translate(${d.parentNode.x + d.offset},${d.parentNode.y})`;
+    })
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      showSidebar(d.spouse, d.parentNode, true, d.index);
+    })
+    .on("mouseenter", (event, d) => showNodeTooltip(event, d.spouse, true))
+    .on("mousemove", (event, d) => showNodeTooltip(event, d.spouse, true))
+    .on("mouseleave", hideNodeTooltip);
+
+  spouseNodes.append("rect")
+      .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
+      .attr("rx", 5).attr("ry", 5)
+      .attr("fill", d => d.spouse.color || "#ffffff")
+      .attr("stroke", "black")
+      .attr("stroke-width", d => selectedSpouse && selectedSpouse === d.spouse ? 4 : 2)
+      .style("filter", d => selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none");
+
+  spouseNodes.append("text")
+      .text(d => {
+        const name = d.spouse.name;
+        const fontSize = d.spouse.fontSize || 12;
+        const isBold = d.spouse.bold || false;
+        return fitName(name, fontSize, isBold);
+      })
+      .style("font-size", d => `${d.spouse.fontSize || 12}px`)
+      .style("font-weight", d => d.spouse.bold ? "bold" : "normal")
+      .style("font-style", d => d.spouse.italic ? "italic" : "normal");
+  
+  // Update home person display in Tools panel
+  updateToolsHomePerson();
+  
+  // Auto-save after any tree changes
+  autoSave();
+}
+
+document.getElementById("update-name").addEventListener("click", () => {
+  if (selectedNode) {
+    const editData = selectedSpouse || selectedNode.data;
+    const oldName = editData.name;
+    const newName = document.getElementById("node-name").value;
+    
+    if (oldName !== newName) {
+      saveState();
+      const updatedComparisons = {};
+      for (const key in dnaComparisons) {
+        const [p1, p2] = key.split("|");
+        let newKey = key;
+        if (p1 === oldName) newKey = `${newName}|${p2}`;
+        else if (p2 === oldName) newKey = `${p1}|${newName}`;
+        updatedComparisons[newKey] = dnaComparisons[key];
+      }
+      dnaComparisons = updatedComparisons;
+    }
+    
+    editData.name = newName;
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
+  }
+});
+
+document.getElementById("add-child").addEventListener("click", () => {
+  const newName = document.getElementById("child-name").value.trim();
+  if (!newName) return;
+  
+  if (selectedSpouse && selectedNode) {
+    // A spouse is selected - add child to the main node with this spouse's ID
+    saveState();
+    const mainNodeData = selectedNode.data;
+    if (!mainNodeData.children) mainNodeData.children = [];
+    const newChild = { 
+      name: newName, 
+      color: "#ffffff", 
+      fontSize: 12, 
+      bold: false, 
+      italic: false,
+      spouseId: selectedSpouse.id  // Associate child with this spouse
+    };
+    mainNodeData.children.push(newChild);
+    document.getElementById("child-name").value = "";
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse, selectedNode, true, selectedSpouseIndex);
+  } else if (selectedNode) {
+    const nodeData = selectedNode.data;
+    const spouses = nodeData.spouses || [];
+    
+    if (spouses.length > 1) {
+      // Multiple spouses - prompt user to select which parent pair
+      showSpouseSelectionDialog(newName, nodeData, spouses);
+    } else {
+      // 0 or 1 spouse - no need to ask
+      saveState();
+      if (!nodeData.children) nodeData.children = [];
+      const newChild = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false };
+      
+      // If there's exactly one spouse, assign the child to that spouse
+      if (spouses.length === 1) {
+        newChild.spouseId = spouses[0].id;
+      }
+      
+      nodeData.children.push(newChild);
+      document.getElementById("child-name").value = "";
+      drawTree(d3.zoomTransform(svg.node()));
+      showSidebar(nodeData, selectedNode, false);
+    }
+  }
+});
+
+// Dialog for selecting which spouse pair a child belongs to
+function showSpouseSelectionDialog(childName, parentNode, spouses) {
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  // Create dialog
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  let html = `
+    <h3 style="margin-top: 0; margin-bottom: 15px;">Select Second Parent for "${childName}"</h3>
+    <p style="margin-bottom: 15px; color: #666;">Which spouse is ${childName}'s other parent?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        ${parentNode.name} only (no second parent)
+      </button>
+  `;
+  
+  spouses.forEach(spouse => {
+    html += `
+      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        ${parentNode.name} & ${spouse.name}
+      </button>
+    `;
+  });
+  
+  html += `
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+  `;
+  
+  dialog.innerHTML = html;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Add hover effect
+  dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
+    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+  });
+  
+  // Handle spouse selection
+  dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      saveState();
+      if (!parentNode.children) parentNode.children = [];
+      
+      const newChild = { name: childName, color: "#ffffff", fontSize: 12, bold: false, italic: false };
+      const spouseId = btn.getAttribute('data-spouse-id');
+      if (spouseId) {
+        newChild.spouseId = spouseId;
+      }
+      
+      parentNode.children.push(newChild);
+      document.getElementById("child-name").value = "";
+      document.body.removeChild(overlay);
+      drawTree(d3.zoomTransform(svg.node()));
+      showSidebar(parentNode, selectedNode, false);
+    });
+  });
+  
+  // Handle cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+document.getElementById("add-parent").addEventListener("click", () => {
+  if (selectedNode && !selectedSpouse) {
+    const newName = document.getElementById("parent-name").value.trim();
+    if (newName) {
+      saveState();
+      const newParent = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, children: [selectedNode.data] };
+
+      if (selectedNode.parent) {
+        const siblings = selectedNode.parent.data.children;
+        const index = siblings.findIndex(c => c === selectedNode.data);
+        siblings[index] = newParent;
+      } else {
+        data = newParent;
+      }
+
+      drawTree(d3.zoomTransform(svg.node()));
+      document.getElementById("parent-name").value = "";
+    }
+  }
+});
+
+document.getElementById("add-spouse").addEventListener("click", () => {
+  if (selectedNode && !selectedSpouse) {
+    const newName = document.getElementById("spouse-name").value.trim();
+    if (newName) {
+      saveState();
+      
+      // Initialize spouses array if needed
+      if (!selectedNode.data.spouses) {
+        selectedNode.data.spouses = [];
+      }
+      
+      // Determine which side to place the new spouse
+      const existingSpouses = selectedNode.data.spouses.length;
+      const side = existingSpouses % 2 === 0 ? 'right' : 'left';
+      
+      const newSpouse = { 
+        name: newName, 
+        color: "#ffffff", 
+        fontSize: 12, 
+        bold: false, 
+        italic: false,
+        id: generateSpouseId(),
+        side: side
+      };
+      
+      // If this is the FIRST spouse being added and there are existing children,
+      // assign those children to this spouse
+      if (existingSpouses === 0 && selectedNode.data.children && selectedNode.data.children.length > 0) {
+        selectedNode.data.children.forEach(child => {
+          if (!child.spouseId) {
+            child.spouseId = newSpouse.id;
+          }
+        });
+      }
+      
+      selectedNode.data.spouses.push(newSpouse);
+      document.getElementById("spouse-name").value = "";
+      drawTree(d3.zoomTransform(svg.node()));
+      showSidebar(selectedNode.data, selectedNode, false);
+    }
+  }
+});
+
+document.getElementById("set-home-person").addEventListener("click", () => {
+  if (!selectedNode) return;
+  
+  const targetData = selectedSpouse || selectedNode.data;
+  
+  // Clear previous home person flag from all nodes
+  function clearHomePerson(node) {
+    delete node.isHomePerson;
+    if (node.spouses) {
+      node.spouses.forEach(spouse => delete spouse.isHomePerson);
+    }
+    if (node.children) node.children.forEach(clearHomePerson);
+  }
+  clearHomePerson(data);
+  
+  // Set new home person
+  targetData.isHomePerson = true;
+  homePersonName = targetData.name;
+  
+  // Refresh sidebar to hide the button
+  showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse, selectedSpouseIndex);
+});
+
+document.getElementById("toggle-collapse").addEventListener("click", () => {
+  if (!selectedNode) return;
+  
+  // Only allow collapsing the main node, not spouses
+  if (selectedSpouse) return;
+  
+  const nodeData = selectedNode.data;
+  
+  // Check if node has children or spouses to collapse
+  const hasDescendants = (nodeData.children && nodeData.children.length > 0) || (nodeData.spouses && nodeData.spouses.length > 0);
+  if (!hasDescendants) return;
+  
+  saveState();
+  
+  // Toggle collapsed state
+  nodeData.collapsed = !nodeData.collapsed;
+  
+  drawTree(d3.zoomTransform(svg.node()));
+  showSidebar(selectedNode.data, selectedNode, false);
+});
+
+document.getElementById("toggle-ancestor-collapse").addEventListener("click", () => {
+  if (!selectedNode) return;
+  
+  // Only allow collapsing the main node, not spouses
+  if (selectedSpouse) return;
+  
+  const nodeData = selectedNode.data;
+  
+  // Check if node has a parent
+  const hasParent = findParent(data, nodeData);
+  if (!hasParent) return;
+  
+  saveState();
+  
+  // Toggle ancestors collapsed state
+  nodeData.ancestorsCollapsed = !nodeData.ancestorsCollapsed;
+  
+  drawTree(d3.zoomTransform(svg.node()));
+  showSidebar(selectedNode.data, selectedNode, false);
+});
+
+
+
+
+document.getElementById("update-color").addEventListener("click", () => {
+  if (selectedNode) {
+    saveState();
+    const editData = selectedSpouse || selectedNode.data;
+    editData.color = document.getElementById("node-color").value;
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
+  }
+});
+
+// Dialog for removing a spouse that has children
+function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, childrenOfSpouse) {
+  const childNames = childrenOfSpouse.map(c => c.name).join(", ");
+  const childCount = childrenOfSpouse.length;
+  const childWord = childCount === 1 ? "child" : "children";
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  dialog.innerHTML = `
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: #d32f2f;">Remove ${spouse.name}</h3>
+    <p style="margin-bottom: 10px; color: #333;">
+      <strong>${spouse.name}</strong> has ${childCount} ${childWord}: <em>${childNames}</em>
+    </p>
+    <p style="margin-bottom: 20px; color: #666;">What would you like to do with the ${childWord}?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="delete-children-btn" style="padding: 12px; border: 2px solid #d32f2f; border-radius: 5px; background: #fff; color: #d32f2f; cursor: pointer; font-weight: bold;">
+        Remove ${spouse.name} AND delete ${childWord}
+      </button>
+      <button class="keep-children-btn" style="padding: 12px; border: 2px solid #1976d2; border-radius: 5px; background: #fff; color: #1976d2; cursor: pointer; font-weight: bold;">
+        Remove ${spouse.name} but keep ${childWord}
+      </button>
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
+  `;
+  
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Delete children option
+  const deleteBtn = dialog.querySelector('.delete-children-btn');
+  deleteBtn.addEventListener('mouseenter', () => {
+    deleteBtn.style.background = '#d32f2f';
+    deleteBtn.style.color = 'white';
+  });
+  deleteBtn.addEventListener('mouseleave', () => {
+    deleteBtn.style.background = '#fff';
+    deleteBtn.style.color = '#d32f2f';
+  });
+  deleteBtn.addEventListener('click', () => {
+    saveState();
+    
+    // Clean up DNA comparisons for spouse
+    for (const key in dnaComparisons) {
+      if (key.includes(spouse.name)) {
+        delete dnaComparisons[key];
+      }
+    }
+    
+    // Clean up DNA comparisons for children and their descendants
+    function collectAllNamesFromNode(node, names) {
+      names.add(node.name);
+      if (node.spouses) {
+        node.spouses.forEach(s => names.add(s.name));
+      }
+      if (node.children) {
+        node.children.forEach(child => collectAllNamesFromNode(child, names));
+      }
+    }
+    
+    const namesToDelete = new Set();
+    childrenOfSpouse.forEach(child => collectAllNamesFromNode(child, namesToDelete));
+    
+    for (const name of namesToDelete) {
+      for (const key in dnaComparisons) {
+        if (key.includes(name)) {
+          delete dnaComparisons[key];
+        }
+      }
+    }
+    
+    // Remove the children from the node's children array
+    nodeData.children = nodeData.children.filter(child => child.spouseId !== spouse.id);
+    if (nodeData.children.length === 0) {
+      delete nodeData.children;
+    }
+    
+    // Remove the spouse
+    nodeData.spouses.splice(spouseIndex, 1);
+    
+    document.body.removeChild(overlay);
+    closeSidebar();
+    drawTree(d3.zoomTransform(svg.node()));
+  });
+  
+  // Keep children option
+  const keepBtn = dialog.querySelector('.keep-children-btn');
+  keepBtn.addEventListener('mouseenter', () => {
+    keepBtn.style.background = '#1976d2';
+    keepBtn.style.color = 'white';
+  });
+  keepBtn.addEventListener('mouseleave', () => {
+    keepBtn.style.background = '#fff';
+    keepBtn.style.color = '#1976d2';
+  });
+  keepBtn.addEventListener('click', () => {
+    saveState();
+    
+    // Clean up DNA comparisons for spouse only
+    for (const key in dnaComparisons) {
+      if (key.includes(spouse.name)) {
+        delete dnaComparisons[key];
+      }
+    }
+    
+    // Remove spouseId from children (they become unassigned)
+    childrenOfSpouse.forEach(child => {
+      delete child.spouseId;
+    });
+    
+    // Remove the spouse
+    nodeData.spouses.splice(spouseIndex, 1);
+    
+    document.body.removeChild(overlay);
+    closeSidebar();
+    drawTree(d3.zoomTransform(svg.node()));
+  });
+  
+  // Cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+function showRemoveSpouseDialog(nodeData) {
+  const spouses = nodeData.spouses;
+  if (spouses.length === 1) {
+    // Only one spouse - check for children first
+    const spouse = spouses[0];
+    const childrenOfSpouse = nodeData.children ? 
+      nodeData.children.filter(child => child.spouseId === spouse.id) : [];
+    
+    if (childrenOfSpouse.length > 0) {
+      // Has children - show the children dialog
+      showRemoveSpouseWithChildrenDialog(nodeData, spouse, 0, childrenOfSpouse);
+    } else {
+      // No children - simple confirm
+      if (confirm(`Are you sure you want to remove "${spouse.name}"?`)) {
+        saveState();
+        
+        // Clean up DNA comparisons
+        for (const key in dnaComparisons) {
+          if (key.includes(spouse.name)) {
+            delete dnaComparisons[key];
+          }
+        }
+        
+        nodeData.spouses = [];
+        drawTree(d3.zoomTransform(svg.node()));
+        showSidebar(nodeData, selectedNode, false);
+      }
+    }
+    return;
+  }
+  
+  // Multiple spouses - show selection dialog
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  let html = `
+    <h3 style="margin-top: 0; margin-bottom: 15px;">Remove Spouse</h3>
+    <p style="margin-bottom: 15px; color: #666;">Which spouse do you want to remove?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+  `;
+  
+  spouses.forEach((spouse, index) => {
+    const childrenOfSpouse = nodeData.children ? 
+      nodeData.children.filter(child => child.spouseId === spouse.id) : [];
+    const childInfo = childrenOfSpouse.length > 0 ? ` (${childrenOfSpouse.length} ${childrenOfSpouse.length === 1 ? 'child' : 'children'})` : '';
+    html += `
+      <button class="spouse-remove-btn" data-index="${index}" style="padding: 10px; border: 1px solid #dc3545; border-radius: 5px; background: #fff; color: #dc3545; cursor: pointer;">
+        Remove ${spouse.name}${childInfo}
+      </button>
+    `;
+  });
+  
+  html += `
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+  `;
+  
+  dialog.innerHTML = html;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Handle spouse removal
+  dialog.querySelectorAll('.spouse-remove-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      btn.style.background = '#dc3545';
+      btn.style.color = 'white';
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.background = '#fff';
+      btn.style.color = '#dc3545';
+    });
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.getAttribute('data-index'));
+      const spouse = spouses[index];
+      const childrenOfSpouse = nodeData.children ? 
+        nodeData.children.filter(child => child.spouseId === spouse.id) : [];
+      
+      // Close this dialog first
+      document.body.removeChild(overlay);
+      
+      if (childrenOfSpouse.length > 0) {
+        // Has children - show the children dialog
+        showRemoveSpouseWithChildrenDialog(nodeData, spouse, index, childrenOfSpouse);
+      } else {
+        // No children - proceed with removal
+        saveState();
+        
+        // Clean up DNA comparisons
+        for (const key in dnaComparisons) {
+          if (key.includes(spouse.name)) {
+            delete dnaComparisons[key];
+          }
+        }
+        
+        nodeData.spouses.splice(index, 1);
+        drawTree(d3.zoomTransform(svg.node()));
+        showSidebar(nodeData, selectedNode, false);
+      }
+    });
+  });
+  
+  // Handle cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+document.getElementById("update-style").addEventListener("click", () => {
+  if (selectedNode) {
+    saveState();
+    const editData = selectedSpouse || selectedNode.data;
+    editData.fontSize = parseInt(document.getElementById("font-size").value);
+    editData.bold = document.getElementById("font-bold").checked;
+    editData.italic = document.getElementById("font-italic").checked;
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
+  }
+});
+
+document.getElementById("update-style-all").addEventListener("click", () => {
+  const fontSize = parseInt(document.getElementById("font-size").value);
+  const bold = document.getElementById("font-bold").checked;
+  const italic = document.getElementById("font-italic").checked;
+  
+  function applyStyleToAll(node) {
+    node.fontSize = fontSize;
+    node.bold = bold;
+    node.italic = italic;
+    if (node.spouses) {
+      node.spouses.forEach(spouse => {
+        spouse.fontSize = fontSize;
+        spouse.bold = bold;
+        spouse.italic = italic;
+      });
+    }
+    if (node.children) {
+      node.children.forEach(child => applyStyleToAll(child));
+    }
+  }
+  
+  applyStyleToAll(data);
+  drawTree(d3.zoomTransform(svg.node()));
+  if (selectedNode) {
+    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse, selectedSpouseIndex);
+  }
+});
+
+document.getElementById("delete-node").addEventListener("click", () => {
+  if (selectedSpouse) {
+    // When deleting a spouse, check for children and handle appropriately
+    if (selectedNode) {
+      const spouseId = selectedSpouse.id;
+      const spouseName = selectedSpouse.name;
+      const childrenOfSpouse = selectedNode.data.children ? 
+        selectedNode.data.children.filter(child => child.spouseId === spouseId) : [];
+      
+      if (childrenOfSpouse.length > 0) {
+        // Spouse has children - show dialog to choose what to do
+        showRemoveSpouseWithChildrenDialog(selectedNode.data, selectedSpouse, selectedSpouseIndex, childrenOfSpouse);
+      } else {
+        // No children - simple removal
+        if (confirm(`Are you sure you want to remove "${spouseName}"?`)) {
+          saveState();
+          
+          // Clean up DNA comparisons
+          for (const key in dnaComparisons) {
+            if (key.includes(spouseName)) {
+              delete dnaComparisons[key];
+            }
+          }
+          
+          // Remove the spouse from the array
+          selectedNode.data.spouses.splice(selectedSpouseIndex, 1);
+          
+          closeSidebar();
+          drawTree(d3.zoomTransform(svg.node()));
+        }
+      }
+    }
+    return;
+  }
+  
+  if (!selectedNode) return;
+  
+  const nodeName = selectedNode.data.name;
+  const nodeToDelete = selectedNode.data;
+  
+  // Check if the selected node IS the home person
+  if (nodeToDelete.isHomePerson) {
+    alert("Cannot delete the home person.");
+    return;
+  }
+  
+  // Check if home person exists in the tree
+  const homePerson = findHomePersonInSubtree(data);
+  
+  if (!homePerson) {
+    // No home person set - use original simple delete behavior
+    if (!selectedNode.parent) {
+      alert("Cannot delete the root node. Set a home person first or add a parent.");
+      return;
+    }
+    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+      saveState();
+      for (const key in dnaComparisons) {
+        if (key.includes(nodeName)) {
+          delete dnaComparisons[key];
+        }
+      }
+      deleteNodeFromTree(data, nodeToDelete);
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+    return;
+  }
+  
+  // Check if the node being deleted is a descendant of the home person
+  // If so, they're being directly deleted - no protection applies
+  function isDescendantOfHomePerson(node) {
+    // Find the home person node, then check if nodeToDelete is in their subtree
+    function findHomeAndCheckDescendant(current) {
+      if (current.isHomePerson) {
+        // Found home person - now check if nodeToDelete is in their descendants
+        return isInSubtree(current, nodeToDelete);
+      }
+      if (current.children) {
+        for (const child of current.children) {
+          if (findHomeAndCheckDescendant(child)) return true;
+        }
+      }
+      return false;
+    }
+    
+    function isInSubtree(root, target) {
+      if (root === target) return false; // The home person itself is not their own descendant
+      
+      // Check if target is spouse of current node
+      if (root.spouses) {
+        for (const spouse of root.spouses) {
+          if (spouse === target) return true;
+        }
+      }
+      
+      // Check if target is in children
+      if (root.children) {
+        for (const child of root.children) {
+          if (child === target) return true;
+          if (isInSubtree(child, target)) return true;
+        }
+      }
+      
+      return false;
+    }
+    
+    return findHomeAndCheckDescendant(data);
+  }
+  
+  // Check if the node being deleted is an ancestor of the home person
+  function isAncestorOfHomePerson(node) {
+    // Find path from root to home person - if node is on this path, it's an ancestor
+    const pathToHome = findPathFromRootToNode(data, homePerson);
+    return pathToHome && pathToHome.includes(node);
+  }
+  
+  if (isDescendantOfHomePerson(nodeToDelete)) {
+    // Direct deletion of home person's descendant - simple delete, no protection
+    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+      saveState();
+      
+      // Collect names for DNA cleanup
+      const namesToDelete = new Set();
+      collectAllNames(nodeToDelete, namesToDelete);
+      
+      for (const name of namesToDelete) {
+        for (const key in dnaComparisons) {
+          if (key.includes(name)) {
+            delete dnaComparisons[key];
+          }
+        }
+      }
+      
+      deleteNodeFromTree(data, nodeToDelete);
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+    return;
+  }
+  
+  // Check if this is actually an ancestor of home person or just a separate branch
+  if (!isAncestorOfHomePerson(nodeToDelete)) {
+    // Node is in a separate branch - simple delete
+    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+      saveState();
+      
+      // Collect names for DNA cleanup
+      const namesToDelete = new Set();
+      collectAllNames(nodeToDelete, namesToDelete);
+      
+      for (const name of namesToDelete) {
+        for (const key in dnaComparisons) {
+          if (key.includes(name)) {
+            delete dnaComparisons[key];
+          }
+        }
+      }
+      
+      deleteNodeFromTree(data, nodeToDelete);
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+    return;
+  }
+  
+  // Home person exists - use special delete logic
+  // What GOES: 
+  //   1. The deleted node
+  //   2. The deleted node's ancestors  
+  //   3. The ancestors' other branches (descendants)
+  // What STAYS:
+  //   - Deleted node's spouse
+  //   - Deleted node's children and their descendants
+  //   - Home person, their spouse, and descendants (protected even if in "goes" category)
+  
+  const isRoot = !selectedNode.parent;
+  
+  if (isRoot) {
+    // Deleting the root node - only rule 1 applies (no ancestors)
+    // Spouses and children stay, only the node itself goes
+    
+    let confirmMsg = `Delete "${nodeName}"? ${nodeName} will be removed. Their spouses and descendants will remain.`;
+    
+    if (confirm(confirmMsg)) {
+      saveState();
+      
+      let newRoot;
+      
+      if (nodeToDelete.spouses && nodeToDelete.spouses.length > 0) {
+        // First spouse becomes new root with other spouses and children
+        const firstSpouse = nodeToDelete.spouses[0];
+        newRoot = {
+          name: firstSpouse.name,
+          color: firstSpouse.color || "#ffffff",
+          fontSize: firstSpouse.fontSize || 12,
+          bold: firstSpouse.bold || false,
+          italic: firstSpouse.italic || false
+        };
+        if (firstSpouse.isHomePerson) newRoot.isHomePerson = true;
+        
+        // Add remaining spouses to new root
+        if (nodeToDelete.spouses.length > 1) {
+          newRoot.spouses = nodeToDelete.spouses.slice(1).map(s => ({ ...s }));
+        }
+        
+        if (nodeToDelete.children && nodeToDelete.children.length > 0) {
+          newRoot.children = nodeToDelete.children.map(c => cloneNodeWithDescendants(c));
+        }
+      } else if (nodeToDelete.children && nodeToDelete.children.length > 0) {
+        // No spouse - need to handle children
+        if (nodeToDelete.children.length === 1) {
+          newRoot = cloneNodeWithDescendants(nodeToDelete.children[0]);
+        } else {
+          // Multiple children - find the one with home person, or create container
+          const childWithHome = nodeToDelete.children.find(c => findHomePersonInSubtree(c));
+          if (childWithHome) {
+            // Just keep the branch with home person (others go as they're not protected)
+            newRoot = cloneNodeWithDescendants(childWithHome);
+          } else {
+            newRoot = {
+              name: "Family",
+              color: "#ffffff", 
+              fontSize: 12,
+              bold: false,
+              italic: false,
+              children: nodeToDelete.children.map(c => cloneNodeWithDescendants(c))
+            };
+          }
+        }
+      } else {
+        alert("Cannot delete - nothing would remain.");
+        return;
+      }
+      
+      // Clean up DNA
+      const allNames = new Set();
+      collectAllNames(data, allNames);
+      const newNames = new Set();
+      collectAllNames(newRoot, newNames);
+      
+      for (const name of allNames) {
+        if (!newNames.has(name)) {
+          for (const key in dnaComparisons) {
+            if (key.includes(name)) {
+              delete dnaComparisons[key];
+            }
+          }
+        }
+      }
+      
+      data = newRoot;
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+  } else {
+    // Deleting a non-root node - rules 1, 2, 3 apply
+    // Node goes, ancestors go, ancestors' other branches go
+    // Spouse and children stay
+    
+    let confirmMsg = `Delete "${nodeName}"? This will remove ${nodeName}, their ancestors, and ancestors' other branches. ` +
+      `Their spouse and descendants will remain. The home person "${homePerson.name}" is protected.`;
+    
+    if (confirm(confirmMsg)) {
+      saveState();
+      
+      // Build new root from what survives:
+      // - Deleted node's spouse (if any)
+      // - Deleted node's children and descendants
+      // - Home person's branch (if elsewhere in tree - protected)
+      
+      // Check if home person is in deleted node's subtree (spouse/children/descendants)
+      const homeInSpouse = nodeToDelete.spouse && nodeToDelete.spouse.isHomePerson;
+      const homeInChildren = nodeToDelete.children && 
+        nodeToDelete.children.some(c => findHomePersonInSubtree(c));
+      const homeInDeletedSubtree = homeInSpouse || homeInChildren;
+      
+      let newRoot;
+      
+      // First, build the surviving part from deleted node
+      let survivingFromDeleted = null;
+      
+      if (nodeToDelete.spouse) {
+        survivingFromDeleted = {
+          name: nodeToDelete.spouse.name,
+          color: nodeToDelete.spouse.color || "#ffffff",
+          fontSize: nodeToDelete.spouse.fontSize || 12,
+          bold: nodeToDelete.spouse.bold || false,
+          italic: nodeToDelete.spouse.italic || false
+        };
+        if (nodeToDelete.spouse.isHomePerson) survivingFromDeleted.isHomePerson = true;
+        
+        if (nodeToDelete.children && nodeToDelete.children.length > 0) {
+          survivingFromDeleted.children = nodeToDelete.children.map(c => cloneNodeWithDescendants(c));
+        }
+      } else if (nodeToDelete.children && nodeToDelete.children.length > 0) {
+        if (nodeToDelete.children.length === 1) {
+          survivingFromDeleted = cloneNodeWithDescendants(nodeToDelete.children[0]);
+        } else {
+          survivingFromDeleted = {
+            name: "Family",
+            color: "#ffffff",
+            fontSize: 12,
+            bold: false,
+            italic: false,
+            children: nodeToDelete.children.map(c => cloneNodeWithDescendants(c))
+          };
+        }
+      }
+      
+      if (homeInDeletedSubtree) {
+        // Home person is in the surviving part - we're good
+        newRoot = survivingFromDeleted;
+      } else {
+        // Home person is elsewhere (in ancestors' other branches) - need to preserve that too
+        // Find the home person's branch
+        const pathToHome = findPathFromRootToNode(data, homePerson);
+        const pathToDeleted = findPathFromRootToNode(data, nodeToDelete);
+        
+        if (pathToHome && pathToDeleted) {
+          // Find divergence point
+          let divergeIndex = 0;
+          for (let i = 0; i < Math.min(pathToDeleted.length, pathToHome.length); i++) {
+            if (pathToDeleted[i] === pathToHome[i]) {
+              divergeIndex = i;
+            } else {
+              break;
+            }
+          }
+          
+          // Clone home person's branch from divergence point
+          const homeBranchStart = pathToHome[divergeIndex + 1];
+          const homeBranch = homeBranchStart ? cloneNodeWithDescendants(homeBranchStart) : cloneNodeWithDescendants(homePerson);
+          
+          // Combine surviving parts
+          if (survivingFromDeleted) {
+            newRoot = {
+              name: "Family",
+              color: "#ffffff",
+              fontSize: 12,
+              bold: false,
+              italic: false,
+              children: [homeBranch, survivingFromDeleted]
+            };
+          } else {
+            newRoot = homeBranch;
+          }
+        } else {
+          newRoot = survivingFromDeleted;
+        }
+      }
+      
+      if (!newRoot) {
+        alert("Error: nothing would remain after deletion.");
+        return;
+      }
+      
+      // Clean up DNA
+      const allNames = new Set();
+      collectAllNames(data, allNames);
+      const newNames = new Set();
+      collectAllNames(newRoot, newNames);
+      
+      for (const name of allNames) {
+        if (!newNames.has(name)) {
+          for (const key in dnaComparisons) {
+            if (key.includes(name)) {
+              delete dnaComparisons[key];
+            }
+          }
+        }
+      }
+      
+      data = newRoot;
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+  }
+});
+
+// Helper: find path from a node down to home person
+function findPathFromNodeToHome(node, path = []) {
+  const currentPath = [...path, node];
+  
+  if (node.isHomePerson) return currentPath;
+  if (node.spouses) {
+    for (const spouse of node.spouses) {
+      if (spouse.isHomePerson) return [...currentPath, spouse];
+    }
+  }
+  
+  if (node.children) {
+    for (const child of node.children) {
+      const result = findPathFromNodeToHome(child, currentPath);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+// Helper: find path from root to a specific node
+function findPathFromRootToNode(root, target, path = []) {
+  const currentPath = [...path, root];
+  
+  if (root === target) return currentPath;
+  if (root.spouses) {
+    for (const spouse of root.spouses) {
+      if (spouse === target) return [...currentPath, target];
+    }
+  }
+  
+  if (root.children) {
+    for (const child of root.children) {
+      const result = findPathFromRootToNode(child, target, currentPath);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+// Helper: collect all names in a subtree
+function collectSubtreeNames(node, names) {
+  names.add(node.name);
+  if (node.spouses) {
+    node.spouses.forEach(spouse => names.add(spouse.name));
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      collectSubtreeNames(child, names);
+    }
+  }
+}
+
+// Helper: collect all names in entire tree
+function collectAllNames(node, names) {
+  names.add(node.name);
+  if (node.spouses) {
+    node.spouses.forEach(spouse => names.add(spouse.name));
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      collectAllNames(child, names);
+    }
+  }
+}
+
+// Helper: deep clone a node with all descendants
+function cloneNodeWithDescendants(node) {
+  const clone = {
+    name: node.name,
+    color: node.color || "#ffffff",
+    fontSize: node.fontSize || 12,
+    bold: node.bold || false,
+    italic: node.italic || false
+  };
+  if (node.isHomePerson) clone.isHomePerson = true;
+  if (node.spouses && node.spouses.length > 0) {
+    clone.spouses = node.spouses.map(s => ({ ...s }));
+  }
+  if (node.spouseId) clone.spouseId = node.spouseId;
+  if (node.children && node.children.length > 0) {
+    clone.children = node.children.map(c => cloneNodeWithDescendants(c));
+  }
+  return clone;
+}
+
+// Spouse swap buttons - swap the selected spouse's side
+document.getElementById("swap-left").addEventListener("click", () => {
+  if (!selectedNode) return;
+  
+  if (selectedSpouse && selectedSpouseIndex >= 0) {
+    // Swap specific spouse to left
+    saveState();
+    selectedSpouse.side = 'left';
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse, selectedNode, true, selectedSpouseIndex);
+  } else if (selectedNode.data.spouses && selectedNode.data.spouses.length > 0) {
+    // Main node selected - swap the first spouse (or only spouse) to left
+    saveState();
+    selectedNode.data.spouses[0].side = 'left';
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedNode.data, selectedNode, false);
+  }
+});
+
+document.getElementById("swap-right").addEventListener("click", () => {
+  if (!selectedNode) return;
+  
+  if (selectedSpouse && selectedSpouseIndex >= 0) {
+    // Swap specific spouse to right
+    saveState();
+    selectedSpouse.side = 'right';
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedSpouse, selectedNode, true, selectedSpouseIndex);
+  } else if (selectedNode.data.spouses && selectedNode.data.spouses.length > 0) {
+    // Main node selected - swap the first spouse (or only spouse) to right
+    saveState();
+    selectedNode.data.spouses[0].side = 'right';
+    drawTree(d3.zoomTransform(svg.node()));
+    showSidebar(selectedNode.data, selectedNode, false);
+  }
+});
+
+// Sibling order buttons
+document.getElementById("move-left").addEventListener("click", () => {
+  if (selectedNode && selectedNode.parent && !selectedSpouse) {
+    const siblings = selectedNode.parent.data.children;
+    const currentIndex = siblings.indexOf(selectedNode.data);
+    if (currentIndex > 0) {
+      saveState();
+      [siblings[currentIndex - 1], siblings[currentIndex]] = [siblings[currentIndex], siblings[currentIndex - 1]];
+      drawTree(d3.zoomTransform(svg.node()));
+      showSidebar(selectedNode.data, selectedNode, false);
+    }
+  }
+});
+
+document.getElementById("move-right").addEventListener("click", () => {
+  if (selectedNode && selectedNode.parent && !selectedSpouse) {
+    const siblings = selectedNode.parent.data.children;
+    const currentIndex = siblings.indexOf(selectedNode.data);
+    if (currentIndex < siblings.length - 1) {
+      saveState();
+      [siblings[currentIndex], siblings[currentIndex + 1]] = [siblings[currentIndex + 1], siblings[currentIndex]];
+      drawTree(d3.zoomTransform(svg.node()));
+      showSidebar(selectedNode.data, selectedNode, false);
+    }
+  }
+});
+
+document.getElementById("vertical-spacing").addEventListener("input", (e) => {
+  verticalSpacing = parseFloat(e.target.value);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("horizontal-spacing").addEventListener("input", (e) => {
+  horizontalSpacing = parseFloat(e.target.value);
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("terminal-line-spacing").addEventListener("input", (e) => {
+  terminalLineSpacing = parseFloat(e.target.value);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("node-width").addEventListener("input", (e) => {
+  nodeWidth = parseFloat(e.target.value);
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("node-height").addEventListener("input", (e) => {
+  nodeHeight = parseFloat(e.target.value);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("export-btn").addEventListener("click", () => {
+  const exportData = {
+    tree: data,
+    dnaComparisons: dnaComparisons,
+    dnaLabelStyles: dnaLabelStyles,
+    autoStrokeEnabled: autoStrokeEnabled,
+    autoStrokeWidth: autoStrokeWidth,
+    alternateLineColors: alternateLineColors,
+    shadedRegion: shadedRegion,
+    homePersonName: homePersonName,
+    settings: {
+      verticalSpacing,
+      horizontalSpacing,
+      terminalLineSpacing,
+      nodeWidth,
+      nodeHeight
+    }
+  };
+  const dataStr = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  // Use the current filename for the download, sanitized for filesystem
+  const safeFilename = currentFilename.replace(/[^a-z0-9\s\-_]/gi, '').replace(/\s+/g, '-') || 'tree';
+  a.download = safeFilename + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// New button - reset to default tree
+document.getElementById("new-btn").addEventListener("click", () => {
+  if (confirm("Are you sure you want to start a new tree? Any unsaved changes will be lost.")) {
+    // Reset to default data
+    data = {
+      name: "Grandparents",
+      color: "#ffffff",
+      fontSize: 12,
+      bold: false,
+      italic: false,
+      children: [
+        { name: "Parent A", color: "#ffffff", fontSize: 12, bold: false, italic: false, 
+          children: [
+            { name: "Cousin 1", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+            { name: "Cousin 2", color: "#ffffff", fontSize: 12, bold: false, italic: false }
+        ]},
+        { name: "Parent B", color: "#ffffff", fontSize: 12, bold: false, italic: false, children: [
+          { name: "Cousin 3", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+          { name: "Cousin 4", color: "#ffffff", fontSize: 12, bold: false, italic: false }
+        ]}
+      ]
+    };
+    
+    // Reset all state
+    dnaComparisons = {};
+    dnaLabelStyles = {
+      cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false },
+      relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
+    };
+    autoStrokeEnabled = false;
+    autoStrokeWidth = 1;
+    alternateLineColors = false;
+    shadedRegion = null;
+    homePersonName = null;
+    currentFilename = "New Tree";
+    
+    // Reset settings to defaults
+    verticalSpacing = 100;
+    horizontalSpacing = 140;
+    terminalLineSpacing = 40;
+    nodeWidth = 100;
+    nodeHeight = 30;
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+    
+    // Update UI controls
+    document.getElementById("filename-display").textContent = currentFilename;
+    document.getElementById("vertical-spacing").value = verticalSpacing;
+    document.getElementById("horizontal-spacing").value = horizontalSpacing;
+    document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+    document.getElementById("node-width").value = nodeWidth;
+    document.getElementById("node-height").value = nodeHeight;
+    document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+    document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+    document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+    document.getElementById("tools-node-width").value = nodeWidth;
+    document.getElementById("tools-node-height").value = nodeHeight;
+    document.getElementById("auto-stroke-toggle").checked = false;
+    document.getElementById("tools-auto-stroke-toggle").checked = false;
+    document.getElementById("alternate-lines-toggle").checked = false;
+    document.getElementById("tools-alternate-lines-toggle").checked = false;
+    
+    // Clear undo/redo history
+    undoStack = [];
+    redoStack = [];
+    updateUndoRedoButtons();
+    
+    // Clear localStorage
+    localStorage.removeItem('threadwizard-autosave');
+    
+    // Close sidebars
+    closeSidebar();
+    closeDnaSidebar();
+    
+    // Redraw and fit
+    drawTree();
+    fitTree();
+  }
+});
+
+// Undo/Redo button handlers
+document.getElementById("undo-btn").addEventListener("click", undo);
+document.getElementById("redo-btn").addEventListener("click", redo);
+
+// Keyboard shortcuts for undo/redo
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+    e.preventDefault();
+    redo();
+  }
+});
+
+document.getElementById("import-btn").addEventListener("click", () => {
+  document.getElementById("import-input").click();
+});
+
+document.getElementById("expand-all-btn").addEventListener("click", () => {
+  // Function to recursively remove collapsed and ancestorsCollapsed flags
+  function expandAll(node) {
+    delete node.collapsed;
+    delete node.ancestorsCollapsed;
+    if (node.children) {
+      node.children.forEach(child => expandAll(child));
+    }
+  }
+  
+  saveState();
+  expandAll(data);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+function normalizeDnaKeys() {
+  const normalized = {};
+  let fixedCount = 0;
+  for (const key in dnaComparisons) {
+    const [name1, name2] = key.split("|");
+    const newKey = getDnaKey(name1, name2);
+    if (!normalized[newKey]) {
+      normalized[newKey] = dnaComparisons[key];
+      if (newKey !== key) fixedCount++;
+    }
+  }
+  dnaComparisons = normalized;
+  return fixedCount;
+}
+
+document.getElementById("import-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        
+        if (imported.tree) {
+          data = imported.tree;
+          dnaComparisons = imported.dnaComparisons || {};
+          
+          // Migrate to multi-spouse format
+          migrateToMultiSpouse(data);
+          
+          if (imported.dnaLabelStyles) {
+            dnaLabelStyles = imported.dnaLabelStyles;
+          }
+          
+          if (imported.autoStrokeEnabled !== undefined) {
+            autoStrokeEnabled = imported.autoStrokeEnabled;
+          }
+          
+          if (imported.autoStrokeWidth !== undefined) {
+            autoStrokeWidth = imported.autoStrokeWidth;
+          }
+          
+          if (imported.alternateLineColors !== undefined) {
+            alternateLineColors = imported.alternateLineColors;
+          }
+          
+          if (imported.shadedRegion !== undefined) {
+            shadedRegion = imported.shadedRegion;
+          } else {
+            shadedRegion = null;
+          }
+          
+          if (imported.homePersonName !== undefined) {
+            homePersonName = imported.homePersonName;
+          }
+          
+          normalizeDnaKeys();
+          
+          if (imported.settings) {
+            verticalSpacing = imported.settings.verticalSpacing || 100;
+            horizontalSpacing = imported.settings.horizontalSpacing || 140;
+            terminalLineSpacing = imported.settings.terminalLineSpacing || 40;
+            nodeWidth = imported.settings.nodeWidth || 100;
+            nodeHeight = imported.settings.nodeHeight || 30;
+            spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+            
+            document.getElementById("vertical-spacing").value = verticalSpacing;
+            document.getElementById("horizontal-spacing").value = horizontalSpacing;
+            document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+            document.getElementById("node-width").value = nodeWidth;
+            document.getElementById("node-height").value = nodeHeight;
+          }
+          
+          // Always derive filename from the imported file name
+          currentFilename = file.name.replace(/\.json$/i, '') || "Imported Tree";
+          filenameDisplay.textContent = currentFilename;
+          setTimeout(checkFilenameOverlap, 0);
+        } else {
+          data = imported;
+          dnaComparisons = {};
+          // Migrate to multi-spouse format
+          migrateToMultiSpouse(data);
+          // Derive filename from file name for legacy imports
+          currentFilename = file.name.replace(/\.json$/i, '') || "Imported Tree";
+          filenameDisplay.textContent = currentFilename;
+          setTimeout(checkFilenameOverlap, 0);
+        }
+        
+        // Auto-set home person if none is defined
+        autoSetHomePerson();
+        
+        drawTree(d3.zoomTransform(svg.node()));
+      } catch (err) {
+        alert("Invalid JSON file");
+      }
+    };
+    reader.readAsText(file);
+    // Reset the input so the same file can be re-imported
+    e.target.value = '';
+  }
+});
+
+function downloadPNG() {
+  const svgElement = document.querySelector("svg");
+  
+  // Clone the SVG
+  const clonedSvg = svgElement.cloneNode(true);
+  
+  // Get the g element and find its bounds
+  const gElement = svgElement.querySelector("g");
+  const bbox = gElement.getBBox();
+  
+  // Add padding
+  const padding = 40;
+  const width = bbox.width + padding * 2;
+  const height = bbox.height + padding * 2;
+  
+  // Reset transform on cloned g to show full content
+  const clonedG = clonedSvg.querySelector("g");
+  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
+  
+  // Inline font-family on all text elements
+  clonedSvg.querySelectorAll("text").forEach(textEl => {
+    textEl.style.fontFamily = "sans-serif";
+  });
+  
+  // Get computed styles and inline them
+  const svgStyles = document.querySelectorAll("style");
+  let styleContent = "";
+  svgStyles.forEach(style => {
+    styleContent += style.innerHTML;
+  });
+  
+  const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  styleElement.textContent = styleContent;
+  clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+  
+  // Set explicit dimensions to fit content
+  clonedSvg.setAttribute("width", width);
+  clonedSvg.setAttribute("height", height);
+  clonedSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  
+  // Convert to data URL
+  const svgData = new XMLSerializer().serializeToString(clonedSvg);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  
+  // Create canvas and draw
+  const canvas = document.createElement("canvas");
+  const scale = 2; // Higher resolution
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    
+    // Download
+    const pngUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = pngUrl;
+    const safeFilename = currentFilename.replace(/[^a-z0-9\s\-_]/gi, '').replace(/\s+/g, '-') || 'tree';
+    a.download = safeFilename + ".png";
+    a.click();
+  };
+  img.src = url;
+}
+
+// Tools Panel functionality
+const toolsPanel = document.getElementById("tools-panel");
+const toolsOverlay = document.getElementById("tools-overlay");
+
+function openToolsPanel() {
+  // Reset position to center
+  toolsPanel.style.left = "50%";
+  toolsPanel.style.top = "50%";
+  toolsPanel.style.transform = "translate(-50%, -50%) scale(1)";
+  
+  // Sync current values to tools panel
+  document.getElementById("tools-font-size").value = selectedNode ? (selectedNode.data.fontSize || 12) : 12;
+  document.getElementById("tools-font-bold").checked = selectedNode ? (selectedNode.data.bold || false) : false;
+  document.getElementById("tools-font-italic").checked = selectedNode ? (selectedNode.data.italic || false) : false;
+  
+  document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+  document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+  document.getElementById("tools-node-width").value = nodeWidth;
+  document.getElementById("tools-node-height").value = nodeHeight;
+  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+  
+  document.getElementById("tools-cm-font-size").value = dnaLabelStyles.cm.fontSize;
+  document.getElementById("tools-cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("tools-cm-font-bold").checked = dnaLabelStyles.cm.bold;
+  document.getElementById("tools-cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  
+  document.getElementById("tools-rel-font-size").value = dnaLabelStyles.relationship.fontSize;
+  document.getElementById("tools-rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("tools-rel-font-bold").checked = dnaLabelStyles.relationship.bold;
+  document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  
+  document.getElementById("tools-auto-stroke-toggle").checked = autoStrokeEnabled;
+  document.getElementById("tools-stroke-width-slider").value = autoStrokeWidth;
+  document.getElementById("tools-stroke-width-value").textContent = autoStrokeWidth + "px";
+  document.getElementById("tools-alternate-lines-toggle").checked = alternateLineColors;
+  
+  toolsPanel.classList.add("visible");
+  toolsOverlay.classList.add("visible");
+}
+
+function closeToolsPanel() {
+  toolsPanel.classList.remove("visible");
+  toolsOverlay.classList.remove("visible");
+}
+
+document.getElementById("tools-btn").addEventListener("click", openToolsPanel);
+document.getElementById("tools-close").addEventListener("click", closeToolsPanel);
+toolsOverlay.addEventListener("click", closeToolsPanel);
+
+// Fit to screen button
+document.getElementById("fit-btn").addEventListener("click", () => {
+  // Get the bounding box of all content
+  const g = svg.select("g");
+  const bbox = g.node().getBBox();
+  
+  // Get viewport dimensions
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight - 40; // Subtract toolbar height
+  
+  // Calculate scale to fit with minimal padding
+  const padding = 20;
+  const scaleX = (viewportWidth - padding * 2) / bbox.width;
+  const scaleY = (viewportHeight - padding * 2) / bbox.height;
+  const scale = Math.min(scaleX, scaleY, 3); // Cap at max zoom of 3
+  
+  // Calculate center position
+  const centerX = bbox.x + bbox.width / 2;
+  const centerY = bbox.y + bbox.height / 2;
+  
+  // Calculate translation to center the content
+  const translateX = viewportWidth / 2 - centerX * scale;
+  const translateY = (viewportHeight / 2 + 40) - centerY * scale; // Add back toolbar offset
+  
+  // Apply transform with smooth transition
+  const transform = d3.zoomIdentity
+    .translate(translateX, translateY)
+    .scale(scale);
+  
+  svg.transition()
+    .duration(500)
+    .call(zoom.transform, transform);
+});
+
+// Make Tools panel draggable by the header
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let panelX = 0;
+let panelY = 0;
+
+const toolsHeader = document.getElementById("tools-header");
+
+toolsHeader.addEventListener("mousedown", (e) => {
+  if (e.target === document.getElementById("tools-close")) return;
+  
+  isDragging = true;
+  toolsPanel.classList.add("dragging");
+  
+  const rect = toolsPanel.getBoundingClientRect();
+  panelX = rect.left + rect.width / 2;
+  panelY = rect.top;
+  
+  dragOffsetX = e.clientX - panelX;
+  dragOffsetY = e.clientY - panelY;
+  
+  // Switch to absolute positioning for dragging
+  toolsPanel.style.left = panelX + "px";
+  toolsPanel.style.top = panelY + "px";
+  toolsPanel.style.transform = "translateX(-50%)";
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!isDragging) return;
+  
+  panelX = e.clientX - dragOffsetX;
+  panelY = e.clientY - dragOffsetY;
+  
+  toolsPanel.style.left = panelX + "px";
+  toolsPanel.style.top = panelY + "px";
+});
+
+document.addEventListener("mouseup", () => {
+  if (isDragging) {
+    isDragging = false;
+    toolsPanel.classList.remove("dragging");
+  }
+});
+
+// Text Styling
+document.getElementById("tools-apply-style-all").addEventListener("click", () => {
+  const fontSize = parseInt(document.getElementById("tools-font-size").value);
+  const bold = document.getElementById("tools-font-bold").checked;
+  const italic = document.getElementById("tools-font-italic").checked;
+  
+  function applyStyleToAll(node) {
+    node.fontSize = fontSize;
+    node.bold = bold;
+    node.italic = italic;
+    if (node.spouse) {
+      node.spouse.fontSize = fontSize;
+      node.spouse.bold = bold;
+      node.spouse.italic = italic;
+    }
+    if (node.children) {
+      node.children.forEach(child => applyStyleToAll(child));
+    }
+  }
+  
+  applyStyleToAll(data);
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Layout Spacing
+document.getElementById("tools-vertical-spacing").addEventListener("input", (e) => {
+  verticalSpacing = parseFloat(e.target.value);
+  document.getElementById("vertical-spacing").value = verticalSpacing;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-horizontal-spacing").addEventListener("input", (e) => {
+  horizontalSpacing = parseFloat(e.target.value);
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  document.getElementById("horizontal-spacing").value = horizontalSpacing;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-node-width").addEventListener("input", (e) => {
+  nodeWidth = parseFloat(e.target.value);
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  document.getElementById("node-width").value = nodeWidth;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-node-height").addEventListener("input", (e) => {
+  nodeHeight = parseFloat(e.target.value);
+  document.getElementById("node-height").value = nodeHeight;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-terminal-line-spacing").addEventListener("input", (e) => {
+  terminalLineSpacing = parseFloat(e.target.value);
+  document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Reset buttons
+document.getElementById("tools-reset-vertical").addEventListener("click", () => {
+  verticalSpacing = 100;
+  document.getElementById("tools-vertical-spacing").value = 100;
+  document.getElementById("vertical-spacing").value = 100;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-reset-horizontal").addEventListener("click", () => {
+  horizontalSpacing = 140;
+  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  document.getElementById("tools-horizontal-spacing").value = 140;
+  document.getElementById("horizontal-spacing").value = 140;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-reset-node-width").addEventListener("click", () => {
+  nodeWidth = 100;
+  document.getElementById("tools-node-width").value = 100;
+  document.getElementById("node-width").value = 100;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-reset-node-height").addEventListener("click", () => {
+  nodeHeight = 30;
+  document.getElementById("tools-node-height").value = 30;
+  document.getElementById("node-height").value = 30;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+document.getElementById("tools-reset-line-spacing").addEventListener("click", () => {
+  terminalLineSpacing = 40;
+  document.getElementById("tools-terminal-line-spacing").value = 40;
+  document.getElementById("terminal-line-spacing").value = 40;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Label Styling
+document.getElementById("tools-apply-label-style").addEventListener("click", () => {
+  dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("tools-cm-font-size").value);
+  dnaLabelStyles.cm.color = document.getElementById("tools-cm-font-color").value;
+  dnaLabelStyles.cm.bold = document.getElementById("tools-cm-font-bold").checked;
+  dnaLabelStyles.cm.italic = document.getElementById("tools-cm-font-italic").checked;
+  
+  dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById("tools-rel-font-size").value);
+  dnaLabelStyles.relationship.color = document.getElementById("tools-rel-font-color").value;
+  dnaLabelStyles.relationship.bold = document.getElementById("tools-rel-font-bold").checked;
+  dnaLabelStyles.relationship.italic = document.getElementById("tools-rel-font-italic").checked;
+  
+  // Also update the DNA sidebar controls
+  document.getElementById("cm-font-size").value = dnaLabelStyles.cm.fontSize;
+  document.getElementById("cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("cm-font-bold").checked = dnaLabelStyles.cm.bold;
+  document.getElementById("cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  document.getElementById("rel-font-size").value = dnaLabelStyles.relationship.fontSize;
+  document.getElementById("rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("rel-font-bold").checked = dnaLabelStyles.relationship.bold;
+  document.getElementById("rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Auto cM Stroke Colors
+document.getElementById("tools-auto-stroke-toggle").addEventListener("change", (e) => {
+  autoStrokeEnabled = e.target.checked;
+  document.getElementById("auto-stroke-toggle").checked = autoStrokeEnabled;
+  
+  if (autoStrokeEnabled) {
+    dnaLabelStyles.cm.bold = false;
+    dnaLabelStyles.cm.color = "#000000";
+    dnaLabelStyles.relationship.bold = false;
+    dnaLabelStyles.relationship.color = "#000000";
+    
+    document.getElementById("tools-cm-font-bold").checked = false;
+    document.getElementById("tools-cm-font-color").value = "#000000";
+    document.getElementById("tools-rel-font-bold").checked = false;
+    document.getElementById("tools-rel-font-color").value = "#000000";
+  }
+  
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("tools-stroke-width-slider").addEventListener("input", (e) => {
+  autoStrokeWidth = parseFloat(e.target.value);
+  document.getElementById("tools-stroke-width-value").textContent = autoStrokeWidth + "px";
+  document.getElementById("stroke-width-slider").value = autoStrokeWidth;
+  document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("tools-alternate-lines-toggle").addEventListener("change", (e) => {
+  alternateLineColors = e.target.checked;
+  document.getElementById("alternate-lines-toggle").checked = alternateLineColors;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Shade Tool functionality
+document.getElementById("tools-shade-toggle").addEventListener("click", () => {
+  shadeToolActive = !shadeToolActive;
+  const btn = document.getElementById("tools-shade-toggle");
+  btn.classList.toggle("active", shadeToolActive);
+  
+  if (shadeToolActive) {
+    document.body.classList.add("shade-tool-active");
+    svg.on(".zoom", null); // Disable zoom
+  } else {
+    document.body.classList.remove("shade-tool-active");
+    svg.call(zoom); // Re-enable zoom
+  }
+});
+
+document.getElementById("tools-shade-clear").addEventListener("click", () => {
+  shadedRegion = null;
+  autoSave();
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Shade tool mouse events on SVG
+svg.on("mousedown.shade", function(event) {
+  if (!shadeToolActive) return;
+  
+  event.preventDefault();
+  event.stopPropagation();
+  
+  const g = svg.select("g");
+  const transform = d3.zoomTransform(svg.node());
+  
+  // Get mouse position in SVG coordinate space
+  const [mouseX, mouseY] = d3.pointer(event, g.node());
+  
+  shadeDrawing = true;
+  shadeStartPoint = { x: mouseX, y: mouseY };
+  
+  // Remove any existing preview
+  g.select(".shade-preview").remove();
+  
+  // Create preview rectangle
+  g.append("rect")
+    .attr("class", "shade-preview")
+    .attr("x", mouseX)
+    .attr("y", mouseY)
+    .attr("width", 0)
+    .attr("height", 0);
+});
+
+svg.on("mousemove.shade", function(event) {
+  if (!shadeToolActive || !shadeDrawing || !shadeStartPoint) return;
+  
+  const g = svg.select("g");
+  const [mouseX, mouseY] = d3.pointer(event, g.node());
+  
+  // Calculate rectangle bounds (handle dragging in any direction)
+  const x = Math.min(shadeStartPoint.x, mouseX);
+  const y = Math.min(shadeStartPoint.y, mouseY);
+  const width = Math.abs(mouseX - shadeStartPoint.x);
+  const height = Math.abs(mouseY - shadeStartPoint.y);
+  
+  // Update preview rectangle
+  g.select(".shade-preview")
+    .attr("x", x)
+    .attr("y", y)
+    .attr("width", width)
+    .attr("height", height);
+});
+
+svg.on("mouseup.shade", function(event) {
+  if (!shadeToolActive || !shadeDrawing || !shadeStartPoint) return;
+  
+  const g = svg.select("g");
+  const [mouseX, mouseY] = d3.pointer(event, g.node());
+  
+  // Calculate final rectangle bounds
+  const x = Math.min(shadeStartPoint.x, mouseX);
+  const y = Math.min(shadeStartPoint.y, mouseY);
+  const width = Math.abs(mouseX - shadeStartPoint.x);
+  const height = Math.abs(mouseY - shadeStartPoint.y);
+  
+  // Only save if the rectangle has meaningful size
+  if (width > 5 && height > 5) {
+    shadedRegion = { x, y, width, height };
+    autoSave();
+  }
+  
+  // Remove preview
+  g.select(".shade-preview").remove();
+  
+  // Reset state
+  shadeDrawing = false;
+  shadeStartPoint = null;
+  
+  // Redraw to show the finalized shaded region
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+// Also handle mouse leaving the SVG while drawing
+svg.on("mouseleave.shade", function(event) {
+  if (!shadeToolActive || !shadeDrawing) return;
+  
+  // Cancel the drawing
+  const g = svg.select("g");
+  g.select(".shade-preview").remove();
+  shadeDrawing = false;
+  shadeStartPoint = null;
+});
+
+// Tools panel export buttons
+document.getElementById("tools-export-png").addEventListener("click", () => {
+  downloadPNG();
+});
+
+document.getElementById("tools-export-svg").addEventListener("click", () => {
+  const svgElement = document.querySelector("svg");
+  
+  // Clone the SVG
+  const clonedSvg = svgElement.cloneNode(true);
+  
+  // Get the g element and find its bounds
+  const gElement = svgElement.querySelector("g");
+  const bbox = gElement.getBBox();
+  
+  // Add padding
+  const padding = 40;
+  const width = bbox.width + padding * 2;
+  const height = bbox.height + padding * 2;
+  
+  // Reset transform on cloned g to show full content
+  const clonedG = clonedSvg.querySelector("g");
+  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
+  
+  // Inline font-family on all text elements
+  clonedSvg.querySelectorAll("text").forEach(textEl => {
+    textEl.style.fontFamily = "sans-serif";
+  });
+  
+  // Get computed styles and inline them
+  const svgStyles = document.querySelectorAll("style");
+  let styleContent = "";
+  svgStyles.forEach(style => {
+    styleContent += style.innerHTML;
+  });
+  
+  const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  styleElement.textContent = styleContent;
+  clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+  
+  // Set explicit dimensions to fit content
+  clonedSvg.setAttribute("width", width);
+  clonedSvg.setAttribute("height", height);
+  clonedSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  
+  // Add white background
+  const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bgRect.setAttribute("width", "100%");
+  bgRect.setAttribute("height", "100%");
+  bgRect.setAttribute("fill", "white");
+  clonedG.insertBefore(bgRect, clonedG.firstChild);
+  
+  // Convert to data URL and download
+  const svgData = new XMLSerializer().serializeToString(clonedSvg);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  
+  const a = document.createElement("a");
+  a.href = url;
+  const safeFilename = currentFilename.replace(/[^a-z0-9\s\-_]/gi, '').replace(/\s+/g, '-') || 'tree';
+  a.download = safeFilename + ".svg";
+  a.click();
+  
+  URL.revokeObjectURL(url);
+});
+
+// Close sidebars when clicking on empty SVG canvas
+svg.on("click", function(event) {
+  // Only close if the click target is the SVG itself or the main group, not a child element
+  if (event.target.tagName === "svg") {
+    const sidebar = document.getElementById("sidebar");
+    const dnaSidebar = document.getElementById("dna-sidebar");
+    
+    if (sidebar.classList.contains("visible")) {
+      closeSidebar();
+    }
+    if (dnaSidebar.classList.contains("visible")) {
+      closeDnaSidebar();
+    }
+  }
+});
+
+// Auto-load saved tree from localStorage
+const loaded = autoLoad();
+
+// Auto-set home person on initial load (only if no tree was loaded)
+if (!loaded) {
+  autoSetHomePerson();
+}
+
+drawTree();
+</script>
+</body>
+</html>
