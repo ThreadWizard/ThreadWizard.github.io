@@ -261,6 +261,19 @@
     margin-right: 10px;
     font-size: 13px;
   }
+  #toolbar .user-guide-link {
+    margin-left: auto;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 3px;
+    transition: background-color 0.15s ease;
+  }
+  #toolbar .user-guide-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 
   /* Sidebar styling - Node Edit */
   #sidebar {
@@ -1023,6 +1036,7 @@
     <span id="filename-display" class="filename-display" title="Click to rename">New Tree</span>
     <input type="text" id="filename-input" class="filename-input" style="display: none;" />
   </div>
+  <a href="/home.html" class="user-guide-link">User Guide</a>
 </div>
 
 <!-- Node Tooltip -->
