@@ -1163,6 +1163,10 @@
           <input type="checkbox" id="tools-alternate-lines-toggle" />
           <label for="tools-alternate-lines-toggle">Alternate Line Colors</label>
         </div>
+        <div class="checkbox-row" style="margin-left: auto; margin-right: 89px;">
+          <input type="checkbox" id="tools-show-terminal-lines-toggle" checked />
+          <label for="tools-show-terminal-lines-toggle">Show Terminal Lines</label>
+        </div>
       </div>
       <div class="tools-row" style="gap: 8px;">
         <button id="tools-shade-toggle" class="shade-btn">Shade Tool</button>
@@ -1438,6 +1442,9 @@ let autoStrokeWidth = 1;
 // Alternating terminal line colors
 let alternateLineColors = false;
 
+// Show/hide terminal lines and DNA data
+let showTerminalLines = true;
+
 // Shading tool
 let shadeToolActive = false;
 let shadedRegion = null; // { x, y, width, height } in SVG coordinates
@@ -1460,6 +1467,7 @@ function autoSave() {
       autoStrokeEnabled: autoStrokeEnabled,
       autoStrokeWidth: autoStrokeWidth,
       alternateLineColors: alternateLineColors,
+      showTerminalLines: showTerminalLines,
       shadedRegion: shadedRegion,
       filename: currentFilename,
       settings: {
@@ -1488,6 +1496,7 @@ function autoLoad() {
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
         alternateLineColors = loadedData.alternateLineColors || false;
+        showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
         shadedRegion = loadedData.shadedRegion || null;
         currentFilename = loadedData.filename || "New Tree";
         
@@ -1505,6 +1514,7 @@ function autoLoad() {
         
         // Update UI elements
         document.getElementById("filename-display").textContent = currentFilename;
+        document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         return true;
       }
     }
@@ -3564,129 +3574,137 @@ function drawTree(savedTransform = null) {
     ? rightmostPosition.y + nodeHeight/2 : 0;
   const topLineY = rightmostNodeBottomY + terminalLineSpacing;
   
-  g.selectAll(".terminal-line")
-    .data(terminalPositionsForLines)
-    .join("path")
-    .attr("class", "terminal-line")
-    .attr("stroke", (d, i) => {
-      if (alternateLineColors) {
-        return i % 2 === 0 ? "black" : "#0066cc";
-      }
-      return "black";
-    })
-    .attr("d", (d, i) => {
-      const startX = d.x;
-      const startY = d.y + nodeHeight/2;
-      const endX = lineEndX;
-      const lineIndex = terminalPositionsForLines.length - 1 - i;
+  // Only draw terminal lines and DNA data if showTerminalLines is true
+  if (showTerminalLines) {
+    g.selectAll(".terminal-line")
+      .data(terminalPositionsForLines)
+      .join("path")
+      .attr("class", "terminal-line")
+      .attr("stroke", (d, i) => {
+        if (alternateLineColors) {
+          return i % 2 === 0 ? "black" : "#0066cc";
+        }
+        return "black";
+      })
+      .attr("d", (d, i) => {
+        const startX = d.x;
+        const startY = d.y + nodeHeight/2;
+        const endX = lineEndX;
+        const lineIndex = terminalPositionsForLines.length - 1 - i;
+        const horizontalY = topLineY + (lineIndex * terminalLineSpacing);
+        return `M${startX},${startY} V${horizontalY} H${endX}`;
+      });
+
+    const intersections = [];
+    terminalPositionsForLines.forEach((linePos, lineIdx) => {
+      const lineIndex = terminalPositionsForLines.length - 1 - lineIdx;
       const horizontalY = topLineY + (lineIndex * terminalLineSpacing);
-      return `M${startX},${startY} V${horizontalY} H${endX}`;
+      const posIndex = terminalPositions.indexOf(linePos);
+      
+      for (let j = posIndex + 1; j < terminalPositions.length; j++) {
+        const targetPos = terminalPositions[j];
+        intersections.push({
+          x: targetPos.x,
+          y: horizontalY,
+          person1: linePos.name,
+          person2: targetPos.name
+        });
+      }
     });
 
-  const intersections = [];
-  terminalPositionsForLines.forEach((linePos, lineIdx) => {
-    const lineIndex = terminalPositionsForLines.length - 1 - lineIdx;
-    const horizontalY = topLineY + (lineIndex * terminalLineSpacing);
-    const posIndex = terminalPositions.indexOf(linePos);
+    const emptyIntersections = intersections.filter(d => {
+      const key = getDnaKey(d.person1, d.person2);
+      return !dnaComparisons[key];
+    });
     
-    for (let j = posIndex + 1; j < terminalPositions.length; j++) {
-      const targetPos = terminalPositions[j];
-      intersections.push({
-        x: targetPos.x,
-        y: horizontalY,
-        person1: linePos.name,
-        person2: targetPos.name
-      });
-    }
-  });
+    g.selectAll(".intersection-point")
+      .data(emptyIntersections)
+      .join("circle")
+      .attr("class", "intersection-point")
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y)
+      .attr("r", 5)
+      .on("click", (event, d) => {
+        event.stopPropagation();
+        showDnaSidebar(d.person1, d.person2);
+      })
+      .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1, d.person2))
+      .on("mousemove", (event, d) => showDnaTooltip(event, d.person1, d.person2))
+      .on("mouseleave", hideDnaTooltip);
 
-  const emptyIntersections = intersections.filter(d => {
-    const key = getDnaKey(d.person1, d.person2);
-    return !dnaComparisons[key];
-  });
-  
-  g.selectAll(".intersection-point")
-    .data(emptyIntersections)
-    .join("circle")
-    .attr("class", "intersection-point")
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
-    .attr("r", 5)
-    .on("click", (event, d) => {
-      event.stopPropagation();
-      showDnaSidebar(d.person1, d.person2);
-    })
-    .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1, d.person2))
-    .on("mousemove", (event, d) => showDnaTooltip(event, d.person1, d.person2))
-    .on("mouseleave", hideDnaTooltip);
-
-  intersections.forEach(intersection => {
-    const key = getDnaKey(intersection.person1, intersection.person2);
-    const dnaData = dnaComparisons[key];
-    
-    if (dnaData) {
-      const labelGroup = g.append("g")
-        .attr("class", "intersection-label-group")
-        .style("cursor", "pointer")
-        .on("click", (event) => {
-          event.stopPropagation();
-          showDnaSidebar(intersection.person1, intersection.person2);
-        })
-        .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
-        .on("mousemove", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
-        .on("mouseleave", hideDnaTooltip);
+    intersections.forEach(intersection => {
+      const key = getDnaKey(intersection.person1, intersection.person2);
+      const dnaData = dnaComparisons[key];
       
-      labelGroup.append("rect")
-        .attr("x", intersection.x - 30)
-        .attr("y", intersection.y - 16)
-        .attr("width", 60)
-        .attr("height", 32)
-        .attr("fill", "transparent")
-        .style("cursor", "pointer");
-      
-      if (dnaData.cm) {
-        const cmFontSize = dnaLabelStyles.cm.fontSize;
-        const relFontSize = dnaLabelStyles.relationship.fontSize;
-        // Smaller base offset to keep cM values close to the line
-        const cmOffset = 2 + (cmFontSize - 11) * 0.15;
-        const cmText = labelGroup.append("text")
-          .attr("class", "intersection-label cm-value")
-          .attr("x", intersection.x)
-          .attr("y", intersection.y - cmOffset)
-          .style("font-size", `${cmFontSize}px`)
-          .style("fill", dnaLabelStyles.cm.color)
-          .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
-          .style("font-style", dnaLabelStyles.cm.italic ? "italic" : "normal")
-          .text(dnaData.cm);
+      if (dnaData) {
+        const labelGroup = g.append("g")
+          .attr("class", "intersection-label-group")
+          .style("cursor", "pointer")
+          .on("click", (event) => {
+            event.stopPropagation();
+            showDnaSidebar(intersection.person1, intersection.person2);
+          })
+          .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
+          .on("mousemove", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
+          .on("mouseleave", hideDnaTooltip);
         
-        if (autoStrokeEnabled) {
-          const strokeColor = getCmStrokeColor(dnaData.cm);
-          if (strokeColor) {
-            cmText
-              .style("stroke", strokeColor)
-              .style("stroke-width", `${autoStrokeWidth}px`)
-              .style("paint-order", "stroke fill");
+        labelGroup.append("rect")
+          .attr("x", intersection.x - 30)
+          .attr("y", intersection.y - 16)
+          .attr("width", 60)
+          .attr("height", 32)
+          .attr("fill", "transparent")
+          .style("cursor", "pointer");
+        
+        if (dnaData.cm) {
+          const cmFontSize = dnaLabelStyles.cm.fontSize;
+          const relFontSize = dnaLabelStyles.relationship.fontSize;
+          // Smaller base offset to keep cM values close to the line
+          const cmOffset = 2 + (cmFontSize - 11) * 0.15;
+          const cmText = labelGroup.append("text")
+            .attr("class", "intersection-label cm-value")
+            .attr("x", intersection.x)
+            .attr("y", intersection.y - cmOffset)
+            .style("font-size", `${cmFontSize}px`)
+            .style("fill", dnaLabelStyles.cm.color)
+            .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
+            .style("font-style", dnaLabelStyles.cm.italic ? "italic" : "normal")
+            .text(dnaData.cm);
+          
+          if (autoStrokeEnabled) {
+            const strokeColor = getCmStrokeColor(dnaData.cm);
+            if (strokeColor) {
+              cmText
+                .style("stroke", strokeColor)
+                .style("stroke-width", `${autoStrokeWidth}px`)
+                .style("paint-order", "stroke fill");
+            }
           }
         }
+        
+        if (dnaData.relationship) {
+          const cmFontSize = dnaLabelStyles.cm.fontSize;
+          const relFontSize = dnaLabelStyles.relationship.fontSize;
+          // Base offset plus scaling based on both font sizes to prevent overlap
+          const relOffset = 12 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+          labelGroup.append("text")
+            .attr("class", "intersection-label relationship")
+            .attr("x", intersection.x)
+            .attr("y", intersection.y + relOffset)
+            .style("font-size", `${relFontSize}px`)
+            .style("fill", dnaLabelStyles.relationship.color)
+            .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
+            .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
+            .text(dnaData.relationship);
+        }
       }
-      
-      if (dnaData.relationship) {
-        const cmFontSize = dnaLabelStyles.cm.fontSize;
-        const relFontSize = dnaLabelStyles.relationship.fontSize;
-        // Base offset plus scaling based on both font sizes to prevent overlap
-        const relOffset = 12 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
-        labelGroup.append("text")
-          .attr("class", "intersection-label relationship")
-          .attr("x", intersection.x)
-          .attr("y", intersection.y + relOffset)
-          .style("font-size", `${relFontSize}px`)
-          .style("fill", dnaLabelStyles.relationship.color)
-          .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
-          .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
-          .text(dnaData.relationship);
-      }
-    }
-  });
+    });
+  } else {
+    // Clear terminal lines and DNA data when hidden
+    g.selectAll(".terminal-line").remove();
+    g.selectAll(".intersection-point").remove();
+    g.selectAll(".intersection-label-group").remove();
+  }
 
   const node = g.selectAll(".node:not(.spouse-node)")
     .data(root.descendants())
@@ -5010,6 +5028,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     autoStrokeEnabled = false;
     autoStrokeWidth = 1;
     alternateLineColors = false;
+    showTerminalLines = true;
     shadedRegion = null;
     homePersonName = null;
     currentFilename = "New Tree";
@@ -5038,6 +5057,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     document.getElementById("tools-auto-stroke-toggle").checked = false;
     document.getElementById("alternate-lines-toggle").checked = false;
     document.getElementById("tools-alternate-lines-toggle").checked = false;
+    document.getElementById("tools-show-terminal-lines-toggle").checked = true;
     
     // Clear undo/redo history
     undoStack = [];
@@ -5138,6 +5158,9 @@ document.getElementById("import-input").addEventListener("change", (e) => {
             alternateLineColors = imported.alternateLineColors;
           }
           
+          // Always default to showing terminal lines on import
+          showTerminalLines = true;
+          
           if (imported.shadedRegion !== undefined) {
             shadedRegion = imported.shadedRegion;
           } else {
@@ -5172,6 +5195,8 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         } else {
           data = imported;
           dnaComparisons = {};
+          // Always default to showing terminal lines on import
+          showTerminalLines = true;
           // Migrate to multi-spouse format
           migrateToMultiSpouse(data);
           // Derive filename from file name for legacy imports
@@ -5179,6 +5204,9 @@ document.getElementById("import-input").addEventListener("change", (e) => {
           filenameDisplay.textContent = currentFilename;
           setTimeout(checkFilenameOverlap, 0);
         }
+        
+        // Update checkbox to reflect default state
+        document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         
         // Auto-set home person if none is defined
         autoSetHomePerson();
@@ -5529,6 +5557,12 @@ document.getElementById("tools-stroke-width-slider").addEventListener("input", (
   document.getElementById("tools-stroke-width-value").textContent = autoStrokeWidth + "px";
   document.getElementById("stroke-width-slider").value = autoStrokeWidth;
   document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("tools-show-terminal-lines-toggle").addEventListener("change", (e) => {
+  showTerminalLines = e.target.checked;
+  autoSave();
   drawTree(d3.zoomTransform(svg.node()));
 });
 
