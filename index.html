@@ -1178,8 +1178,8 @@
     <div class="tools-section">
       <div class="action-row">
         <div class="action-label">Download ▶</div>
-        <button id="tools-export-svg" class="apply-btn export-btn-equal">Download SVG</button>
         <button id="tools-export-png" class="apply-btn export-btn-equal">Download PNG</button>
+        <button id="tools-export-svg" class="apply-btn export-btn-equal">Download SVG</button>
         <button id="export-btn" class="apply-btn export-btn-equal">Export</button>
       </div>
     </div>
@@ -1396,6 +1396,9 @@
       <label class="checkbox-label" style="flex: 1;">
         <input type="checkbox" id="alternate-lines-toggle" /> Alternate Line Colors
       </label>
+      <label class="checkbox-label" style="flex: 1;">
+        <input type="checkbox" id="dna-show-terminal-lines-toggle" checked /> Show Terminal Lines
+      </label>
     </div>
     
     <div class="style-row" style="margin-top: 12px;">
@@ -1515,6 +1518,7 @@ function autoLoad() {
         // Update UI elements
         document.getElementById("filename-display").textContent = currentFilename;
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
+        document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
         return true;
       }
     }
@@ -2378,6 +2382,13 @@ document.getElementById("stroke-width-slider").addEventListener("input", (e) => 
 
 document.getElementById("alternate-lines-toggle").addEventListener("change", (e) => {
   alternateLineColors = e.target.checked;
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
+document.getElementById("dna-show-terminal-lines-toggle").addEventListener("change", (e) => {
+  showTerminalLines = e.target.checked;
+  document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
+  autoSave();
   drawTree(d3.zoomTransform(svg.node()));
 });
 
@@ -5058,6 +5069,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     document.getElementById("alternate-lines-toggle").checked = false;
     document.getElementById("tools-alternate-lines-toggle").checked = false;
     document.getElementById("tools-show-terminal-lines-toggle").checked = true;
+    document.getElementById("dna-show-terminal-lines-toggle").checked = true;
     
     // Clear undo/redo history
     undoStack = [];
@@ -5207,6 +5219,7 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         
         // Update checkbox to reflect default state
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
+        document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
         
         // Auto-set home person if none is defined
         autoSetHomePerson();
@@ -5562,6 +5575,7 @@ document.getElementById("tools-stroke-width-slider").addEventListener("input", (
 
 document.getElementById("tools-show-terminal-lines-toggle").addEventListener("change", (e) => {
   showTerminalLines = e.target.checked;
+  document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
   autoSave();
   drawTree(d3.zoomTransform(svg.node()));
 });
