@@ -72,6 +72,26 @@
     stroke-width: 5px !important;
   }
   
+  /* Cross-link spouse lines (connecting people across branches) */
+  .cross-link {
+    stroke: black;
+    stroke-width: 2px;
+    fill: none;
+  }
+  .cross-link-highlight {
+    stroke: #ff6b00;
+    stroke-width: 3px;
+    fill: none;
+  }
+  /* Bézier curved dotted cross-links */
+  .cross-link-bezier {
+    stroke: black;
+    stroke-width: 2px;
+    fill: none;
+    stroke-dasharray: 4 6;
+    stroke-linecap: round;
+  }
+  
   /* Collapse indicator */
   .collapse-indicator {
     opacity: 0;
@@ -146,38 +166,148 @@
     margin-top: 4px;
   }
   
-  /* Toolbar button tooltips - appear to the right */
-  #toolbar button {
-    position: relative;
+  /* Keyboard shortcuts modal */
+  #shortcuts-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
   }
-  #toolbar button[data-tooltip]:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
+  #shortcuts-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  #shortcuts-modal {
+    position: fixed;
     top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    margin-left: 10px;
-    background: #4169E1;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    max-width: 600px;
+    width: 90%;
+    max-height: 85vh;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  }
+  #shortcuts-modal.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  #shortcuts-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 8px 12px;
-    border-radius: 5px;
+  }
+  #shortcuts-modal .modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  #shortcuts-modal .modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  #shortcuts-modal .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  #shortcuts-modal .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(85vh - 60px);
+  }
+  #shortcuts-modal .shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 550px) {
+    #shortcuts-modal .shortcuts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  #shortcuts-modal .shortcut-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 14px;
+  }
+  #shortcuts-modal .shortcut-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  #shortcuts-modal .shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+  }
+  #shortcuts-modal .shortcut-item:not(:last-child) {
+    border-bottom: 1px solid #e9ecef;
+  }
+  #shortcuts-modal .shortcut-desc {
     font-size: 13px;
-    white-space: nowrap;
-    z-index: 5000;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    color: #495057;
   }
-  #toolbar button[data-tooltip]:hover::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    margin-left: 2px;
-    border: 6px solid transparent;
-    border-right-color: #4169E1;
-    z-index: 5001;
+  #shortcuts-modal .shortcut-keys {
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
-
+  #shortcuts-modal kbd {
+    display: inline-block;
+    padding: 4px 8px;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: #495057;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  }
+  #shortcuts-modal .key-plus {
+    font-size: 10px;
+    color: #9ca3af;
+  }
+  #shortcuts-modal .modal-footer {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+    font-size: 12px;
+    color: #6c757d;
+  }
+  
   /* Toolbar styling */
   #toolbar {
     position: fixed;
@@ -1026,8 +1156,8 @@
 <!-- Toolbar -->
 <div id="toolbar">
   <input type="file" id="import-input" style="display:none" />
-  <button id="import-btn" data-tooltip="Load a saved tree from JSON file">Import</button>
-  <button id="new-btn" data-tooltip="Reset to a new blank tree">New</button>
+  <button id="import-btn">Import</button>
+  <button id="new-btn">New</button>
   <button id="tools-btn">Tools</button>
   <button id="fit-btn">Fit</button>
   <button id="undo-btn">Undo</button>
@@ -1046,6 +1176,94 @@
 <!-- DNA Comparison Tooltip -->
 <div id="dna-tooltip" class="tooltip"></div>
 
+<!-- Keyboard Shortcuts Modal -->
+<div id="shortcuts-overlay"></div>
+<div id="shortcuts-modal">
+  <div class="modal-header">
+    <h2>Keyboard Shortcuts</h2>
+    <button class="modal-close" id="shortcuts-close">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="shortcuts-grid">
+      <div class="shortcut-section">
+        <div class="shortcut-section-title">Navigation</div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Fit Tree to Screen</span>
+          <div class="shortcut-keys"><kbd>F</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Zoom In</span>
+          <div class="shortcut-keys"><kbd>+</kbd> or <kbd>=</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Zoom Out</span>
+          <div class="shortcut-keys"><kbd>-</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Reset Zoom</span>
+          <div class="shortcut-keys"><kbd>0</kbd></div>
+        </div>
+      </div>
+      <div class="shortcut-section">
+        <div class="shortcut-section-title">Editing</div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Undo</span>
+          <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="key-plus">+</span><kbd>Z</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Redo</span>
+          <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="key-plus">+</span><kbd>Y</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Delete Selected Node</span>
+          <div class="shortcut-keys"><kbd>Delete</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Expand All Nodes</span>
+          <div class="shortcut-keys"><kbd>E</kbd></div>
+        </div>
+      </div>
+      <div class="shortcut-section">
+        <div class="shortcut-section-title">Panels</div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Toggle Tools Panel</span>
+          <div class="shortcut-keys"><kbd>T</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Close Panel/Sidebar</span>
+          <div class="shortcut-keys"><kbd>Esc</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Show Shortcuts</span>
+          <div class="shortcut-keys"><kbd>?</kbd></div>
+        </div>
+      </div>
+      <div class="shortcut-section">
+        <div class="shortcut-section-title">File</div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">New Tree</span>
+                    <div class="shortcut-keys"><kbd>Shift</kbd><span class="key-plus">+</span><kbd>S</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Export Tree</span>
+          <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="key-plus">+</span><kbd>S</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Import Tree</span>
+          <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="key-plus">+</span><kbd>O</kbd></div>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-desc">Download PNG</span>
+          <div class="shortcut-keys"><kbd>Ctrl</kbd><span class="key-plus">+</span><kbd>P</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    Press <kbd>?</kbd> anytime to toggle this help
+  </div>
+</div>
+
 <!-- Tools Panel Overlay -->
 <div id="tools-overlay"></div>
 
@@ -1061,7 +1279,7 @@
       <div class="tools-section-title">Node Text Styling</div>
       <div class="tools-row">
         <label>Font Size:</label>
-        <input type="number" id="tools-font-size" min="8" max="24" value="12" />
+        <input type="number" id="tools-font-size" min="8" max="48" value="12" />
         <div class="checkbox-row">
           <input type="checkbox" id="tools-font-bold" />
           <label for="tools-font-bold">Bold</label>
@@ -1110,7 +1328,7 @@
       <div class="tools-section-title">Label Styling</div>
       <div class="style-row">
         <label class="style-label">cM Font:</label>
-        <input type="number" id="tools-cm-font-size" min="8" max="24" value="11" style="width: 45px;" />
+        <input type="number" id="tools-cm-font-size" min="8" max="48" value="11" style="width: 45px;" />
         <input type="color" id="tools-cm-font-color" value="#0d47a1" />
         <div class="checkbox-row">
           <input type="checkbox" id="tools-cm-font-bold" checked />
@@ -1123,7 +1341,7 @@
       </div>
       <div class="style-row">
         <label class="style-label">Rel. Font:</label>
-        <input type="number" id="tools-rel-font-size" min="8" max="24" value="11" style="width: 45px;" />
+        <input type="number" id="tools-rel-font-size" min="8" max="48" value="11" style="width: 45px;" />
         <input type="color" id="tools-rel-font-color" value="#000000" />
         <div class="checkbox-row">
           <input type="checkbox" id="tools-rel-font-bold" />
@@ -1218,9 +1436,9 @@
 
   <!-- Styling Section -->
   <div class="section">
-    <div class="section-title">Text Styling</div>
+    <div class="section-title">Node Text Styling</div>
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-      <label style="margin: 0; display: flex; align-items: center; gap: 5px;">Size <input type="number" id="font-size" min="8" max="24" value="12" style="width: 50px; margin: 0;" /></label>
+      <label style="margin: 0; display: flex; align-items: center; gap: 5px;">Size <input type="number" id="font-size" min="8" max="48" value="12" style="width: 50px; margin: 0;" /></label>
       <label class="checkbox-label" style="margin: 0;"><input type="checkbox" id="font-bold" /> Bold</label>
       <label class="checkbox-label" style="margin: 0;"><input type="checkbox" id="font-italic" /> Italic</label>
     </div>
@@ -1255,6 +1473,27 @@
       <input type="text" id="spouse-name" placeholder="Spouse's name" />
       <button id="add-spouse" class="primary full-width">Add Spouse</button>
     </div>
+  </div>
+  
+  <!-- Link Existing Person Section -->
+  <div class="section" id="link-existing-section">
+    <div class="section-title">Link to Existing Person</div>
+    <label>Relationship Type</label>
+    <select id="link-relationship-type" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-bottom: 8px;">
+      <option value="spouse">As Spouse</option>
+      <option value="parent">As Parent of this person</option>
+      <option value="child">As Child of this person</option>
+    </select>
+    <label>Select Person</label>
+    <select id="link-person-select" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-bottom: 8px;">
+      <option value="">-- Choose a person --</option>
+    </select>
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+      <input type="checkbox" id="enable-bezier-connection" style="margin-right: 8px;">
+      <label for="enable-bezier-connection" style="margin: 0; cursor: pointer; font-size: 13px;">Enable Bézier-Manhattan Connections</label>
+    </div>
+    <button id="create-link" class="primary full-width">Create Link</button>
+    <div id="existing-links" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
   </div>
   
   <!-- Spouse Position Section -->
@@ -1352,7 +1591,7 @@
     
     <div class="style-row">
       <label>cM Font Size:</label>
-      <input type="number" id="cm-font-size" min="8" max="24" value="11" />
+      <input type="number" id="cm-font-size" min="8" max="48" value="11" />
       <input type="color" id="cm-font-color" value="#0d47a1" />
     </div>
     <div class="style-row">
@@ -1362,7 +1601,7 @@
     
     <div class="style-row" style="margin-top: 12px;">
       <label>Rel. Font Size:</label>
-      <input type="number" id="rel-font-size" min="8" max="24" value="11" />
+      <input type="number" id="rel-font-size" min="8" max="48" value="11" />
       <input type="color" id="rel-font-color" value="#000000" />
     </div>
     <div class="style-row">
@@ -1438,6 +1677,13 @@ let dnaLabelStyles = {
   relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
 };
 
+// Global default node text styling (used for nodes without individual overrides)
+let defaultNodeTextStyle = {
+  fontSize: 12,
+  bold: false,
+  italic: false
+};
+
 // Auto-stroke feature
 let autoStrokeEnabled = false;
 let autoStrokeWidth = 1;
@@ -1457,6 +1703,9 @@ let shadeStartPoint = null;
 // Home person tracking
 let homePersonName = null;
 
+// Cross-links for relationships spanning across branches
+let crossLinks = [];
+
 // Current filename
 let currentFilename = "New Tree";
 
@@ -1467,11 +1716,13 @@ function autoSave() {
       tree: data,
       dnaComparisons: dnaComparisons,
       dnaLabelStyles: dnaLabelStyles,
+      defaultNodeTextStyle: defaultNodeTextStyle,
       autoStrokeEnabled: autoStrokeEnabled,
       autoStrokeWidth: autoStrokeWidth,
       alternateLineColors: alternateLineColors,
       showTerminalLines: showTerminalLines,
       shadedRegion: shadedRegion,
+      crossLinks: crossLinks,
       filename: currentFilename,
       settings: {
         verticalSpacing: verticalSpacing,
@@ -1496,11 +1747,13 @@ function autoLoad() {
         data = loadedData.tree;
         dnaComparisons = loadedData.dnaComparisons || {};
         dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
+        defaultNodeTextStyle = loadedData.defaultNodeTextStyle || { fontSize: 12, bold: false, italic: false };
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
         alternateLineColors = loadedData.alternateLineColors || false;
         showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
         shadedRegion = loadedData.shadedRegion || null;
+        crossLinks = loadedData.crossLinks || [];
         currentFilename = loadedData.filename || "New Tree";
         
         if (loadedData.settings) {
@@ -1514,6 +1767,12 @@ function autoLoad() {
         
         // Migrate old single-spouse format to new multi-spouse format
         migrateToMultiSpouse(data);
+        
+        // Ensure all nodes have IDs
+        ensureAllNodesHaveIds(data);
+        
+        // Migrate old name-based DNA comparisons to ID-based
+        migrateDnaComparisonsToIds();
         
         // Update UI elements
         document.getElementById("filename-display").textContent = currentFilename;
@@ -1644,6 +1903,633 @@ function getSpousesWithOffsets(node) {
   });
   
   return result;
+}
+
+// Generate unique node ID
+let nodeIdCounter = 0;
+function generateNodeId() {
+  return 'node_' + Date.now() + '_' + (nodeIdCounter++);
+}
+
+// Ensure all nodes (and spouses) have unique IDs
+function ensureAllNodesHaveIds(node) {
+  if (!node) return;
+  
+  // Add ID to main node if missing
+  if (!node.id) {
+    node.id = generateNodeId();
+  }
+  
+  // Add IDs to spouses if missing
+  if (node.spouses) {
+    node.spouses.forEach(spouse => {
+      if (!spouse.id) {
+        spouse.id = generateSpouseId();
+      }
+    });
+  }
+  
+  // Recursively process children
+  if (node.children) {
+    node.children.forEach(child => ensureAllNodesHaveIds(child));
+  }
+}
+
+// Get a flat list of all people in the tree (nodes and spouses)
+function getAllPeopleFlat(excludeId = null) {
+  const people = [];
+  
+  function traverse(node, parentName = null) {
+    // Add main node
+    if (node.id !== excludeId) {
+      people.push({
+        id: node.id,
+        name: node.name,
+        type: 'node',
+        node: node,
+        parentName: parentName
+      });
+    }
+    
+    // Add spouses
+    if (node.spouses) {
+      node.spouses.forEach(spouse => {
+        if (spouse.id !== excludeId) {
+          people.push({
+            id: spouse.id,
+            name: spouse.name,
+            type: 'spouse',
+            node: spouse,
+            spouseOf: node.name,
+            parentNode: node
+          });
+        }
+      });
+    }
+    
+    // Traverse children
+    if (node.children) {
+      node.children.forEach(child => traverse(child, node.name));
+    }
+  }
+  
+  traverse(data);
+  
+  // Sort alphabetically by name
+  people.sort((a, b) => a.name.localeCompare(b.name));
+  
+  return people;
+}
+
+// Find a person (node or spouse) by ID
+function getPersonById(id) {
+  function search(node) {
+    if (node.id === id) {
+      return { person: node, type: 'node', parentNode: null };
+    }
+    
+    if (node.spouses) {
+      for (const spouse of node.spouses) {
+        if (spouse.id === id) {
+          return { person: spouse, type: 'spouse', parentNode: node };
+        }
+      }
+    }
+    
+    if (node.children) {
+      for (const child of node.children) {
+        const result = search(child);
+        if (result) return result;
+      }
+    }
+    
+    return null;
+  }
+  
+  return search(data);
+}
+
+// Find the parent node of a given node
+function findParentNode(targetNode) {
+  function search(node) {
+    if (node.children) {
+      for (const child of node.children) {
+        if (child === targetNode || child.id === targetNode.id) {
+          return node;
+        }
+        const result = search(child);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return search(data);
+}
+
+// Add a cross-link between two people
+function addCrossLink(type, person1Id, person2Id, options = {}) {
+  // Check if link already exists
+  const exists = crossLinks.some(link => 
+    link.type === type && 
+    ((link.person1Id === person1Id && link.person2Id === person2Id) ||
+     (link.person1Id === person2Id && link.person2Id === person1Id))
+  );
+  
+  if (!exists) {
+    const link = { type, person1Id, person2Id };
+    // Add any additional options (e.g., sharedChildren, useBezier, keepTerminalLine)
+    if (options.sharedChildren) {
+      link.sharedChildren = options.sharedChildren; // 'person1', 'person2', 'both', or 'none'
+    }
+    if (options.useBezier) {
+      link.useBezier = true;
+    }
+    if (options.keepTerminalLine) {
+      link.keepTerminalLineFor = person1Id; // Store which person keeps their terminal line
+    }
+    crossLinks.push(link);
+  }
+}
+
+// Remove a cross-link
+function removeCrossLink(type, person1Id, person2Id) {
+  crossLinks = crossLinks.filter(link => 
+    !(link.type === type && 
+      ((link.person1Id === person1Id && link.person2Id === person2Id) ||
+       (link.person1Id === person2Id && link.person2Id === person1Id)))
+  );
+}
+
+// Get cross-links for a specific person
+function getCrossLinksForPerson(personId) {
+  return crossLinks.filter(link => 
+    link.person1Id === personId || link.person2Id === personId
+  );
+}
+
+// Populate the "Select Person" dropdown
+function populateLinkPersonDropdown(excludeId = null) {
+  const select = document.getElementById("link-person-select");
+  const people = getAllPeopleFlat(excludeId);
+  
+  // Clear existing options
+  select.innerHTML = '<option value="">-- Choose a person --</option>';
+  
+  // Add options for each person
+  people.forEach(person => {
+    const option = document.createElement("option");
+    option.value = person.id;
+    let label = person.name;
+    if (person.type === 'spouse') {
+      label += ` (spouse of ${person.spouseOf})`;
+    } else if (person.parentName) {
+      label += ` (child of ${person.parentName})`;
+    }
+    option.textContent = label;
+    select.appendChild(option);
+  });
+}
+
+// Display existing cross-links for a person
+function displayExistingLinks(personId) {
+  const container = document.getElementById("existing-links");
+  const links = getCrossLinksForPerson(personId);
+  
+  if (links.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  let html = '<div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;"><strong>Existing Links:</strong><br>';
+  
+  links.forEach(link => {
+    const otherId = link.person1Id === personId ? link.person2Id : link.person1Id;
+    const otherPerson = getPersonById(otherId);
+    if (otherPerson) {
+      let linkLabel = link.type;
+      if (link.type === 'spouse' && link.sharedChildren && link.sharedChildren !== 'none') {
+        linkLabel += ' (shared children)';
+      }
+      html += `<div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">`;
+      html += `<span>${linkLabel}: ${otherPerson.person.name}</span>`;
+      html += `<button onclick="removeExistingLink('${link.type}', '${link.person1Id}', '${link.person2Id}')" style="padding: 5px 12px; font-size: 12px; background: #000000; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>`;
+      html += `</div>`;
+    }
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Remove an existing link (called from the UI)
+function removeExistingLink(type, person1Id, person2Id) {
+  saveState();
+  removeCrossLink(type, person1Id, person2Id);
+  drawTree(d3.zoomTransform(svg.node()));
+  
+  // Refresh the display
+  const currentPersonId = selectedSpouse ? selectedSpouse.id : (selectedNode ? selectedNode.data.id : null);
+  if (currentPersonId) {
+    displayExistingLinks(currentPersonId);
+  }
+}
+
+// Find rendered position of a node or spouse by ID
+function findRenderedPosition(root, personId, yAdjustments = {}, xAdjustments = {}) {
+  // Search main nodes
+  for (const node of root.descendants()) {
+    if (node.data.id === personId) {
+      const adjustedY = yAdjustments[personId] !== undefined ? yAdjustments[personId] : node.y;
+      const adjustedX = node.x + (xAdjustments[personId] || 0);
+      return { x: adjustedX, y: adjustedY };
+    }
+    
+    // Search spouses of this node
+    if (node.data.spouses) {
+      const spousesWithOffsets = getSpousesWithOffsets(node.data);
+      for (const sp of spousesWithOffsets) {
+        if (sp.spouse.id === personId) {
+          const baseY = node.y;
+          const adjustedY = yAdjustments[personId] !== undefined ? yAdjustments[personId] : baseY;
+          // Apply X adjustment to the main node, then add spouse offset
+          const mainNodeAdjustedX = node.x + (xAdjustments[node.data.id] || 0);
+          return { x: mainNodeAdjustedX + sp.offset, y: adjustedY };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Find a node in the tree by ID (returns the d3 hierarchy node, not just position)
+function findNodeById(root, personId) {
+  for (const node of root.descendants()) {
+    if (node.data.id === personId) {
+      return { node: node, isSpouse: false };
+    }
+    // Search spouses of this node
+    if (node.data.spouses) {
+      const spouse = node.data.spouses.find(s => s.id === personId);
+      if (spouse) {
+        return { node: node, spouse: spouse, isSpouse: true };
+      }
+    }
+  }
+  return null;
+}
+
+// Draw cross-link lines between connected people
+// Returns a Set of child IDs whose solid parent lines should be suppressed (for Bézier links)
+function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
+  const suppressedChildIds = new Set();
+  
+  if (!crossLinks || crossLinks.length === 0) return suppressedChildIds;
+  
+  // Create a group for cross-links
+  const crossLinkGroup = g.append("g").attr("class", "cross-links");
+  
+  crossLinks.forEach(link => {
+    const pos1 = findRenderedPosition(root, link.person1Id, yAdjustments, xAdjustments);
+    const pos2 = findRenderedPosition(root, link.person2Id, yAdjustments, xAdjustments);
+    
+    if (!pos1 || !pos2) return; // One or both people not currently rendered
+    
+    if (link.type === "parent") {
+      // person1 is parent, person2 is child
+      const parentPos = pos1;
+      const childPos = pos2;
+      
+      if (link.useBezier) {
+        // Draw a smooth Bézier curve with dotted line
+        const startX = parentPos.x;
+        const startY = parentPos.y + nodeHeight/2;
+        const endX = childPos.x;
+        const endY = childPos.y - nodeHeight/2;
+        
+        // Find the X range between parent and child
+        const minX = Math.min(startX, endX);
+        const maxX = Math.max(startX, endX);
+        const minY = Math.min(parentPos.y, childPos.y);
+        const maxY = Math.max(parentPos.y, childPos.y);
+        
+        // Find obstacles: nodes that are in the path of the curve
+        // Only consider nodes that are actually in the rectangular region between parent and child
+        let obstacleBottomY = startY;
+        const padding = nodeHeight * 0.8;
+        
+        for (const node of root.descendants()) {
+          const nodeX = node.x + (xAdjustments[node.data.id] || 0);
+          const nodeY = yAdjustments[node.data.id] !== undefined ? yAdjustments[node.data.id] : node.y;
+          
+          // Check if this node is in the horizontal range AND vertical range
+          if (nodeX > minX - nodeWidth && nodeX < maxX + nodeWidth) {
+            if (nodeY > minY && nodeY < maxY) {
+              obstacleBottomY = Math.max(obstacleBottomY, nodeY + nodeHeight/2);
+            }
+          }
+          
+          // Also check spouses
+          if (node.data.spouses) {
+            const spousesWithOffsets = getSpousesWithOffsets(node.data);
+            for (const sp of spousesWithOffsets) {
+              const spouseX = nodeX + sp.offset;
+              if (spouseX > minX - nodeWidth && spouseX < maxX + nodeWidth) {
+                if (nodeY > minY && nodeY < maxY) {
+                  obstacleBottomY = Math.max(obstacleBottomY, nodeY + nodeHeight/2);
+                }
+              }
+            }
+          }
+        }
+        
+        // Control points that curve around obstacles
+        const midY = Math.max(obstacleBottomY + padding, (startY + endY) / 2 + nodeHeight);
+        
+        // Control points for smooth curve
+        const cp1X = startX;
+        const cp1Y = midY;
+        const cp2X = endX;
+        const cp2Y = midY;
+        
+        const pathData = `M ${startX} ${startY}
+                          C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+        
+        crossLinkGroup.append("path")
+          .attr("class", "cross-link-bezier")
+          .attr("d", pathData)
+          .attr("fill", "none");
+      } else {
+        // Gutter Y: midpoint between parent's row and the next row down
+        const gutterY = parentPos.y + verticalSpacing / 2;
+        
+        // Simple path: bottom of parent → down to gutter → across → down to top of child
+        const pathData = `M ${parentPos.x} ${parentPos.y + nodeHeight/2}
+                          L ${parentPos.x} ${gutterY}
+                          L ${childPos.x} ${gutterY}
+                          L ${childPos.x} ${childPos.y - nodeHeight/2}`;
+        
+        crossLinkGroup.append("path")
+          .attr("class", "cross-link")
+          .attr("d", pathData)
+          .attr("fill", "none");
+      }
+        
+    } else if (link.type === "spouse") {
+      if (link.useBezier) {
+        // MANHATTAN ROUTING: Find a clear path around obstacles
+        const x1 = pos1.x + (pos1.x < pos2.x ? nodeWidth/2 : -nodeWidth/2);
+        const y1 = pos1.y;
+        const x2 = pos2.x + (pos2.x < pos1.x ? nodeWidth/2 : -nodeWidth/2);
+        const y2 = pos2.y;
+        
+        const spouseY = Math.max(y1, y2);
+        const leftX = Math.min(pos1.x, pos2.x);
+        const rightX = Math.max(pos1.x, pos2.x);
+        
+        // Collect all obstacles (nodes and their spouses) in and around the region
+        const obstacles = [];
+        const yTolerance = verticalSpacing; // Check nodes within vertical range
+        
+        for (const node of root.descendants()) {
+          const nodeX = node.x + (xAdjustments[node.data.id] || 0);
+          const nodeY = node.y;
+          
+          // Skip the two nodes we're connecting
+          if (node.data.id === link.person1Id || node.data.id === link.person2Id) continue;
+          
+          // Add this node as obstacle if it's in the relevant region
+          if (nodeX > leftX - nodeWidth && nodeX < rightX + nodeWidth) {
+            if (Math.abs(nodeY - spouseY) < yTolerance) {
+              obstacles.push({
+                x: nodeX,
+                y: nodeY,
+                left: nodeX - nodeWidth/2,
+                right: nodeX + nodeWidth/2,
+                top: nodeY - nodeHeight/2,
+                bottom: nodeY + nodeHeight/2
+              });
+            }
+          }
+          
+          // Also add spouses as obstacles
+          if (node.data.spouses) {
+            const spousesWithOffsets = getSpousesWithOffsets(node.data);
+            for (const sp of spousesWithOffsets) {
+              if (sp.id === link.person1Id || sp.id === link.person2Id) continue;
+              const spouseX = nodeX + sp.offset;
+              if (spouseX > leftX - nodeWidth && spouseX < rightX + nodeWidth) {
+                if (Math.abs(nodeY - spouseY) < yTolerance) {
+                  obstacles.push({
+                    x: spouseX,
+                    y: nodeY,
+                    left: spouseX - nodeWidth/2,
+                    right: spouseX + nodeWidth/2,
+                    top: nodeY - nodeHeight/2,
+                    bottom: nodeY + nodeHeight/2
+                  });
+                }
+              }
+            }
+          }
+        }
+        
+        // Sort obstacles by X position (for potential future use)
+        obstacles.sort((a, b) => a.x - b.x);
+        
+        // Check if we can draw a straight horizontal line:
+        // 1. Both nodes at the same Y level
+        // 2. No obstacles between them at that Y level
+        const sameYLevel = Math.abs(y1 - y2) < 1; // Allow tiny floating point differences
+        const obstaclesAtSameY = obstacles.filter(obs => Math.abs(obs.y - y1) < nodeHeight);
+        const useStraightLine = sameYLevel && obstaclesAtSameY.length === 0;
+        
+        // Define variables needed for both paths and shared children logic
+        const gutterPadding = nodeHeight * 0.8;
+        const serifLength = spouseGap / 2;
+        const serifX1 = x1 + (x1 < x2 ? serifLength : -serifLength);
+        const serifX2 = x2 + (x2 < x1 ? serifLength : -serifLength);
+        
+        let gutterY;
+        // Calculate gutterY at 1/3 of the way down between parent row bottom and child row top
+        const parentRowBottom = Math.max(y1, y2) + nodeHeight/2;
+        const childRowTop = Math.max(y1, y2) + verticalSpacing - nodeHeight/2;
+        const gapBetweenRows = childRowTop - parentRowBottom;
+        gutterY = parentRowBottom + gapBetweenRows / 3;
+        
+        if (useStraightLine) {
+          // Clear horizontal path - draw a straight line
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${x1} ${y1} L ${x2} ${y2}`)
+            .attr("fill", "none");
+        } else {
+          // Obstacles present or different Y levels - use U-shaped Manhattan routing
+          
+          // Draw each segment - lines connect directly to node edges with serif stubs
+          
+          // Segment 1: horizontal serif from node 1 to corner
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${x1} ${y1} L ${serifX1} ${y1}`)
+            .attr("fill", "none");
+          
+          // Segment 2: vertical from corner DOWN to bottom-left corner
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${serifX1} ${y1} L ${serifX1} ${gutterY}`)
+            .attr("fill", "none");
+          
+          // Segment 3: horizontal from bottom-left corner to bottom-right corner
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${serifX1} ${gutterY} L ${serifX2} ${gutterY}`)
+            .attr("fill", "none");
+          
+          // Segment 4: vertical from bottom-right corner UP to corner
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${serifX2} ${gutterY} L ${serifX2} ${y2}`)
+            .attr("fill", "none");
+          
+          // Segment 5: horizontal serif from corner to node 2
+          crossLinkGroup.append("path")
+            .attr("class", "cross-link-bezier")
+            .attr("d", `M ${serifX2} ${y2} L ${x2} ${y2}`)
+            .attr("fill", "none");
+        }
+        
+        // If there are shared children, draw smooth Bézier curve from the horizontal segment to children
+        if (link.sharedChildren && link.sharedChildren !== 'none') {
+          // Find which person has the shared children
+          let parentWithChildren = null;
+          let parentPos = null;
+          let nearerSerifX = serifX1; // Default to person1's side
+          
+          if (link.sharedChildren === 'person1' || link.sharedChildren === 'both') {
+            const person1Info = findNodeById(root, link.person1Id);
+            if (person1Info && person1Info.node && person1Info.node.children) {
+              parentWithChildren = person1Info.node;
+              parentPos = pos1;
+              nearerSerifX = serifX1;
+            }
+          }
+          if (!parentWithChildren && (link.sharedChildren === 'person2' || link.sharedChildren === 'both')) {
+            const person2Info = findNodeById(root, link.person2Id);
+            if (person2Info && person2Info.node && person2Info.node.children) {
+              parentWithChildren = person2Info.node;
+              parentPos = pos2;
+              nearerSerifX = serifX2;
+            }
+          }
+          
+          if (parentWithChildren && parentWithChildren.children && parentPos) {
+            const children = parentWithChildren.children;
+            
+            // Mark these children's IDs to suppress their solid parent lines
+            children.forEach(child => {
+              suppressedChildIds.add(child.data.id);
+            });
+            
+            // Calculate drop point based on whether we used straight line or U-shape
+            const midX = (x1 + x2) / 2;
+            let dropStartX, dropStartY;
+            
+            if (useStraightLine) {
+              // For straight line: drop from the midpoint of the line
+              dropStartX = midX;
+              dropStartY = y1; // Both nodes at same Y level
+            } else {
+              // For U-shape: drop from halfway between nearer corner and midpoint on the gutter
+              const serifMidX = (serifX1 + serifX2) / 2;
+              dropStartX = nearerSerifX + (serifMidX - nearerSerifX) * 0.5;
+              dropStartY = gutterY;
+            }
+            
+            // Nudge drop point away from terminal lines to avoid visual collision
+            const terminalPositions = getAllTerminalPositions(root, xAdjustments);
+            const nudgeThreshold = nodeWidth / 4;
+            for (const termPos of terminalPositions) {
+              const distance = Math.abs(dropStartX - termPos.x);
+              if (distance < nudgeThreshold) {
+                // Nudge away from the terminal line
+                if (dropStartX < termPos.x) {
+                  dropStartX = termPos.x - nudgeThreshold;
+                } else {
+                  dropStartX = termPos.x + nudgeThreshold;
+                }
+                break; // Only need to nudge once
+              }
+            }
+            
+            if (children.length === 1) {
+              // Single child: draw smooth Bézier curve from horizontal segment to child
+              const child = children[0];
+              const childX = child.x + (xAdjustments[child.data.id] || 0);
+              const childAdjustedY = yAdjustments[child.data.id] !== undefined ? yAdjustments[child.data.id] : child.y;
+              const childY = childAdjustedY - nodeHeight/2;
+              
+              // Smooth Bézier curve to single child
+              const curveMidY = (dropStartY + childY) / 2;
+              const childPathData = `M ${dropStartX} ${dropStartY}
+                                     C ${dropStartX} ${curveMidY}, ${childX} ${curveMidY}, ${childX} ${childY}`;
+              
+              crossLinkGroup.append("path")
+                .attr("class", "cross-link-bezier")
+                .attr("d", childPathData)
+                .attr("fill", "none");
+            } else {
+              // Multiple children: draw Bézier curve to gutter, then to each child
+              const childXPositions = children.map(c => c.x + (xAdjustments[c.data.id] || 0));
+              const minChildX = Math.min(...childXPositions);
+              const maxChildX = Math.max(...childXPositions);
+              const firstChildAdjustedY = yAdjustments[children[0].data.id] !== undefined ? yAdjustments[children[0].data.id] : children[0].y;
+              const childY = firstChildAdjustedY - nodeHeight/2;
+              const parentAdjustedY = yAdjustments[parentWithChildren.data.id] !== undefined ? yAdjustments[parentWithChildren.data.id] : parentWithChildren.y;
+              const childGutterY = parentAdjustedY + verticalSpacing / 2;
+              
+              // Smooth Bézier curve from drop point to child gutter level
+              const curveMidY = (dropStartY + childGutterY) / 2;
+              const vertDropPath = `M ${dropStartX} ${dropStartY}
+                                    C ${dropStartX} ${curveMidY}, ${dropStartX} ${curveMidY}, ${dropStartX} ${childGutterY}`;
+              
+              crossLinkGroup.append("path")
+                .attr("class", "cross-link-bezier")
+                .attr("d", vertDropPath)
+                .attr("fill", "none");
+              
+              // Horizontal line across at gutter level
+              crossLinkGroup.append("path")
+                .attr("class", "cross-link-bezier")
+                .attr("d", `M ${minChildX} ${childGutterY} L ${maxChildX} ${childGutterY}`)
+                .attr("fill", "none");
+              
+              // Vertical drops from gutter to each child
+              children.forEach(child => {
+                const childX = child.x + (xAdjustments[child.data.id] || 0);
+                const childAdjustedY = yAdjustments[child.data.id] !== undefined ? yAdjustments[child.data.id] : child.y;
+                const childYTop = childAdjustedY - nodeHeight/2;
+                
+                crossLinkGroup.append("path")
+                  .attr("class", "cross-link-bezier")
+                  .attr("d", `M ${childX} ${childGutterY} L ${childX} ${childYTop}`)
+                  .attr("fill", "none");
+              });
+            }
+          }
+        }
+      } else {
+        // Horizontal line at the same Y level (they should now be at the same Y after adjustments)
+        crossLinkGroup.append("line")
+          .attr("class", "cross-link")
+          .attr("x1", pos1.x + (pos1.x < pos2.x ? nodeWidth/2 : -nodeWidth/2))
+          .attr("y1", pos1.y)
+          .attr("x2", pos2.x + (pos2.x < pos1.x ? nodeWidth/2 : -nodeWidth/2))
+          .attr("y2", pos2.y);
+      }
+    }
+  });
+  
+  return suppressedChildIds;
 }
 
 // Filename display functionality
@@ -1827,7 +2713,8 @@ function saveState() {
   // Save current state to history
   historyStack.push({
     data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons)
+    dnaComparisons: deepClone(dnaComparisons),
+    crossLinks: deepClone(crossLinks)
   });
   // Limit history size
   if (historyStack.length > MAX_HISTORY) {
@@ -1844,13 +2731,15 @@ function undo() {
   // Save current state to redo stack
   redoStack.push({
     data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons)
+    dnaComparisons: deepClone(dnaComparisons),
+    crossLinks: deepClone(crossLinks)
   });
   
   // Restore previous state
   const previousState = historyStack.pop();
   data = previousState.data;
   dnaComparisons = previousState.dnaComparisons;
+  crossLinks = previousState.crossLinks || [];
   
   // Close sidebar and redraw
   closeSidebar();
@@ -1866,13 +2755,15 @@ function redo() {
   // Save current state to history stack
   historyStack.push({
     data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons)
+    dnaComparisons: deepClone(dnaComparisons),
+    crossLinks: deepClone(crossLinks)
   });
   
   // Restore redo state
   const redoState = redoStack.pop();
   data = redoState.data;
   dnaComparisons = redoState.dnaComparisons;
+  crossLinks = redoState.crossLinks || [];
   
   // Close sidebar and redraw
   closeSidebar();
@@ -1919,30 +2810,38 @@ function getCmStrokeColor(cmValue) {
 
 // Tree-based relationship calculator
 // Builds a map of all nodes with their depths and paths to root
-function buildNodeMap(tree, depth = 0, path = [], parentName = null, parentSpouseId = null) {
+// FIXED: Uses node IDs as map keys to handle duplicate names correctly
+function buildNodeMap(tree, depth = 0, path = [], parentId = null, parentSpouseId = null) {
   const nodeMap = new Map();
   
-  // Add current node
-  nodeMap.set(tree.name, {
+  // Generate a unique ID if the node doesn't have one
+  const nodeId = tree.id || `generated_${tree.name}_${depth}_${path.length}`;
+  
+  // Add current node (keyed by ID, not name)
+  nodeMap.set(nodeId, {
+    id: nodeId,
     name: tree.name,
     depth: depth,
-    path: [...path, tree.name],
-    parent: parentName,
-    spouseId: tree.spouseId || null, // Track which spouse this child belongs to
-    parentSpouseId: parentSpouseId // Track the spouseId used to reach this node
+    path: [...path, { id: nodeId, name: tree.name }],
+    parentId: parentId,
+    spouseId: tree.spouseId || null,
+    parentSpouseId: parentSpouseId
   });
   
   // Add all spouses at same depth
   if (tree.spouses && tree.spouses.length > 0) {
     tree.spouses.forEach(spouse => {
-      nodeMap.set(spouse.name, {
+      const spouseNodeId = spouse.id || `generated_spouse_${spouse.name}_${depth}`;
+      nodeMap.set(spouseNodeId, {
+        id: spouseNodeId,
         name: spouse.name,
         depth: depth,
-        path: [...path, tree.name, spouse.name],
-        parent: tree.name, // Spouse connects through the main node
+        path: [...path, { id: nodeId, name: tree.name }, { id: spouseNodeId, name: spouse.name }],
+        parentId: nodeId,
         isSpouse: true,
-        spouseOf: tree.name,
-        spouseId: spouse.id // The spouse's own ID
+        spouseOfId: nodeId,
+        spouseOfName: tree.name,
+        spouseId: spouse.id
       });
     });
   }
@@ -1950,7 +2849,7 @@ function buildNodeMap(tree, depth = 0, path = [], parentName = null, parentSpous
   // Recursively add children
   if (tree.children) {
     for (const child of tree.children) {
-      const childMap = buildNodeMap(child, depth + 1, [...path, tree.name], tree.name, child.spouseId || null);
+      const childMap = buildNodeMap(child, depth + 1, [...path, { id: nodeId, name: tree.name }], nodeId, child.spouseId || null);
       for (const [key, value] of childMap) {
         nodeMap.set(key, value);
       }
@@ -1960,20 +2859,32 @@ function buildNodeMap(tree, depth = 0, path = [], parentName = null, parentSpous
   return nodeMap;
 }
 
-// Find the Lowest Common Ancestor (LCA) of two nodes
-function findLCA(nodeMap, name1, name2) {
-  const node1 = nodeMap.get(name1);
-  const node2 = nodeMap.get(name2);
+// Build a name-to-IDs lookup (handles duplicate names by returning array of all matching IDs)
+function buildNameLookup(nodeMap) {
+  const nameLookup = new Map();
+  for (const [id, node] of nodeMap) {
+    if (!nameLookup.has(node.name)) {
+      nameLookup.set(node.name, []);
+    }
+    nameLookup.get(node.name).push(id);
+  }
+  return nameLookup;
+}
+
+// Find the Lowest Common Ancestor (LCA) of two nodes by their IDs
+function findLCA(nodeMap, id1, id2) {
+  const node1 = nodeMap.get(id1);
+  const node2 = nodeMap.get(id2);
   
   if (!node1 || !node2) return null;
   
   const path1 = node1.path;
   const path2 = node2.path;
   
-  // Find the last common element in both paths
+  // Find the last common element in both paths (compare by ID, not name)
   let lcaIndex = -1;
   for (let i = 0; i < Math.min(path1.length, path2.length); i++) {
-    if (path1[i] === path2[i]) {
+    if (path1[i].id === path2[i].id) {
       lcaIndex = i;
     } else {
       break;
@@ -1982,52 +2893,45 @@ function findLCA(nodeMap, name1, name2) {
   
   if (lcaIndex === -1) return null;
   
-  const lcaName = path1[lcaIndex];
-  const lca = nodeMap.get(lcaName);
+  const lcaId = path1[lcaIndex].id;
+  const lcaName = path1[lcaIndex].name;
+  const lca = nodeMap.get(lcaId);
   
   // Calculate generations from LCA to each person
-  // For spouses, we need to handle them specially - they're at the same generation as their spouse
   let gen1 = path1.length - lcaIndex - 1;
   let gen2 = path2.length - lcaIndex - 1;
   
   // If a person IS the LCA (or LCA's spouse), their generation distance is 0
-  // But we need to account for spouse paths that add an extra step
-  if (node1.isSpouse && path1[lcaIndex] === node1.spouseOf) {
+  if (node1.isSpouse && path1[lcaIndex].id === node1.spouseOfId) {
     gen1 = 0;
   }
-  if (node2.isSpouse && path2[lcaIndex] === node2.spouseOf) {
+  if (node2.isSpouse && path2[lcaIndex].id === node2.spouseOfId) {
     gen2 = 0;
   }
   
   // Detect half-relationship: check if the immediate children of the LCA 
-  // (first step down from LCA towards each person) have different spouseIds
+  // have different spouseIds
   let isHalfRelationship = false;
   
-  // Only check for half-relationship if both people descend from the LCA (not the LCA itself)
   if (gen1 > 0 && gen2 > 0) {
-    // Get the first descendant in each path after the LCA
-    const firstDescendant1 = path1[lcaIndex + 1];
-    const firstDescendant2 = path2[lcaIndex + 1];
+    // Get the first descendant in each path after the LCA (using ID)
+    const firstDescendant1Id = path1[lcaIndex + 1].id;
+    const firstDescendant2Id = path2[lcaIndex + 1].id;
     
-    if (firstDescendant1 && firstDescendant2 && firstDescendant1 !== firstDescendant2) {
-      const desc1Node = nodeMap.get(firstDescendant1);
-      const desc2Node = nodeMap.get(firstDescendant2);
+    if (firstDescendant1Id && firstDescendant2Id && firstDescendant1Id !== firstDescendant2Id) {
+      const desc1Node = nodeMap.get(firstDescendant1Id);
+      const desc2Node = nodeMap.get(firstDescendant2Id);
       
       if (desc1Node && desc2Node) {
-        // Check if they're both spouses (in which case, not half-siblings)
         const bothSpouses = desc1Node.isSpouse && desc2Node.isSpouse;
         
         if (!bothSpouses) {
-          // Get the spouseId each child belongs to
           const spouseId1 = desc1Node.spouseId || desc1Node.parentSpouseId;
           const spouseId2 = desc2Node.spouseId || desc2Node.parentSpouseId;
           
-          // If one is a spouse, they share both parents with children of that spouse
           const oneIsSpouse = desc1Node.isSpouse || desc2Node.isSpouse;
           
           if (!oneIsSpouse) {
-            // Both are children - check if they have different spouseIds
-            // Half-relationship if: different spouseIds, OR one/both have no spouseId (unknown other parent)
             if (spouseId1 !== spouseId2) {
               isHalfRelationship = true;
             }
@@ -2039,6 +2943,7 @@ function findLCA(nodeMap, name1, name2) {
   
   return {
     lca: lcaName,
+    lcaId: lcaId,
     gen1: gen1,
     gen2: gen2,
     depth1: node1.depth,
@@ -2099,20 +3004,65 @@ function getRelationshipLabel(gen1, gen2, isHalfRelationship = false) {
 }
 
 // Main function to get relationship between two people by name
+// FIXED: Handles duplicate names by finding the correct node for each person
 function calculateTreeRelationship(name1, name2) {
   const nodeMap = buildNodeMap(data);
-  const result = findLCA(nodeMap, name1, name2);
+  const nameLookup = buildNameLookup(nodeMap);
   
-  if (!result) return null;
+  // Get all IDs for each name
+  const ids1 = nameLookup.get(name1);
+  const ids2 = nameLookup.get(name2);
+  
+  if (!ids1 || !ids2 || ids1.length === 0 || ids2.length === 0) {
+    return null;
+  }
+  
+  // If there's only one person with each name, use them directly
+  if (ids1.length === 1 && ids2.length === 1) {
+    const result = findLCA(nodeMap, ids1[0], ids2[0]);
+    if (!result) return null;
+    
+    return {
+      label: getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship),
+      commonAncestor: result.lca,
+      gen1: result.gen1,
+      gen2: result.gen2,
+      depth1: result.depth1,
+      depth2: result.depth2,
+      isHalfRelationship: result.isHalfRelationship
+    };
+  }
+  
+  // If there are duplicates, find the pair with the closest relationship
+  // (smallest total generation distance)
+  let bestResult = null;
+  let bestTotalGen = Infinity;
+  
+  for (const id1 of ids1) {
+    for (const id2 of ids2) {
+      if (id1 === id2) continue; // Skip if same person
+      
+      const result = findLCA(nodeMap, id1, id2);
+      if (result) {
+        const totalGen = result.gen1 + result.gen2;
+        if (totalGen < bestTotalGen) {
+          bestTotalGen = totalGen;
+          bestResult = result;
+        }
+      }
+    }
+  }
+  
+  if (!bestResult) return null;
   
   return {
-    label: getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship),
-    commonAncestor: result.lca,
-    gen1: result.gen1,
-    gen2: result.gen2,
-    depth1: result.depth1,
-    depth2: result.depth2,
-    isHalfRelationship: result.isHalfRelationship
+    label: getRelationshipLabel(bestResult.gen1, bestResult.gen2, bestResult.isHalfRelationship),
+    commonAncestor: bestResult.lca,
+    gen1: bestResult.gen1,
+    gen2: bestResult.gen2,
+    depth1: bestResult.depth1,
+    depth2: bestResult.depth2,
+    isHalfRelationship: bestResult.isHalfRelationship
   };
 }
 
@@ -2129,12 +3079,108 @@ let nodeWidth = 100;
 let nodeHeight = 30;
 let spouseGap = 40;
 
-function getDnaKey(name1, name2) {
+// DNA comparison keys now use IDs for stability (names can change, IDs don't)
+function getDnaKey(id1, id2) {
+  if (id1 < id2) {
+    return `${id1}|${id2}`;
+  } else {
+    return `${id2}|${id1}`;
+  }
+}
+
+// Legacy key function for migration
+function getLegacyDnaKey(name1, name2) {
   if (name1 < name2) {
     return `${name1}|${name2}`;
   } else {
     return `${name2}|${name1}`;
   }
+}
+
+// Helper function to check if a DNA key contains a specific ID
+function dnaKeyContainsId(key, id) {
+  const [id1, id2] = key.split("|");
+  return id1 === id || id2 === id;
+}
+
+// Helper to find a person (node or spouse) by ID and return their name
+function findPersonNameById(id, rootData = data) {
+  function searchNode(node) {
+    if (node.id === id) return node.name;
+    if (node.spouses) {
+      for (const spouse of node.spouses) {
+        if (spouse.id === id) return spouse.name;
+      }
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        const result = searchNode(child);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return searchNode(rootData);
+}
+
+// Helper to find ID by name (for migration only)
+function findPersonIdByName(name, rootData = data) {
+  function searchNode(node) {
+    if (node.name === name) return node.id;
+    if (node.spouses) {
+      for (const spouse of node.spouses) {
+        if (spouse.name === name) return spouse.id;
+      }
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        const result = searchNode(child);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return searchNode(rootData);
+}
+
+// Migrate old name-based dnaComparisons keys to ID-based keys
+function migrateDnaComparisonsToIds() {
+  const migrated = {};
+  let migratedCount = 0;
+  let skippedCount = 0;
+  
+  for (const key in dnaComparisons) {
+    // Check if key is already ID-based (IDs start with "node_" or "spouse_")
+    if (key.includes("node_") || key.includes("spouse_")) {
+      migrated[key] = dnaComparisons[key];
+      continue;
+    }
+    
+    // This is a name-based key, try to migrate it
+    const [name1, name2] = key.split("|");
+    const id1 = findPersonIdByName(name1);
+    const id2 = findPersonIdByName(name2);
+    
+    if (id1 && id2) {
+      const newKey = getDnaKey(id1, id2);
+      migrated[newKey] = dnaComparisons[key];
+      migratedCount++;
+    } else {
+      // Can't find IDs - person may have been deleted or name changed
+      // Skip this entry
+      skippedCount++;
+      console.log(`Migration skipped: could not find IDs for "${name1}" and/or "${name2}"`);
+    }
+  }
+  
+  if (migratedCount > 0) {
+    console.log(`Migrated ${migratedCount} DNA comparisons to ID-based keys`);
+  }
+  if (skippedCount > 0) {
+    console.log(`Skipped ${skippedCount} DNA comparisons (people not found)`);
+  }
+  
+  dnaComparisons = migrated;
 }
 
 function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
@@ -2150,9 +3196,17 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   document.getElementById("parent-name").value = "";
   document.getElementById("spouse-name").value = "";
   document.getElementById("node-color").value = editData.color || "#ffffff";
-  document.getElementById("font-size").value = editData.fontSize || 12;
-  document.getElementById("font-bold").checked = editData.bold || false;
-  document.getElementById("font-italic").checked = editData.italic || false;
+  
+  // Use node's custom style if it has one, otherwise use global defaults
+  if (editData.hasCustomStyle) {
+    document.getElementById("font-size").value = editData.fontSize || defaultNodeTextStyle.fontSize;
+    document.getElementById("font-bold").checked = editData.bold !== undefined ? editData.bold : defaultNodeTextStyle.bold;
+    document.getElementById("font-italic").checked = editData.italic !== undefined ? editData.italic : defaultNodeTextStyle.italic;
+  } else {
+    document.getElementById("font-size").value = defaultNodeTextStyle.fontSize;
+    document.getElementById("font-bold").checked = defaultNodeTextStyle.bold;
+    document.getElementById("font-italic").checked = defaultNodeTextStyle.italic;
+  }
   
   const deleteBtn = document.getElementById("delete-node");
   const deleteSection = document.getElementById("delete-section");
@@ -2238,6 +3292,15 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
     toggleAncestorCollapseBtn.style.display = "none";
   }
   
+  // Populate the "Link Existing Person" dropdown
+  const currentPersonId = editData.id;
+  populateLinkPersonDropdown(currentPersonId);
+  displayExistingLinks(currentPersonId);
+  
+  // Reset the dropdown selection
+  document.getElementById("link-relationship-type").value = "spouse";
+  document.getElementById("link-person-select").value = "";
+  
   document.getElementById("sidebar").classList.add("visible");
   drawTree(d3.zoomTransform(svg.node()));
 }
@@ -2249,14 +3312,14 @@ function closeSidebar() {
   drawTree(d3.zoomTransform(svg.node()));
 }
 
-function showDnaSidebar(person1Name, person2Name) {
+function showDnaSidebar(person1Id, person2Id, person1Name, person2Name) {
   closeSidebar();
-  selectedIntersection = { person1: person1Name, person2: person2Name };
+  selectedIntersection = { person1Id: person1Id, person2Id: person2Id, person1Name: person1Name, person2Name: person2Name };
   
   document.getElementById("person1-name").textContent = person1Name;
   document.getElementById("person2-name").textContent = person2Name;
   
-  const key = getDnaKey(person1Name, person2Name);
+  const key = getDnaKey(person1Id, person2Id);
   const existingData = dnaComparisons[key];
   
   if (existingData) {
@@ -2283,7 +3346,7 @@ function showDnaSidebar(person1Name, person2Name) {
   document.getElementById("alternate-lines-toggle").checked = alternateLineColors;
   document.getElementById("dna-line-spacing").value = terminalLineSpacing;
   
-  // Calculate and display the tree-based relationship
+  // Calculate and display the tree-based relationship (uses names for now)
   updateCalculatedRelationship(person1Name, person2Name);
   
   document.getElementById("dna-sidebar").classList.add("visible");
@@ -2298,7 +3361,7 @@ function closeDnaSidebar() {
 document.getElementById("save-dna").addEventListener("click", () => {
   if (selectedIntersection) {
     saveState();
-    const key = getDnaKey(selectedIntersection.person1, selectedIntersection.person2);
+    const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
     const cm = document.getElementById("cm-input").value.trim();
     const relationship = document.getElementById("relationship-input").value.trim();
     
@@ -2315,7 +3378,7 @@ document.getElementById("save-dna").addEventListener("click", () => {
 document.getElementById("clear-dna").addEventListener("click", () => {
   if (selectedIntersection) {
     saveState();
-    const key = getDnaKey(selectedIntersection.person1, selectedIntersection.person2);
+    const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
     delete dnaComparisons[key];
     document.getElementById("cm-input").value = "";
     document.getElementById("relationship-input").value = "";
@@ -2738,16 +3801,57 @@ function getTerminalNodesInOrder(node) {
   return terminals;
 }
 
-function getAllTerminalPositions(root) {
+function getAllTerminalPositions(root, xAdjustments = {}) {
   const positions = [];
   
+  // Get IDs of all people in cross-links who shouldn't have terminal lines
+  // - Spouse cross-links: both people (they share children, not terminal)
+  // - Parent cross-links: both people - person1 (parent) has descendants via cross-link,
+  //   person2 (child) has their lineage shown elsewhere
+  // EXCEPT: if keepTerminalLineFor is set, that person keeps their terminal line
+  const spouseCrossLinkIds = new Set();
+  const keepTerminalLineIds = new Set();
+  
+  if (crossLinks) {
+    crossLinks.forEach(link => {
+      // Track which IDs should keep their terminal lines
+      if (link.keepTerminalLineFor) {
+        keepTerminalLineIds.add(link.keepTerminalLineFor);
+      }
+      
+      if (link.type === "spouse") {
+        spouseCrossLinkIds.add(link.person1Id);
+        spouseCrossLinkIds.add(link.person2Id);
+      } else if (link.type === "parent") {
+        // Both parent and child in a parent cross-link - exclude from terminal lines
+        spouseCrossLinkIds.add(link.person1Id);
+        spouseCrossLinkIds.add(link.person2Id);
+      }
+    });
+  }
+  
   function traverse(n) {
-    const isTerminal = !n.children || n.children.length === 0;
-    
     // Skip collapsed nodes entirely - they shouldn't have terminal lines
     if (n.data.collapsed) {
       return;
     }
+    
+    // Skip nodes that are part of a spouse cross-link (they share children)
+    // UNLESS they have keepTerminalLineFor set for them
+    if (spouseCrossLinkIds.has(n.data.id) && !keepTerminalLineIds.has(n.data.id)) {
+      // Still traverse children
+      if (n.children) {
+        for (const child of n.children) {
+          traverse(child);
+        }
+      }
+      return;
+    }
+    
+    const isTerminal = !n.children || n.children.length === 0;
+    
+    // Get adjusted X for this node
+    const adjustedX = n.x + (xAdjustments[n.data.id] || 0);
     
     if (isTerminal) {
       // Don't include spouses if node is collapsed
@@ -2759,41 +3863,50 @@ function getAllTerminalPositions(root) {
         const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right').sort((a, b) => a.offset - b.offset);
         
         // Add left spouses first (for correct left-to-right ordering)
+        // But skip spouses that are in a spouse cross-link (unless they have keepTerminalLine)
         leftSpouses.forEach(sp => {
-          positions.push({
-            x: n.x + sp.offset,
-            y: n.y,
-            name: sp.spouse.name,
-            node: n,
-            isSpouse: true,
-            spouseIndex: sp.index
-          });
+          if (!spouseCrossLinkIds.has(sp.spouse.id) || keepTerminalLineIds.has(sp.spouse.id)) {
+            positions.push({
+              x: adjustedX + sp.offset,
+              y: n.y,
+              name: sp.spouse.name,
+              id: sp.spouse.id,
+              node: n,
+              isSpouse: true,
+              spouseIndex: sp.index
+            });
+          }
         });
         
         // Add main node
         positions.push({
-          x: n.x,
+          x: adjustedX,
           y: n.y,
           name: n.data.name,
+          id: n.data.id,
           node: n
         });
         
-        // Add right spouses
+        // Add right spouses, but skip those in spouse cross-link (unless they have keepTerminalLine)
         rightSpouses.forEach(sp => {
-          positions.push({
-            x: n.x + sp.offset,
-            y: n.y,
-            name: sp.spouse.name,
-            node: n,
-            isSpouse: true,
-            spouseIndex: sp.index
-          });
+          if (!spouseCrossLinkIds.has(sp.spouse.id) || keepTerminalLineIds.has(sp.spouse.id)) {
+            positions.push({
+              x: adjustedX + sp.offset,
+              y: n.y,
+              name: sp.spouse.name,
+              id: sp.spouse.id,
+              node: n,
+              isSpouse: true,
+              spouseIndex: sp.index
+            });
+          }
         });
       } else {
         positions.push({
-          x: n.x,
+          x: adjustedX,
           y: n.y,
           name: n.data.name,
+          id: n.data.id,
           node: n
         });
       }
@@ -3261,6 +4374,59 @@ function computeLayout(root) {
       }
     }
   }
+  
+  // ============================================
+  // PHASE 5: Final collision resolution (NO re-centering)
+  // This ensures collisions caused by re-centering are fixed and stay fixed
+  // ============================================
+  
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const collisions = findCollisions();
+    
+    if (collisions.length === 0) {
+      break; // No more collisions - we're done!
+    }
+    
+    const collision = collisions[0];
+    
+    const leftSubtree = findRootSubtree(collision.leftNode);
+    const rightSubtree = findRootSubtree(collision.rightNode);
+    
+    if (leftSubtree === rightSubtree) {
+      // Same subtree - find LCA and shift
+      const leftPath = [];
+      let n = collision.leftNode;
+      while (n) {
+        leftPath.push(n);
+        n = n.parent;
+      }
+      const leftPathSet = new Set(leftPath);
+      
+      n = collision.rightNode;
+      let lca = null;
+      while (n) {
+        if (leftPathSet.has(n)) {
+          lca = n;
+          break;
+        }
+        n = n.parent;
+      }
+      
+      if (lca && lca.children) {
+        let rightChild = collision.rightNode;
+        while (rightChild.parent !== lca) {
+          rightChild = rightChild.parent;
+        }
+        // Add small buffer to prevent edge-touching
+        shiftSubtree(rightChild, collision.overlap + 5);
+      }
+    } else {
+      // Different root subtrees - shift the right one
+      // Add small buffer to prevent edge-touching
+      shiftSubtree(rightSubtree, collision.overlap + 5);
+    }
+    // NOTE: No re-centering here - this is intentional to preserve collision fixes
+  }
 }
 
 function autoLayout() {
@@ -3472,16 +4638,564 @@ function drawTree(savedTransform = null) {
   const root = d3.hierarchy(effectiveRoot, d => d.collapsed ? null : d.children);
   computeLayout(root);
 
+  // Calculate Y adjustments for spouse cross-links
+  // The higher spouse (smaller Y) gets moved down to match the lower spouse's Y
+  const crossLinkYAdjustments = {};
+  
+  // Calculate X adjustments for shared children
+  // Children should be centered under the midpoint between cross-linked spouses
+  const crossLinkChildXAdjustments = {};
+  
+  if (crossLinks && crossLinks.length > 0) {
+    crossLinks.forEach(link => {
+      if (link.type === "spouse") {
+        // Find positions of both people
+        let pos1 = null, pos2 = null;
+        
+        // Search for person1
+        for (const node of root.descendants()) {
+          if (node.data.id === link.person1Id) {
+            pos1 = { id: link.person1Id, x: node.x, y: node.y, isSpouse: false, node: node };
+            break;
+          }
+          if (node.data.spouses) {
+            const spouse = node.data.spouses.find(s => s.id === link.person1Id);
+            if (spouse) {
+              const spousesWithOffsets = getSpousesWithOffsets(node.data);
+              const spouseData = spousesWithOffsets.find(s => s.spouse.id === link.person1Id);
+              const spouseX = spouseData ? node.x + spouseData.offset : node.x;
+              pos1 = { id: link.person1Id, x: spouseX, y: node.y, isSpouse: true, parentNode: node };
+              break;
+            }
+          }
+        }
+        
+        // Search for person2
+        for (const node of root.descendants()) {
+          if (node.data.id === link.person2Id) {
+            pos2 = { id: link.person2Id, x: node.x, y: node.y, isSpouse: false, node: node };
+            break;
+          }
+          if (node.data.spouses) {
+            const spouse = node.data.spouses.find(s => s.id === link.person2Id);
+            if (spouse) {
+              const spousesWithOffsets = getSpousesWithOffsets(node.data);
+              const spouseData = spousesWithOffsets.find(s => s.spouse.id === link.person2Id);
+              const spouseX = spouseData ? node.x + spouseData.offset : node.x;
+              pos2 = { id: link.person2Id, x: spouseX, y: node.y, isSpouse: true, parentNode: node };
+              break;
+            }
+          }
+        }
+        
+        if (pos1 && pos2) {
+          // Y adjustment: Move the higher one down to match the lower one
+          // This applies to ALL spouse cross-links including Bézier
+          if (pos1.y !== pos2.y) {
+            const higherPos = pos1.y < pos2.y ? pos1 : pos2;
+            const lowerPos = pos1.y < pos2.y ? pos2 : pos1;
+            const yShiftAmount = lowerPos.y - higherPos.y;
+            
+            crossLinkYAdjustments[higherPos.id] = lowerPos.y;
+            
+            // Cascade Y adjustment to all descendants of the moved node
+            // This ensures children stay below their parent after the adjustment
+            if (higherPos.node && higherPos.node.children) {
+              function applyYOffsetToDescendants(node) {
+                // Apply the same shift amount to maintain relative positioning
+                const currentY = crossLinkYAdjustments[node.data.id] !== undefined 
+                  ? crossLinkYAdjustments[node.data.id] 
+                  : node.y;
+                crossLinkYAdjustments[node.data.id] = currentY + yShiftAmount;
+                
+                if (node.children) {
+                  node.children.forEach(child => applyYOffsetToDescendants(child));
+                }
+              }
+              
+              higherPos.node.children.forEach(child => applyYOffsetToDescendants(child));
+            }
+          }
+          
+          // X adjustment for shared children: center them under the midpoint
+          // Skip this for Bézier connections - they don't re-center children
+          if (!link.useBezier && link.sharedChildren && link.sharedChildren !== 'none') {
+            const midpointX = (pos1.x + pos2.x) / 2;
+            
+            // Find the parent node whose children are shared
+            let parentNode = null;
+            if ((link.sharedChildren === 'person1' || link.sharedChildren === 'both') && pos1.node) {
+              parentNode = pos1.node;
+            } else if ((link.sharedChildren === 'person2' || link.sharedChildren === 'both') && pos2.node) {
+              parentNode = pos2.node;
+            }
+            
+            if (parentNode && parentNode.children) {
+              // Calculate the offset needed to center children under midpoint
+              // The children's current center is relative to parentNode.x
+              // We want them centered at midpointX instead
+              const xOffset = midpointX - parentNode.x;
+              
+              // Apply offset to all children and their descendants
+              function applyXOffset(node) {
+                crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + xOffset;
+                if (node.children) {
+                  node.children.forEach(child => applyXOffset(child));
+                }
+              }
+              
+              parentNode.children.forEach(child => applyXOffset(child));
+            }
+          }
+        }
+      }
+    });
+    
+    // Second pass: Handle parent-type cross-links
+    // Center the parent over BOTH their tree children AND the cross-linked child
+    // Then position each single-child ancestor directly above their child
+    // And shift sibling subtrees to maintain compact spacing
+    crossLinks.forEach(link => {
+      if (link.type === "parent") {
+        // Skip layout adjustments for Bézier connections - they stay in place
+        if (link.useBezier) {
+          return; // Skip this link's layout adjustments
+        }
+        
+        // person1 is parent, person2 is child
+        const parentId = link.person1Id;
+        const crossLinkChildId = link.person2Id;
+        
+        // Find the parent node in the tree
+        let parentNode = null;
+        for (const node of root.descendants()) {
+          if (node.data.id === parentId) {
+            parentNode = node;
+            break;
+          }
+        }
+        
+        // Find the cross-linked child's X position
+        let crossLinkChildX = null;
+        for (const node of root.descendants()) {
+          if (node.data.id === crossLinkChildId) {
+            crossLinkChildX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
+            break;
+          }
+          // Check if it's a spouse
+          if (node.data.spouses) {
+            const spouse = node.data.spouses.find(s => s.id === crossLinkChildId);
+            if (spouse) {
+              const spousesWithOffsets = getSpousesWithOffsets(node.data);
+              const spouseData = spousesWithOffsets.find(s => s.spouse.id === crossLinkChildId);
+              if (spouseData) {
+                const nodeAdjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
+                crossLinkChildX = nodeAdjustedX + spouseData.offset;
+              }
+              break;
+            }
+          }
+        }
+        
+        if (parentNode && crossLinkChildX !== null) {
+          // Helper to apply shift to a node and all its descendants
+          function applyShiftToSubtree(node, shiftAmount) {
+            crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + shiftAmount;
+            if (node.children) {
+              for (const child of node.children) {
+                applyShiftToSubtree(child, shiftAmount);
+              }
+            }
+          }
+          
+          // Gather all X positions the parent should be centered over:
+          // 1. Tree children of the parent (if any)
+          // 2. The cross-link child
+          const allChildXPositions = [];
+          
+          // Add tree children positions
+          if (parentNode.children && parentNode.children.length > 0) {
+            for (const child of parentNode.children) {
+              allChildXPositions.push(child.x + (crossLinkChildXAdjustments[child.data.id] || 0));
+            }
+          }
+          
+          // Add cross-link child position
+          allChildXPositions.push(crossLinkChildX);
+          
+          // Calculate the center over all children (tree + cross-link)
+          const minChildX = Math.min(...allChildXPositions);
+          const maxChildX = Math.max(...allChildXPositions);
+          const targetX = (minChildX + maxChildX) / 2;
+          const shift = targetX - parentNode.x;
+          
+          // Set parent's adjustment to center over all children
+          crossLinkChildXAdjustments[parentId] = shift;
+          
+          // Walk up the tree
+          let currentNode = parentNode;
+          while (currentNode.parent) {
+            const ancestor = currentNode.parent;
+            
+            // Shift all siblings to the LEFT of currentNode by the same amount
+            // (to maintain compact spacing)
+            const currentIndex = ancestor.children.indexOf(currentNode);
+            for (let i = 0; i < currentIndex; i++) {
+              applyShiftToSubtree(ancestor.children[i], shift);
+            }
+            
+            // Get the child's final X position
+            const childFinalX = currentNode.x + (crossLinkChildXAdjustments[currentNode.data.id] || 0);
+            
+            if (ancestor.children.length === 1) {
+              // Single child: ancestor goes directly above
+              crossLinkChildXAdjustments[ancestor.data.id] = childFinalX - ancestor.x;
+            } else {
+              // Multiple children: ancestor re-centers over all children's final positions
+              const childXPositions = ancestor.children.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+              const minX = Math.min(...childXPositions);
+              const maxX = Math.max(...childXPositions);
+              const centerX = (minX + maxX) / 2;
+              crossLinkChildXAdjustments[ancestor.data.id] = centerX - ancestor.x;
+            }
+            
+            currentNode = ancestor;
+          }
+        }
+      }
+    });
+  }
+
+  // Calculate which child IDs should have their solid parent lines suppressed
+  // (because they're being handled by Bézier spouse connections)
+  const bezierSuppressedChildIds = new Set();
+  if (crossLinks && crossLinks.length > 0) {
+    crossLinks.forEach(link => {
+      if (link.type === "spouse" && link.useBezier && link.sharedChildren && link.sharedChildren !== 'none') {
+        // Find which person has the shared children
+        let parentWithChildren = null;
+        
+        if (link.sharedChildren === 'person1' || link.sharedChildren === 'both') {
+          for (const node of root.descendants()) {
+            if (node.data.id === link.person1Id && node.children) {
+              parentWithChildren = node;
+              break;
+            }
+          }
+        }
+        if (!parentWithChildren && (link.sharedChildren === 'person2' || link.sharedChildren === 'both')) {
+          for (const node of root.descendants()) {
+            if (node.data.id === link.person2Id && node.children) {
+              parentWithChildren = node;
+              break;
+            }
+          }
+        }
+        
+        if (parentWithChildren && parentWithChildren.children) {
+          parentWithChildren.children.forEach(child => {
+            bezierSuppressedChildIds.add(child.data.id);
+          });
+        }
+      }
+    });
+  }
+
+  // ============================================
+  // POST-ADJUSTMENT COLLISION DETECTION
+  // Run after crossLinkChildXAdjustments are finalized to catch any new collisions
+  // ============================================
+  
+  function getAdjustedNodeBounds(node) {
+    const adjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
+    let left = adjustedX - nodeWidth / 2;
+    let right = adjustedX + nodeWidth / 2;
+    
+    if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
+      const spousesWithOffsets = getSpousesWithOffsets(node.data);
+      for (const sp of spousesWithOffsets) {
+        const spouseX = adjustedX + sp.offset;
+        left = Math.min(left, spouseX - nodeWidth / 2);
+        right = Math.max(right, spouseX + nodeWidth / 2);
+      }
+    }
+    
+    return { left, right, adjustedX };
+  }
+  
+  function findAdjustedCollisions() {
+    const nodesByDepth = new Map();
+    const allNodes = root.descendants();
+    
+    for (const node of allNodes) {
+      if (!nodesByDepth.has(node.depth)) {
+        nodesByDepth.set(node.depth, []);
+      }
+      nodesByDepth.get(node.depth).push(node);
+    }
+    
+    const collisions = [];
+    const minGap = spouseGap;
+    
+    // Standard same-depth collision detection
+    for (const [depth, nodes] of nodesByDepth) {
+      // Sort by ADJUSTED x position
+      nodes.sort((a, b) => {
+        const aX = a.x + (crossLinkChildXAdjustments[a.data.id] || 0);
+        const bX = b.x + (crossLinkChildXAdjustments[b.data.id] || 0);
+        return aX - bX;
+      });
+      
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const leftNode = nodes[i];
+        const rightNode = nodes[i + 1];
+        
+        const leftBounds = getAdjustedNodeBounds(leftNode);
+        const rightBounds = getAdjustedNodeBounds(rightNode);
+        
+        const overlap = leftBounds.right + minGap - rightBounds.left;
+        
+        if (overlap > 0) {
+          collisions.push({
+            depth,
+            leftNode,
+            rightNode,
+            overlap
+          });
+        }
+      }
+    }
+    
+    // Cross-depth collision detection for Y-adjusted (pulled-down) nodes
+    // This handles cases where a node is visually moved to a different Y level
+    // and may collide with nodes at that visual level but different structural depth
+    const yAdjustedIds = Object.keys(crossLinkYAdjustments);
+    if (yAdjustedIds.length > 0) {
+      // Build a map of nodes by their VISUAL Y level (adjusted Y)
+      const nodesByVisualY = new Map();
+      
+      for (const node of allNodes) {
+        const visualY = crossLinkYAdjustments[node.data.id] !== undefined 
+          ? crossLinkYAdjustments[node.data.id] 
+          : node.y;
+        // Round to avoid floating point issues
+        const yKey = Math.round(visualY);
+        
+        if (!nodesByVisualY.has(yKey)) {
+          nodesByVisualY.set(yKey, []);
+        }
+        nodesByVisualY.get(yKey).push(node);
+      }
+      
+      // Check for collisions at each visual Y level
+      for (const [visualY, nodesAtY] of nodesByVisualY) {
+        // Only check if there are nodes from different structural depths at this visual Y
+        const depths = new Set(nodesAtY.map(n => n.depth));
+        if (depths.size <= 1) continue; // All same depth, already handled above
+        
+        // Sort by adjusted X position
+        nodesAtY.sort((a, b) => {
+          const aX = a.x + (crossLinkChildXAdjustments[a.data.id] || 0);
+          const bX = b.x + (crossLinkChildXAdjustments[b.data.id] || 0);
+          return aX - bX;
+        });
+        
+        // Check adjacent pairs for collisions
+        for (let i = 0; i < nodesAtY.length - 1; i++) {
+          const leftNode = nodesAtY[i];
+          const rightNode = nodesAtY[i + 1];
+          
+          // Skip if same depth (already checked above)
+          if (leftNode.depth === rightNode.depth) continue;
+          
+          const leftBounds = getAdjustedNodeBounds(leftNode);
+          const rightBounds = getAdjustedNodeBounds(rightNode);
+          
+          const overlap = leftBounds.right + minGap - rightBounds.left;
+          
+          if (overlap > 0) {
+            collisions.push({
+              depth: Math.max(leftNode.depth, rightNode.depth), // Use deeper node's depth for resolution
+              leftNode,
+              rightNode,
+              overlap,
+              isCrossDepth: true
+            });
+          }
+        }
+      }
+    }
+    
+    return collisions;
+  }
+  
+  function findRootSubtreeForAdjustment(node) {
+    let current = node;
+    while (current.parent && current.parent.parent) {
+      current = current.parent;
+    }
+    return current;
+  }
+  
+  function shiftSubtreeAdjustments(node, amount) {
+    crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + amount;
+    if (node.children) {
+      for (const child of node.children) {
+        shiftSubtreeAdjustments(child, amount);
+      }
+    }
+  }
+  
+  // Run post-adjustment collision detection
+  const maxAdjustmentPasses = 30;
+  for (let pass = 0; pass < maxAdjustmentPasses; pass++) {
+    const collisions = findAdjustedCollisions();
+    
+    if (collisions.length === 0) {
+      break;
+    }
+    
+    const collision = collisions[0];
+    
+    const leftSubtree = findRootSubtreeForAdjustment(collision.leftNode);
+    const rightSubtree = findRootSubtreeForAdjustment(collision.rightNode);
+    
+    // For cross-depth collisions (caused by Y-adjusted/pulled-down nodes),
+    // shift the subtree containing the Y-adjusted node rather than arbitrarily shifting right
+    if (collision.isCrossDepth) {
+      const leftIsYAdjusted = crossLinkYAdjustments[collision.leftNode.data.id] !== undefined;
+      const rightIsYAdjusted = crossLinkYAdjustments[collision.rightNode.data.id] !== undefined;
+      
+      // Determine which subtree to shift:
+      // - If one node is Y-adjusted and the other isn't, shift the Y-adjusted one's subtree
+      // - If both or neither are Y-adjusted, fall back to shifting the right one
+      let subtreeToShift;
+      if (leftIsYAdjusted && !rightIsYAdjusted) {
+        subtreeToShift = leftSubtree;
+      } else if (rightIsYAdjusted && !leftIsYAdjusted) {
+        subtreeToShift = rightSubtree;
+      } else {
+        // Both or neither adjusted - shift right subtree (default behavior)
+        subtreeToShift = rightSubtree;
+      }
+      
+      shiftSubtreeAdjustments(subtreeToShift, collision.overlap + 5);
+    } else if (leftSubtree === rightSubtree) {
+      // Same subtree - find LCA and shift
+      const leftPath = [];
+      let n = collision.leftNode;
+      while (n) {
+        leftPath.push(n);
+        n = n.parent;
+      }
+      const leftPathSet = new Set(leftPath);
+      
+      n = collision.rightNode;
+      let lca = null;
+      while (n) {
+        if (leftPathSet.has(n)) {
+          lca = n;
+          break;
+        }
+        n = n.parent;
+      }
+      
+      if (lca && lca.children) {
+        let rightChild = collision.rightNode;
+        while (rightChild.parent !== lca) {
+          rightChild = rightChild.parent;
+        }
+        shiftSubtreeAdjustments(rightChild, collision.overlap + 5);
+      }
+    } else {
+      // Different root subtrees - shift the right one
+      shiftSubtreeAdjustments(rightSubtree, collision.overlap + 5);
+    }
+  }
+  
+  // Re-center all ancestors after post-adjustment collision resolution
+  // This ensures parent nodes are properly centered over their (now shifted) children
+  const allNodesForRecentering = root.descendants();
+  const maxDepthForRecentering = Math.max(...allNodesForRecentering.map(n => n.depth));
+  
+  for (let depth = maxDepthForRecentering - 1; depth >= 0; depth--) {
+    const nodesAtDepth = allNodesForRecentering.filter(n => n.depth === depth);
+    
+    for (const node of nodesAtDepth) {
+      if (node.children && node.children.length > 0) {
+        // Calculate children's adjusted X positions
+        const childAdjustedXPositions = node.children.map(c => 
+          c.x + (crossLinkChildXAdjustments[c.data.id] || 0)
+        );
+        const minChildX = Math.min(...childAdjustedXPositions);
+        const maxChildX = Math.max(...childAdjustedXPositions);
+        const childrenCenter = (minChildX + maxChildX) / 2;
+        
+        // Calculate where this node should be centered
+        let targetX;
+        if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
+          const spousesWithOffsets = getSpousesWithOffsets(node.data);
+          const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
+          const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
+          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
+          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          targetX = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+        } else {
+          targetX = childrenCenter;
+        }
+        
+        // Calculate the adjustment needed
+        const currentAdjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
+        const adjustmentNeeded = targetX - currentAdjustedX;
+        
+        // Apply adjustment to this node (but not its children - they're already positioned)
+        if (Math.abs(adjustmentNeeded) > 0.1) {
+          crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + adjustmentNeeded;
+        }
+      }
+    }
+  }
+
   // For collapsed nodes, also hide spouses
   const nodesWithSpouses = root.descendants().filter(d => d.data.spouses && d.data.spouses.length > 0 && !d.data.collapsed);
   
+  // Filter out children whose parent lines are suppressed by Bézier connections
+  const nodesForLinks = root.descendants().slice(1).filter(d => !bezierSuppressedChildIds.has(d.data.id));
+  
   g.selectAll(".link")
-    .data(root.descendants().slice(1))
+    .data(nodesForLinks)
     .join("path")
     .attr("class", "link")
     .attr("d", d => {
-      let px = d.parent.x;
-      let py = d.parent.y + nodeHeight/2;
+      // Use adjusted X for parent if available
+      let parentAdjustedX = d.parent.x + (crossLinkChildXAdjustments[d.parent.data.id] || 0);
+      let px = parentAdjustedX;
+      // Use adjusted Y for parent if available
+      let parentAdjustedY = crossLinkYAdjustments[d.parent.data.id] !== undefined ? crossLinkYAdjustments[d.parent.data.id] : d.parent.y;
+      let py = parentAdjustedY + nodeHeight/2;
+      
+      // Check if parent is involved in a spouse cross-link with shared children
+      let crossLinkSpouseX = null;
+      if (crossLinks) {
+        for (const link of crossLinks) {
+          if (link.type === "spouse" && link.sharedChildren) {
+            // Check if parent is person1 and children are shared from person1
+            if (link.person1Id === d.parent.data.id && (link.sharedChildren === 'person1' || link.sharedChildren === 'both')) {
+              // Find person2's X position
+              const pos2 = findRenderedPosition(root, link.person2Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
+              if (pos2) crossLinkSpouseX = pos2.x;
+              break;
+            }
+            // Check if parent is person2 and children are shared from person2
+            if (link.person2Id === d.parent.data.id && (link.sharedChildren === 'person2' || link.sharedChildren === 'both')) {
+              // Find person1's X position
+              const pos1 = findRenderedPosition(root, link.person1Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
+              if (pos1) crossLinkSpouseX = pos1.x;
+              break;
+            }
+          }
+        }
+      }
       
       // If parent has spouses, find the correct center point for the child connection
       if (d.parent.data.spouses && d.parent.data.spouses.length > 0) {
@@ -3492,37 +5206,48 @@ function drawTree(savedTransform = null) {
           // Child is assigned to a specific spouse - find that spouse
           const spouseData = spousesWithOffsets.find(s => s.spouse.id === childSpouseId);
           if (spouseData) {
-            // Midpoint between parent node and that specific spouse
-            px = d.parent.x + spouseData.offset / 2;
+            // Midpoint between parent node and that specific spouse (using adjusted X)
+            px = parentAdjustedX + spouseData.offset / 2;
           } else {
             // spouseId doesn't match any current spouse - connect directly to parent
             // (the spouse was likely deleted)
-            px = d.parent.x;
+            px = parentAdjustedX;
           }
         } else {
           // No spouseId assigned - connect directly to parent node
           // These are children of the main person only, not from any spouse relationship
-          px = d.parent.x;
+          px = parentAdjustedX;
         }
+      } else if (crossLinkSpouseX !== null) {
+        // Parent has a cross-link spouse with shared children - use midpoint
+        px = (parentAdjustedX + crossLinkSpouseX) / 2;
       }
       
-      const cx = d.x;
-      const cy = d.y - nodeHeight/2;
-      const midY = (py + cy) / 2;
-      return `M${px},${py} V${midY} H${cx} V${cy}`;
+      // Use adjusted X for child if available
+      const cx = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
+      // Use adjusted Y for child if available
+      const childAdjustedY = crossLinkYAdjustments[d.data.id] !== undefined ? crossLinkYAdjustments[d.data.id] : d.y;
+      const cy = childAdjustedY - nodeHeight/2;
+      
+      // Use consistent gutter level below parent (not midpoint between parent and child)
+      const gutterY = d.parent.y + verticalSpacing / 2;
+      
+      return `M${px},${py} V${gutterY} H${cx} V${cy}`;
     });
 
   // Draw spouse links for all spouses
   nodesWithSpouses.forEach(d => {
     const spouseLineY = d.y;
     const spousesWithOffsets = getSpousesWithOffsets(d.data);
+    // Get adjusted X for the main node
+    const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
     
     spousesWithOffsets.forEach(sp => {
       const spouseOffset = sp.offset;
-      const spouseX = d.x + spouseOffset;
+      const spouseX = mainNodeAdjustedX + spouseOffset;
       
       // Draw horizontal line between main node and spouse
-      const mainEdgeX = sp.side === 'left' ? d.x - nodeWidth/2 : d.x + nodeWidth/2;
+      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - nodeWidth/2 : mainNodeAdjustedX + nodeWidth/2;
       const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
       
       g.append("line")
@@ -3544,7 +5269,7 @@ function drawTree(savedTransform = null) {
         if (shouldDrawVertical) {
           const childY = d.children[0].y - nodeHeight/2;
           const branchY = (spouseLineY + nodeHeight/2 + childY) / 2;
-          const midX = d.x + spouseOffset / 2;
+          const midX = mainNodeAdjustedX + spouseOffset / 2;
           
           g.append("line")
             .attr("class", "spouse-link")
@@ -3562,28 +5287,120 @@ function drawTree(savedTransform = null) {
     if (d.children && d.children.length > 0) {
       const childrenWithNoSpouse = d.children.filter(c => !c.data.spouseId);
       if (childrenWithNoSpouse.length > 0) {
+        const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
         const childY = d.children[0].y - nodeHeight/2;
         const branchY = (d.y + nodeHeight/2 + childY) / 2;
         
         g.append("line")
           .attr("class", "link")
-          .attr("x1", d.x)
+          .attr("x1", mainNodeAdjustedX)
           .attr("y1", d.y + nodeHeight/2)
-          .attr("x2", d.x)
+          .attr("x2", mainNodeAdjustedX)
           .attr("y2", branchY);
       }
     }
   });
+  
+  // Draw vertical drop line for cross-linked spouse pairs with shared children
+  // Skip Bézier links - they draw their own vertical drop in drawCrossLinks
+  if (crossLinks) {
+    crossLinks.forEach(link => {
+      if (link.type === "spouse" && link.sharedChildren && link.sharedChildren !== 'none' && !link.useBezier) {
+        const pos1 = findRenderedPosition(root, link.person1Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
+        const pos2 = findRenderedPosition(root, link.person2Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
+        
+        if (pos1 && pos2) {
+          // Find which person has children that are shared
+          let parentWithChildren = null;
+          let parentNode = null;
+          
+          // Find the parent node with children
+          for (const node of root.descendants()) {
+            if ((link.sharedChildren === 'person1' || link.sharedChildren === 'both') && node.data.id === link.person1Id) {
+              if (node.children && node.children.length > 0) {
+                parentWithChildren = node;
+                break;
+              }
+            }
+            if ((link.sharedChildren === 'person2' || link.sharedChildren === 'both') && node.data.id === link.person2Id) {
+              if (node.children && node.children.length > 0) {
+                parentWithChildren = node;
+                break;
+              }
+            }
+          }
+          
+          if (parentWithChildren && parentWithChildren.children && parentWithChildren.children.length > 0) {
+            const midX = (pos1.x + pos2.x) / 2;
+            const spouseY = pos1.y; // Both should be at same Y after adjustment
+            const childY = parentWithChildren.children[0].y - nodeHeight/2;
+            const gutterY = parentWithChildren.y + verticalSpacing / 2;
+            
+            // Draw vertical line from spouse line level down to gutter
+            g.append("line")
+              .attr("class", "cross-link")
+              .attr("x1", midX)
+              .attr("y1", spouseY)
+              .attr("x2", midX)
+              .attr("y2", gutterY);
+          }
+        }
+      }
+    });
+  }
 
-  const terminalPositions = getAllTerminalPositions(root);
+  const terminalPositions = getAllTerminalPositions(root, crossLinkChildXAdjustments);
   const terminalPositionsForLines = terminalPositions.slice(0, -1);
   const rightmostPosition = terminalPositions.length > 0 ? terminalPositions[terminalPositions.length - 1] : null;
   const maxX = rightmostPosition ? rightmostPosition.x : 0;
   // End lines flush with right edge of rightmost node
   const lineEndX = maxX + nodeWidth / 2;
-  const rightmostNodeBottomY = rightmostPosition 
-    ? rightmostPosition.y + nodeHeight/2 : 0;
-  const topLineY = rightmostNodeBottomY + terminalLineSpacing;
+  // Use the deepest (maximum Y) terminal node to start lines below all nodes
+  const maxY = terminalPositions.length > 0 
+    ? Math.max(...terminalPositions.map(p => p.y)) : 0;
+  const deepestNodeBottomY = maxY + nodeHeight / 2;
+  let topLineY = deepestNodeBottomY + terminalLineSpacing;
+  
+  // Final adjustment: ensure the topmost horizontal line is exactly terminalLineSpacing
+  // below the nearest node above it (not excessive space due to deep nodes elsewhere)
+  if (terminalPositionsForLines.length > 0) {
+    // The topmost horizontal line is for the rightmost terminal (lineIndex = 0)
+    // which corresponds to the last item in terminalPositionsForLines
+    // Find the lowest horizontal line Y first (this is where lineIndex is highest)
+    const lowestLineIndex = terminalPositionsForLines.length - 1;
+    const lowestHorizontalY = topLineY + (lowestLineIndex * terminalLineSpacing);
+    
+    // For each horizontal line, find the node whose vertical segment crosses it
+    // and determine the minimum required Y for that line
+    let minRequiredTopLineY = -Infinity;
+    
+    terminalPositionsForLines.forEach((pos, i) => {
+      const lineIndex = terminalPositionsForLines.length - 1 - i;
+      // This line's horizontal Y would be: topLineY + (lineIndex * terminalLineSpacing)
+      // The vertical segment of this line goes from pos.y down to horizontalY
+      // The horizontal segment then goes right and crosses over all nodes to the right
+      
+      // Find the deepest node that this horizontal line passes over (from this node to the right)
+      const posIndex = terminalPositions.indexOf(pos);
+      const nodesThisLineCrosses = terminalPositions.slice(posIndex);
+      const maxYCrossed = Math.max(...nodesThisLineCrosses.map(p => p.y));
+      const minHorizontalYForThisLine = maxYCrossed + nodeHeight / 2 + terminalLineSpacing;
+      
+      // What topLineY would be needed for this line to be at minHorizontalYForThisLine?
+      // horizontalY = topLineY + (lineIndex * terminalLineSpacing)
+      // minHorizontalYForThisLine = requiredTopLineY + (lineIndex * terminalLineSpacing)
+      // requiredTopLineY = minHorizontalYForThisLine - (lineIndex * terminalLineSpacing)
+      const requiredTopLineY = minHorizontalYForThisLine - (lineIndex * terminalLineSpacing);
+      
+      if (requiredTopLineY > minRequiredTopLineY) {
+        minRequiredTopLineY = requiredTopLineY;
+      }
+    });
+    
+    // Use the minimum required topLineY (this ensures no line crosses through a node,
+    // while keeping the topmost line as close as possible to the nodes above it)
+    topLineY = minRequiredTopLineY;
+  }
   
   // Only draw terminal lines and DNA data if showTerminalLines is true
   if (showTerminalLines) {
@@ -3617,14 +5434,16 @@ function drawTree(savedTransform = null) {
         intersections.push({
           x: targetPos.x,
           y: horizontalY,
-          person1: linePos.name,
-          person2: targetPos.name
+          person1Name: linePos.name,
+          person2Name: targetPos.name,
+          person1Id: linePos.id,
+          person2Id: targetPos.id
         });
       }
     });
 
     const emptyIntersections = intersections.filter(d => {
-      const key = getDnaKey(d.person1, d.person2);
+      const key = getDnaKey(d.person1Id, d.person2Id);
       return !dnaComparisons[key];
     });
     
@@ -3637,14 +5456,14 @@ function drawTree(savedTransform = null) {
       .attr("r", 5)
       .on("click", (event, d) => {
         event.stopPropagation();
-        showDnaSidebar(d.person1, d.person2);
+        showDnaSidebar(d.person1Id, d.person2Id, d.person1Name, d.person2Name);
       })
-      .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1, d.person2))
-      .on("mousemove", (event, d) => showDnaTooltip(event, d.person1, d.person2))
+      .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name))
+      .on("mousemove", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name))
       .on("mouseleave", hideDnaTooltip);
 
     intersections.forEach(intersection => {
-      const key = getDnaKey(intersection.person1, intersection.person2);
+      const key = getDnaKey(intersection.person1Id, intersection.person2Id);
       const dnaData = dnaComparisons[key];
       
       if (dnaData) {
@@ -3653,10 +5472,10 @@ function drawTree(savedTransform = null) {
           .style("cursor", "pointer")
           .on("click", (event) => {
             event.stopPropagation();
-            showDnaSidebar(intersection.person1, intersection.person2);
+            showDnaSidebar(intersection.person1Id, intersection.person2Id, intersection.person1Name, intersection.person2Name);
           })
-          .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
-          .on("mousemove", (event) => showDnaTooltip(event, intersection.person1, intersection.person2))
+          .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name))
+          .on("mousemove", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name))
           .on("mouseleave", hideDnaTooltip);
         
         labelGroup.append("rect")
@@ -3722,7 +5541,11 @@ function drawTree(savedTransform = null) {
     .join("g")
     .attr("class", "node")
     .attr("data-name", d => d.data.name)
-    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .attr("transform", d => {
+      const adjustedY = crossLinkYAdjustments[d.data.id] !== undefined ? crossLinkYAdjustments[d.data.id] : d.y;
+      const adjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
+      return `translate(${adjustedX},${adjustedY})`;
+    })
     .on("click", (event, d) => showSidebar(d.data, d, false))
     .on("mouseenter", (event, d) => showNodeTooltip(event, d.data, false))
     .on("mousemove", (event, d) => showNodeTooltip(event, d.data, false))
@@ -3757,13 +5580,13 @@ function drawTree(savedTransform = null) {
   node.append("text")
       .text(d => {
         const name = d.data.name;
-        const fontSize = d.data.fontSize || 12;
-        const isBold = d.data.bold || false;
+        const fontSize = d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
+        const isBold = d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
         return fitName(name, fontSize, isBold);
       })
-      .style("font-size", d => `${d.data.fontSize || 12}px`)
-      .style("font-weight", d => d.data.bold ? "bold" : "normal")
-      .style("font-style", d => d.data.italic ? "italic" : "normal");
+      .style("font-size", d => `${d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
+      .style("font-weight", d => (d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
+      .style("font-style", d => (d.data.hasCustomStyle ? (d.data.italic !== undefined ? d.data.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic) ? "italic" : "normal");
 
   // Add collapse indicator for collapsed nodes
   const collapsedNodes = node.filter(d => d.data.collapsed);
@@ -3810,7 +5633,11 @@ function drawTree(savedTransform = null) {
     .attr("class", "node spouse-node")
     .attr("data-name", d => d.spouse.name)
     .attr("transform", d => {
-      return `translate(${d.parentNode.x + d.offset},${d.parentNode.y})`;
+      const baseY = d.parentNode.y;
+      const adjustedY = crossLinkYAdjustments[d.spouse.id] !== undefined ? crossLinkYAdjustments[d.spouse.id] : baseY;
+      // Use adjusted X for parent node
+      const parentAdjustedX = d.parentNode.x + (crossLinkChildXAdjustments[d.parentNode.data.id] || 0);
+      return `translate(${parentAdjustedX + d.offset},${adjustedY})`;
     })
     .on("click", (event, d) => {
       event.stopPropagation();
@@ -3831,16 +5658,19 @@ function drawTree(savedTransform = null) {
   spouseNodes.append("text")
       .text(d => {
         const name = d.spouse.name;
-        const fontSize = d.spouse.fontSize || 12;
-        const isBold = d.spouse.bold || false;
+        const fontSize = d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
+        const isBold = d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
         return fitName(name, fontSize, isBold);
       })
-      .style("font-size", d => `${d.spouse.fontSize || 12}px`)
-      .style("font-weight", d => d.spouse.bold ? "bold" : "normal")
-      .style("font-style", d => d.spouse.italic ? "italic" : "normal");
+      .style("font-size", d => `${d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
+      .style("font-weight", d => (d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
+      .style("font-style", d => (d.spouse.hasCustomStyle ? (d.spouse.italic !== undefined ? d.spouse.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic) ? "italic" : "normal");
   
   // Update home person display in Tools panel
   updateToolsHomePerson();
+  
+  // Draw cross-links (spouse connections across branches)
+  drawCrossLinks(g, root, crossLinkYAdjustments, crossLinkChildXAdjustments);
   
   // Auto-save after any tree changes
   autoSave();
@@ -3854,15 +5684,7 @@ document.getElementById("update-name").addEventListener("click", () => {
     
     if (oldName !== newName) {
       saveState();
-      const updatedComparisons = {};
-      for (const key in dnaComparisons) {
-        const [p1, p2] = key.split("|");
-        let newKey = key;
-        if (p1 === oldName) newKey = `${newName}|${p2}`;
-        else if (p2 === oldName) newKey = `${p1}|${newName}`;
-        updatedComparisons[newKey] = dnaComparisons[key];
-      }
-      dnaComparisons = updatedComparisons;
+      // Note: DNA comparison keys now use IDs, so no need to update them when name changes
     }
     
     editData.name = newName;
@@ -3886,6 +5708,7 @@ document.getElementById("add-child").addEventListener("click", () => {
       fontSize: 12, 
       bold: false, 
       italic: false,
+      id: generateNodeId(),
       spouseId: selectedSpouse.id  // Associate child with this spouse
     };
     mainNodeData.children.push(newChild);
@@ -3903,7 +5726,7 @@ document.getElementById("add-child").addEventListener("click", () => {
       // 0 or 1 spouse - no need to ask
       saveState();
       if (!nodeData.children) nodeData.children = [];
-      const newChild = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false };
+      const newChild = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId() };
       
       // If there's exactly one spouse, assign the child to that spouse
       if (spouses.length === 1) {
@@ -3966,7 +5789,7 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
       saveState();
       if (!parentNode.children) parentNode.children = [];
       
-      const newChild = { name: childName, color: "#ffffff", fontSize: 12, bold: false, italic: false };
+      const newChild = { name: childName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId() };
       const spouseId = btn.getAttribute('data-spouse-id');
       if (spouseId) {
         newChild.spouseId = spouseId;
@@ -3998,7 +5821,7 @@ document.getElementById("add-parent").addEventListener("click", () => {
     const newName = document.getElementById("parent-name").value.trim();
     if (newName) {
       saveState();
-      const newParent = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, children: [selectedNode.data] };
+      const newParent = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId(), children: [selectedNode.data] };
 
       if (selectedNode.parent) {
         const siblings = selectedNode.parent.data.children;
@@ -4056,6 +5879,184 @@ document.getElementById("add-spouse").addEventListener("click", () => {
     }
   }
 });
+
+// Create Link button handler
+document.getElementById("create-link").addEventListener("click", () => {
+  const relationshipType = document.getElementById("link-relationship-type").value;
+  const selectedPersonId = document.getElementById("link-person-select").value;
+  
+  if (!selectedPersonId) {
+    alert("Please select a person to link.");
+    return;
+  }
+  
+  // Get current person (either selected node or spouse)
+  const currentPerson = selectedSpouse || selectedNode.data;
+  const currentPersonId = currentPerson.id;
+  
+  if (!currentPersonId) {
+    alert("Current person has no ID. Please try again.");
+    return;
+  }
+  
+  if (relationshipType === "spouse") {
+    // Check if either person has children
+    const person1Info = getPersonById(currentPersonId);
+    const person2Info = getPersonById(selectedPersonId);
+    
+    // Check for children - for main nodes, check node.children; for spouses, check if any children have their spouseId
+    let person1HasChildren = false;
+    let person2HasChildren = false;
+    
+    if (person1Info) {
+      if (person1Info.type === 'node') {
+        person1HasChildren = person1Info.person.children && person1Info.person.children.length > 0;
+      } else if (person1Info.type === 'spouse' && person1Info.parentNode) {
+        // Check if any of parentNode's children have this spouse's ID
+        const parentData = person1Info.parentNode.data || person1Info.parentNode;
+        person1HasChildren = parentData.children && parentData.children.some(c => c.spouseId === currentPersonId);
+      }
+    }
+    
+    if (person2Info) {
+      if (person2Info.type === 'node') {
+        person2HasChildren = person2Info.person.children && person2Info.person.children.length > 0;
+      } else if (person2Info.type === 'spouse' && person2Info.parentNode) {
+        const parentData = person2Info.parentNode.data || person2Info.parentNode;
+        person2HasChildren = parentData.children && parentData.children.some(c => c.spouseId === selectedPersonId);
+      }
+    }
+    
+    if (person1HasChildren || person2HasChildren) {
+      // Show dialog to ask about shared children
+      showSharedChildrenDialog(currentPersonId, selectedPersonId, currentPerson.name, 
+        getPersonById(selectedPersonId)?.person?.name || "Selected person",
+        person1HasChildren, person2HasChildren);
+    } else {
+      // No children, just create the link
+      saveState();
+      const useBezier = document.getElementById("enable-bezier-connection").checked;
+      addCrossLink("spouse", currentPersonId, selectedPersonId, { useBezier });
+      drawTree(d3.zoomTransform(svg.node()));
+      populateLinkPersonDropdown(currentPersonId);
+      displayExistingLinks(currentPersonId);
+      document.getElementById("link-person-select").value = "";
+    }
+  } else if (relationshipType === "parent") {
+    saveState();
+    const useBezier = document.getElementById("enable-bezier-connection").checked;
+    // The selected person becomes a parent of the current person
+    addCrossLink("parent", selectedPersonId, currentPersonId, { useBezier });
+    drawTree(d3.zoomTransform(svg.node()));
+    populateLinkPersonDropdown(currentPersonId);
+    displayExistingLinks(currentPersonId);
+    document.getElementById("link-person-select").value = "";
+  } else if (relationshipType === "child") {
+    saveState();
+    const useBezier = document.getElementById("enable-bezier-connection").checked;
+    // The selected person becomes a child of the current person
+    addCrossLink("parent", currentPersonId, selectedPersonId, { useBezier });
+    drawTree(d3.zoomTransform(svg.node()));
+    populateLinkPersonDropdown(currentPersonId);
+    displayExistingLinks(currentPersonId);
+    document.getElementById("link-person-select").value = "";
+  }
+});
+
+// Dialog for asking about shared children when creating spouse cross-link
+function showSharedChildrenDialog(person1Id, person2Id, person1Name, person2Name, person1HasChildren, person2HasChildren) {
+  // Capture the Bézier checkbox state at the time the dialog was opened
+  const useBezier = document.getElementById("enable-bezier-connection").checked;
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  let html = `
+    <h3 style="margin-top: 0; margin-bottom: 15px;">Shared Children?</h3>
+    <p style="margin-bottom: 15px; color: #666;">Are existing children shared between ${person1Name} and ${person2Name}?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+  `;
+  
+  if (person1HasChildren && person2HasChildren) {
+    html += `
+      <button class="shared-btn" data-shared="both" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        Yes, all children are shared
+      </button>
+      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        Only ${person1Name}'s children are shared
+      </button>
+      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        Only ${person2Name}'s children are shared
+      </button>
+    `;
+  } else if (person1HasChildren) {
+    html += `
+      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        Yes, ${person1Name}'s children are shared with ${person2Name}
+      </button>
+    `;
+  } else if (person2HasChildren) {
+    html += `
+      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        Yes, ${person2Name}'s children are shared with ${person1Name}
+      </button>
+    `;
+  }
+  
+  html += `
+      <button class="shared-btn" data-shared="none" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        No, children are not shared
+      </button>
+    </div>
+    <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
+      <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #555;">
+        <input type="checkbox" id="keep-terminal-line-checkbox" style="margin-right: 8px;">
+        Keep terminal line for ${person1Name}
+      </label>
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+  `;
+  
+  dialog.innerHTML = html;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Add hover effects
+  dialog.querySelectorAll('.shared-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
+    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+  });
+  
+  // Handle selection
+  dialog.querySelectorAll('.shared-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sharedValue = btn.getAttribute('data-shared');
+      const keepTerminalLine = dialog.querySelector('#keep-terminal-line-checkbox').checked;
+      saveState();
+      addCrossLink("spouse", person1Id, person2Id, { sharedChildren: sharedValue, useBezier, keepTerminalLine });
+      document.body.removeChild(overlay);
+      drawTree(d3.zoomTransform(svg.node()));
+      populateLinkPersonDropdown(person1Id);
+      displayExistingLinks(person1Id);
+      document.getElementById("link-person-select").value = "";
+    });
+  });
+  
+  // Handle cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
 
 document.getElementById("set-home-person").addEventListener("click", () => {
   if (!selectedNode) return;
@@ -4180,30 +6181,30 @@ function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, child
   deleteBtn.addEventListener('click', () => {
     saveState();
     
-    // Clean up DNA comparisons for spouse
+    // Clean up DNA comparisons for spouse (using ID)
     for (const key in dnaComparisons) {
-      if (key.includes(spouse.name)) {
+      if (dnaKeyContainsId(key, spouse.id)) {
         delete dnaComparisons[key];
       }
     }
     
     // Clean up DNA comparisons for children and their descendants
-    function collectAllNamesFromNode(node, names) {
-      names.add(node.name);
+    function collectAllIdsFromNode(node, ids) {
+      ids.add(node.id);
       if (node.spouses) {
-        node.spouses.forEach(s => names.add(s.name));
+        node.spouses.forEach(s => ids.add(s.id));
       }
       if (node.children) {
-        node.children.forEach(child => collectAllNamesFromNode(child, names));
+        node.children.forEach(child => collectAllIdsFromNode(child, ids));
       }
     }
     
-    const namesToDelete = new Set();
-    childrenOfSpouse.forEach(child => collectAllNamesFromNode(child, namesToDelete));
+    const idsToDelete = new Set();
+    childrenOfSpouse.forEach(child => collectAllIdsFromNode(child, idsToDelete));
     
-    for (const name of namesToDelete) {
+    for (const id of idsToDelete) {
       for (const key in dnaComparisons) {
-        if (key.includes(name)) {
+        if (dnaKeyContainsId(key, id)) {
           delete dnaComparisons[key];
         }
       }
@@ -4236,9 +6237,9 @@ function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, child
   keepBtn.addEventListener('click', () => {
     saveState();
     
-    // Clean up DNA comparisons for spouse only
+    // Clean up DNA comparisons for spouse only (using ID)
     for (const key in dnaComparisons) {
-      if (key.includes(spouse.name)) {
+      if (dnaKeyContainsId(key, spouse.id)) {
         delete dnaComparisons[key];
       }
     }
@@ -4284,9 +6285,9 @@ function showRemoveSpouseDialog(nodeData) {
       if (confirm(`Are you sure you want to remove "${spouse.name}"?`)) {
         saveState();
         
-        // Clean up DNA comparisons
+        // Clean up DNA comparisons (using ID)
         for (const key in dnaComparisons) {
-          if (key.includes(spouse.name)) {
+          if (dnaKeyContainsId(key, spouse.id)) {
             delete dnaComparisons[key];
           }
         }
@@ -4358,9 +6359,9 @@ function showRemoveSpouseDialog(nodeData) {
         // No children - proceed with removal
         saveState();
         
-        // Clean up DNA comparisons
+        // Clean up DNA comparisons (using ID)
         for (const key in dnaComparisons) {
-          if (key.includes(spouse.name)) {
+          if (dnaKeyContainsId(key, spouse.id)) {
             delete dnaComparisons[key];
           }
         }
@@ -4391,6 +6392,8 @@ document.getElementById("update-style").addEventListener("click", () => {
     editData.fontSize = parseInt(document.getElementById("font-size").value);
     editData.bold = document.getElementById("font-bold").checked;
     editData.italic = document.getElementById("font-italic").checked;
+    editData.hasCustomStyle = true; // Mark this node as having custom styling
+    autoSave();
     drawTree(d3.zoomTransform(svg.node()));
     showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
   }
@@ -4401,15 +6404,27 @@ document.getElementById("update-style-all").addEventListener("click", () => {
   const bold = document.getElementById("font-bold").checked;
   const italic = document.getElementById("font-italic").checked;
   
+  // Update the global default
+  defaultNodeTextStyle.fontSize = fontSize;
+  defaultNodeTextStyle.bold = bold;
+  defaultNodeTextStyle.italic = italic;
+  
+  // Sync Tools Panel inputs with new defaults
+  document.getElementById("tools-font-size").value = fontSize;
+  document.getElementById("tools-font-bold").checked = bold;
+  document.getElementById("tools-font-italic").checked = italic;
+  
   function applyStyleToAll(node) {
     node.fontSize = fontSize;
     node.bold = bold;
     node.italic = italic;
+    delete node.hasCustomStyle; // Clear individual override flag
     if (node.spouses) {
       node.spouses.forEach(spouse => {
         spouse.fontSize = fontSize;
         spouse.bold = bold;
         spouse.italic = italic;
+        delete spouse.hasCustomStyle; // Clear individual override flag
       });
     }
     if (node.children) {
@@ -4418,6 +6433,7 @@ document.getElementById("update-style-all").addEventListener("click", () => {
   }
   
   applyStyleToAll(data);
+  autoSave();
   drawTree(d3.zoomTransform(svg.node()));
   if (selectedNode) {
     showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse, selectedSpouseIndex);
@@ -4441,9 +6457,9 @@ document.getElementById("delete-node").addEventListener("click", () => {
         if (confirm(`Are you sure you want to remove "${spouseName}"?`)) {
           saveState();
           
-          // Clean up DNA comparisons
+          // Clean up DNA comparisons (using ID)
           for (const key in dnaComparisons) {
-            if (key.includes(spouseName)) {
+            if (dnaKeyContainsId(key, spouseId)) {
               delete dnaComparisons[key];
             }
           }
@@ -4481,9 +6497,25 @@ document.getElementById("delete-node").addEventListener("click", () => {
     }
     if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
       saveState();
-      for (const key in dnaComparisons) {
-        if (key.includes(nodeName)) {
-          delete dnaComparisons[key];
+      
+      // Collect all IDs from the node and its descendants for DNA cleanup
+      function collectAllIdsForDelete(node, ids) {
+        ids.add(node.id);
+        if (node.spouses) {
+          node.spouses.forEach(s => ids.add(s.id));
+        }
+        if (node.children) {
+          node.children.forEach(child => collectAllIdsForDelete(child, ids));
+        }
+      }
+      const idsToDelete = new Set();
+      collectAllIdsForDelete(nodeToDelete, idsToDelete);
+      
+      for (const id of idsToDelete) {
+        for (const key in dnaComparisons) {
+          if (dnaKeyContainsId(key, id)) {
+            delete dnaComparisons[key];
+          }
         }
       }
       deleteNodeFromTree(data, nodeToDelete);
@@ -4546,13 +6578,13 @@ document.getElementById("delete-node").addEventListener("click", () => {
     if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
       saveState();
       
-      // Collect names for DNA cleanup
-      const namesToDelete = new Set();
-      collectAllNames(nodeToDelete, namesToDelete);
+      // Collect IDs for DNA cleanup
+      const idsToDelete = new Set();
+      collectAllIds(nodeToDelete, idsToDelete);
       
-      for (const name of namesToDelete) {
+      for (const id of idsToDelete) {
         for (const key in dnaComparisons) {
-          if (key.includes(name)) {
+          if (dnaKeyContainsId(key, id)) {
             delete dnaComparisons[key];
           }
         }
@@ -4571,13 +6603,13 @@ document.getElementById("delete-node").addEventListener("click", () => {
     if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
       saveState();
       
-      // Collect names for DNA cleanup
-      const namesToDelete = new Set();
-      collectAllNames(nodeToDelete, namesToDelete);
+      // Collect IDs for DNA cleanup
+      const idsToDelete = new Set();
+      collectAllIds(nodeToDelete, idsToDelete);
       
-      for (const name of namesToDelete) {
+      for (const id of idsToDelete) {
         for (const key in dnaComparisons) {
-          if (key.includes(name)) {
+          if (dnaKeyContainsId(key, id)) {
             delete dnaComparisons[key];
           }
         }
@@ -4659,16 +6691,16 @@ document.getElementById("delete-node").addEventListener("click", () => {
         return;
       }
       
-      // Clean up DNA
-      const allNames = new Set();
-      collectAllNames(data, allNames);
-      const newNames = new Set();
-      collectAllNames(newRoot, newNames);
+      // Clean up DNA (using IDs)
+      const allIds = new Set();
+      collectAllIds(data, allIds);
+      const newIds = new Set();
+      collectAllIds(newRoot, newIds);
       
-      for (const name of allNames) {
-        if (!newNames.has(name)) {
+      for (const id of allIds) {
+        if (!newIds.has(id)) {
           for (const key in dnaComparisons) {
-            if (key.includes(name)) {
+            if (dnaKeyContainsId(key, id)) {
               delete dnaComparisons[key];
             }
           }
@@ -4781,16 +6813,16 @@ document.getElementById("delete-node").addEventListener("click", () => {
         return;
       }
       
-      // Clean up DNA
-      const allNames = new Set();
-      collectAllNames(data, allNames);
-      const newNames = new Set();
-      collectAllNames(newRoot, newNames);
+      // Clean up DNA (using IDs)
+      const allIds = new Set();
+      collectAllIds(data, allIds);
+      const newIds = new Set();
+      collectAllIds(newRoot, newIds);
       
-      for (const name of allNames) {
-        if (!newNames.has(name)) {
+      for (const id of allIds) {
+        if (!newIds.has(id)) {
           for (const key in dnaComparisons) {
-            if (key.includes(name)) {
+            if (dnaKeyContainsId(key, id)) {
               delete dnaComparisons[key];
             }
           }
@@ -4866,6 +6898,19 @@ function collectAllNames(node, names) {
   if (node.children) {
     for (const child of node.children) {
       collectAllNames(child, names);
+    }
+  }
+}
+
+// Helper: collect all IDs in entire tree (for DNA cleanup)
+function collectAllIds(node, ids) {
+  ids.add(node.id);
+  if (node.spouses) {
+    node.spouses.forEach(spouse => ids.add(spouse.id));
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      collectAllIds(child, ids);
     }
   }
 }
@@ -4986,6 +7031,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
     autoStrokeWidth: autoStrokeWidth,
     alternateLineColors: alternateLineColors,
     shadedRegion: shadedRegion,
+    crossLinks: crossLinks,
     homePersonName: homePersonName,
     settings: {
       verticalSpacing,
@@ -5042,6 +7088,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     showTerminalLines = true;
     shadedRegion = null;
     homePersonName = null;
+    crossLinks = [];
     currentFilename = "New Tree";
     
     // Reset settings to defaults
@@ -5085,7 +7132,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     
     // Redraw and fit
     drawTree();
-    fitTree();
+    fitTreeToScreen(false);
   }
 });
 
@@ -5093,15 +7140,328 @@ document.getElementById("new-btn").addEventListener("click", () => {
 document.getElementById("undo-btn").addEventListener("click", undo);
 document.getElementById("redo-btn").addEventListener("click", redo);
 
-// Keyboard shortcuts for undo/redo
+// Keyboard shortcuts modal
+const shortcutsModal = document.getElementById("shortcuts-modal");
+const shortcutsOverlay = document.getElementById("shortcuts-overlay");
+
+function openShortcutsModal() {
+  shortcutsModal.classList.add("visible");
+  shortcutsOverlay.classList.add("visible");
+}
+
+function closeShortcutsModal() {
+  shortcutsModal.classList.remove("visible");
+  shortcutsOverlay.classList.remove("visible");
+}
+
+document.getElementById("shortcuts-close").addEventListener("click", closeShortcutsModal);
+shortcutsOverlay.addEventListener("click", closeShortcutsModal);
+
+// Helper: check if user is typing in an input
+function isTypingInInput() {
+  const activeElement = document.activeElement;
+  const tagName = activeElement.tagName.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || activeElement.isContentEditable;
+}
+
+// Helper: find and center on home person
+function jumpToHomePerson() {
+  if (!homePersonName) {
+    alert("No home person set. Click on a node and use 'Set as Home Person' in the sidebar.");
+    return;
+  }
+  
+  // Find home person node
+  function findHomeNode(node, parent = null) {
+    if (node.name === homePersonName || node.isHomePerson) {
+      return { node, parent };
+    }
+    if (node.spouses) {
+      for (const spouse of node.spouses) {
+        if (spouse.name === homePersonName || spouse.isHomePerson) {
+          return { node: spouse, parent: node };
+        }
+      }
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        const result = findHomeNode(child, node);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  
+  const homeResult = findHomeNode(data);
+  if (!homeResult) {
+    alert("Home person not found in tree.");
+    return;
+  }
+  
+  // Trigger fit to screen and then center on home person
+  // Find the node's position from the drawn tree
+  const g = svg.select("g");
+  const homeNode = g.selectAll(".node").filter(function() {
+    return d3.select(this).attr("data-name") === homePersonName;
+  });
+  
+  if (!homeNode.empty()) {
+    const nodeTransform = homeNode.attr("transform");
+    const match = nodeTransform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+    if (match) {
+      const nodeX = parseFloat(match[1]) + nodeWidth / 2;
+      const nodeY = parseFloat(match[2]) + nodeHeight / 2;
+      
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight - 40;
+      
+      const currentTransform = d3.zoomTransform(svg.node());
+      const scale = currentTransform.k;
+      
+      const translateX = viewportWidth / 2 - nodeX * scale;
+      const translateY = (viewportHeight / 2 + 40) - nodeY * scale;
+      
+      const transform = d3.zoomIdentity
+        .translate(translateX, translateY)
+        .scale(scale);
+      
+      svg.transition()
+        .duration(500)
+        .call(zoom.transform, transform);
+    }
+  }
+}
+
+// Helper: fit tree to screen (duplicates fit-btn logic for reuse)
+function fitTreeToScreen(animate = true) {
+  const g = svg.select("g");
+  const bbox = g.node().getBBox();
+  
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight - 40;
+  
+  const padding = 20;
+  const scaleX = (viewportWidth - padding * 2) / bbox.width;
+  const scaleY = (viewportHeight - padding * 2) / bbox.height;
+  const scale = Math.min(scaleX, scaleY, 3);
+  
+  const centerX = bbox.x + bbox.width / 2;
+  const centerY = bbox.y + bbox.height / 2;
+  
+  const translateX = viewportWidth / 2 - centerX * scale;
+  const translateY = (viewportHeight / 2 + 40) - centerY * scale;
+  
+  const transform = d3.zoomIdentity
+    .translate(translateX, translateY)
+    .scale(scale);
+  
+  if (animate) {
+    svg.transition()
+      .duration(500)
+      .call(zoom.transform, transform);
+  } else {
+    svg.call(zoom.transform, transform);
+  }
+}
+
+// Helper: zoom by a factor
+function zoomBy(factor) {
+  const currentTransform = d3.zoomTransform(svg.node());
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  const newScale = Math.max(0.1, Math.min(5, currentTransform.k * factor));
+  
+  // Zoom centered on viewport center
+  const centerX = viewportWidth / 2;
+  const centerY = viewportHeight / 2;
+  
+  const transform = d3.zoomIdentity
+    .translate(
+      centerX - (centerX - currentTransform.x) * (newScale / currentTransform.k),
+      centerY - (centerY - currentTransform.y) * (newScale / currentTransform.k)
+    )
+    .scale(newScale);
+  
+  svg.transition()
+    .duration(200)
+    .call(zoom.transform, transform);
+}
+
+// Helper: reset zoom to 100%
+function resetZoom() {
+  const g = svg.select("g");
+  const bbox = g.node().getBBox();
+  
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight - 40;
+  
+  const centerX = bbox.x + bbox.width / 2;
+  const centerY = bbox.y + bbox.height / 2;
+  
+  const translateX = viewportWidth / 2 - centerX;
+  const translateY = (viewportHeight / 2 + 40) - centerY;
+  
+  const transform = d3.zoomIdentity
+    .translate(translateX, translateY)
+    .scale(1);
+  
+  svg.transition()
+    .duration(300)
+    .call(zoom.transform, transform);
+}
+
+// Helper: expand all nodes
+function expandAllNodes() {
+  function expandAll(node) {
+    delete node.collapsed;
+    delete node.ancestorsCollapsed;
+    if (node.children) {
+      node.children.forEach(child => expandAll(child));
+    }
+  }
+  
+  saveState();
+  expandAll(data);
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
+// Comprehensive keyboard shortcuts
 document.addEventListener("keydown", (e) => {
+  // Check if modal is open - only allow Escape and ? to close
+  const isShortcutsModalOpen = shortcutsModal.classList.contains("visible");
+  
+  if (isShortcutsModalOpen) {
+    if (e.key === "Escape" || e.key === "?" || e.key === "/") {
+      e.preventDefault();
+      closeShortcutsModal();
+    }
+    return;
+  }
+  
+  // Undo: Ctrl+Z
   if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
     e.preventDefault();
     undo();
+    return;
   }
+  
+  // Redo: Ctrl+Y or Ctrl+Shift+Z
   if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
     e.preventDefault();
     redo();
+    return;
+  }
+  
+  // Export/Save: Ctrl+S
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+    e.preventDefault();
+    document.getElementById("export-btn").click();
+    return;
+  }
+  
+  // Import/Open: Ctrl+O
+  if ((e.ctrlKey || e.metaKey) && e.key === "o") {
+    e.preventDefault();
+    document.getElementById("import-btn").click();
+    return;
+  }
+  
+  // Download PNG: Ctrl+P
+  if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+    e.preventDefault();
+    downloadPNG();
+    return;
+  }
+  
+  // Skip single-key shortcuts if typing in an input
+  if (isTypingInInput()) return;
+  
+  // New Tree: Shift+S
+  if (e.shiftKey && (e.key === "s" || e.key === "S") && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    document.getElementById("new-btn").click();
+    return;
+  }
+  
+  // Show shortcuts modal: ?
+  if (e.key === "?" || e.key === "/") {
+    e.preventDefault();
+    openShortcutsModal();
+    return;
+  }
+  
+  // Escape: Close any open panel/sidebar/modal
+  if (e.key === "Escape") {
+    e.preventDefault();
+    const sidebar = document.getElementById("sidebar");
+    const dnaSidebar = document.getElementById("dna-sidebar");
+    const toolsPanel = document.getElementById("tools-panel");
+    
+    if (sidebar.classList.contains("visible")) {
+      closeSidebar();
+    } else if (dnaSidebar.classList.contains("visible")) {
+      closeDnaSidebar();
+    } else if (toolsPanel.classList.contains("visible")) {
+      closeToolsPanel();
+    }
+    return;
+  }
+  
+  // Fit to Screen: F
+  if (e.key === "f" || e.key === "F") {
+    e.preventDefault();
+    fitTreeToScreen();
+    return;
+  }
+  
+  // Toggle Tools Panel: T
+  if (e.key === "t" || e.key === "T") {
+    e.preventDefault();
+    const toolsPanel = document.getElementById("tools-panel");
+    if (toolsPanel.classList.contains("visible")) {
+      closeToolsPanel();
+    } else {
+      openToolsPanel();
+    }
+    return;
+  }
+  
+  // Expand All: E
+  if (e.key === "e" || e.key === "E") {
+    e.preventDefault();
+    expandAllNodes();
+    return;
+  }
+  
+  // Delete selected node: Delete or Backspace
+  if (e.key === "Delete" || e.key === "Backspace") {
+    if (selectedNode) {
+      e.preventDefault();
+      document.getElementById("delete-node").click();
+    }
+    return;
+  }
+  
+  // Zoom In: + or =
+  if (e.key === "+" || e.key === "=") {
+    e.preventDefault();
+    zoomBy(1.25);
+    return;
+  }
+  
+  // Zoom Out: -
+  if (e.key === "-") {
+    e.preventDefault();
+    zoomBy(0.8);
+    return;
+  }
+  
+  // Reset Zoom: 0
+  if (e.key === "0") {
+    e.preventDefault();
+    resetZoom();
+    return;
   }
 });
 
@@ -5128,8 +7488,8 @@ function normalizeDnaKeys() {
   const normalized = {};
   let fixedCount = 0;
   for (const key in dnaComparisons) {
-    const [name1, name2] = key.split("|");
-    const newKey = getDnaKey(name1, name2);
+    const [id1, id2] = key.split("|");
+    const newKey = getDnaKey(id1, id2);
     if (!normalized[newKey]) {
       normalized[newKey] = dnaComparisons[key];
       if (newKey !== key) fixedCount++;
@@ -5153,6 +7513,15 @@ document.getElementById("import-input").addEventListener("change", (e) => {
           
           // Migrate to multi-spouse format
           migrateToMultiSpouse(data);
+          
+          // Ensure all nodes have IDs for cross-links
+          ensureAllNodesHaveIds(data);
+          
+          // Migrate old name-based DNA comparisons to ID-based
+          migrateDnaComparisonsToIds();
+          
+          // Load cross-links
+          crossLinks = imported.crossLinks || [];
           
           if (imported.dnaLabelStyles) {
             dnaLabelStyles = imported.dnaLabelStyles;
@@ -5207,10 +7576,13 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         } else {
           data = imported;
           dnaComparisons = {};
+          crossLinks = [];
           // Always default to showing terminal lines on import
           showTerminalLines = true;
           // Migrate to multi-spouse format
           migrateToMultiSpouse(data);
+          // Ensure all nodes have IDs
+          ensureAllNodesHaveIds(data);
           // Derive filename from file name for legacy imports
           currentFilename = file.name.replace(/\.json$/i, '') || "Imported Tree";
           filenameDisplay.textContent = currentFilename;
@@ -5224,7 +7596,8 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         // Auto-set home person if none is defined
         autoSetHomePerson();
         
-        drawTree(d3.zoomTransform(svg.node()));
+        drawTree();
+        fitTreeToScreen(false);
       } catch (err) {
         alert("Invalid JSON file");
       }
@@ -5316,10 +7689,10 @@ function openToolsPanel() {
   toolsPanel.style.top = "50%";
   toolsPanel.style.transform = "translate(-50%, -50%) scale(1)";
   
-  // Sync current values to tools panel
-  document.getElementById("tools-font-size").value = selectedNode ? (selectedNode.data.fontSize || 12) : 12;
-  document.getElementById("tools-font-bold").checked = selectedNode ? (selectedNode.data.bold || false) : false;
-  document.getElementById("tools-font-italic").checked = selectedNode ? (selectedNode.data.italic || false) : false;
+  // Sync current values to tools panel - always show global defaults
+  document.getElementById("tools-font-size").value = defaultNodeTextStyle.fontSize;
+  document.getElementById("tools-font-bold").checked = defaultNodeTextStyle.bold;
+  document.getElementById("tools-font-italic").checked = defaultNodeTextStyle.italic;
   
   document.getElementById("tools-vertical-spacing").value = verticalSpacing;
   document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
@@ -5440,14 +7813,28 @@ document.getElementById("tools-apply-style-all").addEventListener("click", () =>
   const bold = document.getElementById("tools-font-bold").checked;
   const italic = document.getElementById("tools-font-italic").checked;
   
+  // Update the global default
+  defaultNodeTextStyle.fontSize = fontSize;
+  defaultNodeTextStyle.bold = bold;
+  defaultNodeTextStyle.italic = italic;
+  
+  // Sync sidebar inputs with new defaults
+  document.getElementById("font-size").value = fontSize;
+  document.getElementById("font-bold").checked = bold;
+  document.getElementById("font-italic").checked = italic;
+  
   function applyStyleToAll(node) {
     node.fontSize = fontSize;
     node.bold = bold;
     node.italic = italic;
-    if (node.spouse) {
-      node.spouse.fontSize = fontSize;
-      node.spouse.bold = bold;
-      node.spouse.italic = italic;
+    delete node.hasCustomStyle; // Clear individual override flag
+    if (node.spouses) {
+      node.spouses.forEach(spouse => {
+        spouse.fontSize = fontSize;
+        spouse.bold = bold;
+        spouse.italic = italic;
+        delete spouse.hasCustomStyle; // Clear individual override flag
+      });
     }
     if (node.children) {
       node.children.forEach(child => applyStyleToAll(child));
@@ -5455,6 +7842,7 @@ document.getElementById("tools-apply-style-all").addEventListener("click", () =>
   }
   
   applyStyleToAll(data);
+  autoSave();
   drawTree(d3.zoomTransform(svg.node()));
 });
 
@@ -5786,7 +8174,11 @@ if (!loaded) {
   autoSetHomePerson();
 }
 
+// Ensure all nodes have IDs for cross-links feature
+ensureAllNodesHaveIds(data);
+
 drawTree();
+fitTreeToScreen(false);
 </script>
 </body>
 </html>
