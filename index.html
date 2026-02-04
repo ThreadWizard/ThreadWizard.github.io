@@ -962,7 +962,7 @@
     pointer-events: none;
   }
   .shaded-region {
-    fill: rgba(0, 0, 0, 0.08);
+    fill: rgba(0, 0, 0, 0.064);
     pointer-events: none;
   }
   #tools-panel .shade-btn {
@@ -1528,27 +1528,27 @@
     <div class="slider-row">
       <label>Vertical:</label>
       <input type="range" id="vertical-spacing" min="50" max="200" step="10" value="100" />
-      <button class="secondary" onclick="document.getElementById('vertical-spacing').value=100; verticalSpacing=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+      <button class="secondary" onclick="document.getElementById('vertical-spacing').value=100; document.getElementById('tools-vertical-spacing').value=100; verticalSpacing=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
     </div>
     <div class="slider-row">
       <label>Horizontal:</label>
       <input type="range" id="horizontal-spacing" min="80" max="250" step="10" value="140" />
-      <button class="secondary" onclick="document.getElementById('horizontal-spacing').value=140; horizontalSpacing=140; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+      <button class="secondary" onclick="document.getElementById('horizontal-spacing').value=140; document.getElementById('tools-horizontal-spacing').value=140; horizontalSpacing=140; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
     </div>
     <div class="slider-row">
       <label>Node Width:</label>
       <input type="range" id="node-width" min="60" max="200" step="10" value="100" />
-      <button class="secondary" onclick="document.getElementById('node-width').value=100; nodeWidth=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+      <button class="secondary" onclick="document.getElementById('node-width').value=100; document.getElementById('tools-node-width').value=100; nodeWidth=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
     </div>
     <div class="slider-row">
       <label>Node Height:</label>
       <input type="range" id="node-height" min="20" max="60" step="2" value="30" />
-      <button class="secondary" onclick="document.getElementById('node-height').value=30; nodeHeight=30; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+      <button class="secondary" onclick="document.getElementById('node-height').value=30; document.getElementById('tools-node-height').value=30; nodeHeight=30; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
     </div>
     <div class="slider-row">
       <label>Line Spacing:</label>
       <input type="range" id="terminal-line-spacing" min="30" max="100" step="5" value="40" />
-      <button class="secondary" onclick="document.getElementById('terminal-line-spacing').value=40; terminalLineSpacing=40; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
+      <button class="secondary" onclick="document.getElementById('terminal-line-spacing').value=40; document.getElementById('tools-terminal-line-spacing').value=40; terminalLineSpacing=40; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
     </div>
   </div>
 
@@ -2262,11 +2262,147 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
         // Gutter Y: midpoint between parent's row and the next row down
         const gutterY = parentPos.y + verticalSpacing / 2;
         
-        // Simple path: bottom of parent → down to gutter → across → down to top of child
-        const pathData = `M ${parentPos.x} ${parentPos.y + nodeHeight/2}
-                          L ${parentPos.x} ${gutterY}
-                          L ${childPos.x} ${gutterY}
-                          L ${childPos.x} ${childPos.y - nodeHeight/2}`;
+        // Check for crossings on the vertical drop from gutter to child
+        const crossings = [];
+        
+        // Check against spouse-to-spouse horizontal lines
+        for (const node of root.descendants()) {
+          if (node.data.spouses && node.data.spouses.length > 0) {
+            const nodeX = node.x + (xAdjustments[node.data.id] || 0);
+            const nodeY = node.y;
+            const spousesWithOffsets = getSpousesWithOffsets(node.data);
+            
+            spousesWithOffsets.forEach(sp => {
+              const spouseX = nodeX + sp.offset;
+              const mainEdgeX = sp.side === 'left' ? nodeX - nodeWidth/2 : nodeX + nodeWidth/2;
+              const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+              const xStart = Math.min(mainEdgeX, spouseEdgeX);
+              const xEnd = Math.max(mainEdgeX, spouseEdgeX);
+              
+              // Check if this spouse line is crossed by the vertical drop
+              if (nodeY > gutterY && nodeY < childPos.y) {
+                if (childPos.x > xStart + 1 && childPos.x < xEnd - 1) {
+                  crossings.push(nodeY);
+                }
+              }
+            });
+          }
+        }
+        
+        // Check against sibling-to-sibling horizontal lines (gutter lines)
+        // Group nodes by parent to find sibling groups
+        const nodesByParent = new Map();
+        for (const node of root.descendants()) {
+          if (node.parent) {
+            const parentId = node.parent.data.id;
+            if (!nodesByParent.has(parentId)) {
+              nodesByParent.set(parentId, []);
+            }
+            nodesByParent.get(parentId).push(node);
+          }
+        }
+        
+        // For each sibling group, check if the vertical line crosses their gutter
+        nodesByParent.forEach((siblings, parentId) => {
+          if (siblings.length > 1) {
+            const siblingParent = siblings[0].parent;
+            const siblingGutterY = siblingParent.y + verticalSpacing / 2;
+            
+            // Get X range of siblings (including their spouses)
+            let minX = Infinity;
+            let maxX = -Infinity;
+            
+            siblings.forEach(sib => {
+              const sibX = sib.x + (xAdjustments[sib.data.id] || 0);
+              minX = Math.min(minX, sibX);
+              maxX = Math.max(maxX, sibX);
+              
+              // Include spouses in the range
+              if (sib.data.spouses && sib.data.spouses.length > 0) {
+                const spousesWithOffsets = getSpousesWithOffsets(sib.data);
+                spousesWithOffsets.forEach(sp => {
+                  const spouseX = sibX + sp.offset;
+                  minX = Math.min(minX, spouseX);
+                  maxX = Math.max(maxX, spouseX);
+                });
+              }
+            });
+            
+            // Check if this sibling gutter line is crossed by the vertical drop
+            // Use >= to catch cases where gutters are at the same level
+            if (siblingGutterY >= gutterY && siblingGutterY < childPos.y) {
+              if (childPos.x > minX + 1 && childPos.x < maxX - 1) {
+                crossings.push(siblingGutterY);
+              }
+            }
+          }
+        });
+        
+        // Sort and dedupe crossings
+        const uniqueCrossings = [...new Set(crossings)].sort((a, b) => a - b);
+        
+        // Proportional radius: diameter = 1/3 of gap between nodes
+        const gap = verticalSpacing - nodeHeight;
+        const hopRadius = gap / 6;
+        
+        // Determine where the initial vertical line should stop
+        let initialVerticalEnd = gutterY;
+        if (uniqueCrossings.length > 0) {
+          const firstHopTop = uniqueCrossings[0] - hopRadius;
+          if (firstHopTop < gutterY) {
+            initialVerticalEnd = firstHopTop;
+          }
+        }
+        
+        // Build path - stop vertical line at the right place
+        let pathData = `M ${parentPos.x} ${parentPos.y + nodeHeight/2}
+                        L ${parentPos.x} ${initialVerticalEnd}`;
+        
+        // Only draw horizontal segment to child X if we reached the gutter
+        if (initialVerticalEnd >= gutterY) {
+          pathData += ` L ${childPos.x} ${gutterY}`;
+        }
+        
+        if (uniqueCrossings.length === 0) {
+          pathData += ` L ${childPos.x} ${childPos.y - nodeHeight/2}`;
+        } else {
+          let currentY = initialVerticalEnd;
+          
+          // Magic number for circular Bézier approximation: κ = 4/3 * (√2 - 1) ≈ 0.5523
+          const kappa = 0.552284749831;
+          const controlOffset = hopRadius * kappa;
+          
+          uniqueCrossings.forEach(crossY => {
+            // Draw line to the start of the hop (centered on crossY)
+            const hopTop = crossY - hopRadius;
+            pathData += ` L ${childPos.x} ${hopTop}`;
+            
+            // Draw a true semicircle using two cubic Bézier curves
+            // Top point: (x, crossY - r)
+            // Right point (apex): (x + r, crossY)
+            // Bottom point: (x, crossY + r)
+            
+            const x = childPos.x;
+            const hopBottom = crossY + hopRadius;
+            const hopRight = x + hopRadius;
+            
+            // First quarter: from top to right apex
+            // Control point 1: (x + controlOffset, crossY - r)
+            // Control point 2: (x + r, crossY - controlOffset)
+            pathData += ` C ${x + controlOffset} ${hopTop} ${hopRight} ${crossY - controlOffset} ${hopRight} ${crossY}`;
+            
+            // Second quarter: from right apex to bottom
+            // Control point 1: (x + r, crossY + controlOffset)
+            // Control point 2: (x + controlOffset, crossY + r)
+            pathData += ` C ${hopRight} ${crossY + controlOffset} ${x + controlOffset} ${hopBottom} ${x} ${hopBottom}`;
+            
+            currentY = hopBottom;
+          });
+          
+          if (currentY < childPos.y - nodeHeight/2) {
+            pathData += ` L ${childPos.x} ${childPos.y - nodeHeight/2}`;
+          }
+        }
         
         crossLinkGroup.append("path")
           .attr("class", "cross-link")
@@ -2653,15 +2789,15 @@ function hideNodeTooltip() {
 // DNA Comparison Tooltip functionality
 const dnaTooltip = document.getElementById("dna-tooltip");
 
-function highlightComparedNodes(person1, person2) {
+function highlightComparedNodes(person1Id, person2Id) {
   // Remove any existing highlights first
   d3.selectAll(".node").classed("dna-compare-highlight", false);
   
-  // Add highlight to nodes matching the names
+  // Add highlight to nodes matching the IDs
   d3.selectAll(".node").each(function() {
     const node = d3.select(this);
-    const nodeName = node.attr("data-name");
-    if (nodeName === person1 || nodeName === person2) {
+    const nodeId = node.attr("data-id");
+    if (nodeId === person1Id || nodeId === person2Id) {
       node.classed("dna-compare-highlight", true);
     }
   });
@@ -2671,12 +2807,12 @@ function clearNodeHighlights() {
   d3.selectAll(".node").classed("dna-compare-highlight", false);
 }
 
-function showDnaTooltip(event, person1, person2) {
-  dnaTooltip.innerHTML = `<span style="font-weight: bold;">${person1} ⟷ ${person2}</span>`;
+function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
+  dnaTooltip.innerHTML = `<span style="font-weight: bold;">${person1Name} ⟷ ${person2Name}</span>`;
   dnaTooltip.classList.add("visible");
   
-  // Highlight the compared nodes
-  highlightComparedNodes(person1, person2);
+  // Highlight the compared nodes using IDs
+  highlightComparedNodes(person1Id, person2Id);
   
   // Position tooltip near cursor
   const tooltipRect = dnaTooltip.getBoundingClientRect();
@@ -5162,6 +5298,146 @@ function drawTree(savedTransform = null) {
   // Filter out children whose parent lines are suppressed by Bézier connections
   const nodesForLinks = root.descendants().slice(1).filter(d => !bezierSuppressedChildIds.has(d.data.id));
   
+  // ============================================
+  // COLLECT HORIZONTAL LINES FOR HOP DETECTION
+  // 1. Sibling-to-sibling lines (gutter segments connecting siblings)
+  // 2. Spouse-to-spouse lines (horizontal lines connecting spouses)
+  // ============================================
+  const horizontalLines = [];
+  
+  // Collect spouse-to-spouse horizontal lines
+  nodesWithSpouses.forEach(d => {
+    const spouseLineY = d.y;
+    const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
+    const spousesWithOffsets = getSpousesWithOffsets(d.data);
+    
+    spousesWithOffsets.forEach(sp => {
+      const spouseX = mainNodeAdjustedX + sp.offset;
+      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - nodeWidth/2 : mainNodeAdjustedX + nodeWidth/2;
+      const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+      
+      horizontalLines.push({
+        y: spouseLineY,
+        xStart: Math.min(mainEdgeX, spouseEdgeX),
+        xEnd: Math.max(mainEdgeX, spouseEdgeX),
+        type: 'spouse'
+      });
+    });
+  });
+  
+  // Collect sibling-to-sibling horizontal lines (gutter segments)
+  // These are the horizontal portions of parent-child links at each gutter level
+  // Group children by parent to find sibling groups
+  const childrenByParent = new Map();
+  nodesForLinks.forEach(d => {
+    const parentId = d.parent.data.id;
+    if (!childrenByParent.has(parentId)) {
+      childrenByParent.set(parentId, []);
+    }
+    childrenByParent.get(parentId).push(d);
+  });
+  
+  // For each parent with multiple children, the gutter line spans from leftmost to rightmost child
+  childrenByParent.forEach((children, parentId) => {
+    if (children.length > 0) {
+      const parent = children[0].parent;
+      const gutterY = parent.y + verticalSpacing / 2;
+      
+      // Get all X positions involved (parent connection point and all children)
+      const xPositions = children.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+      
+      // Also include the parent's connection point
+      let parentAdjustedX = parent.x + (crossLinkChildXAdjustments[parent.data.id] || 0);
+      let px = parentAdjustedX;
+      
+      // Check for spouse adjustments to parent connection point
+      if (parent.data.spouses && parent.data.spouses.length > 0) {
+        // The parent connection point may vary per child based on spouseId
+        // For simplicity, we'll consider the full range
+        const spousesWithOffsets = getSpousesWithOffsets(parent.data);
+        spousesWithOffsets.forEach(sp => {
+          xPositions.push(parentAdjustedX + sp.offset / 2);
+        });
+      }
+      xPositions.push(px);
+      
+      const minX = Math.min(...xPositions);
+      const maxX = Math.max(...xPositions);
+      
+      if (minX !== maxX) {
+        horizontalLines.push({
+          y: gutterY,
+          xStart: minX,
+          xEnd: maxX,
+          type: 'sibling'
+        });
+      }
+    }
+  });
+  
+  // ============================================
+  // HELPER: Find crossings for a vertical segment
+  // ============================================
+  // Calculate proportional hop radius based on gap between nodes
+  const gap = verticalSpacing - nodeHeight;
+  const hopRadius = gap / 6; // Diameter is 1/3 of gap
+  
+  function findHopCrossings(x, yStart, yEnd) {
+    const crossings = [];
+    
+    horizontalLines.forEach(hLine => {
+      // Check if the horizontal line's Y is within the vertical segment's range
+      if (hLine.y > yStart && hLine.y < yEnd) {
+        // Check if the vertical line's X is within the horizontal segment's range
+        // Use small epsilon to avoid edge cases
+        if (x > hLine.xStart + 1 && x < hLine.xEnd - 1) {
+          crossings.push(hLine.y);
+        }
+      }
+    });
+    
+    return [...new Set(crossings)].sort((a, b) => a - b);
+  }
+  
+  // ============================================
+  // HELPER: Build vertical path with hops
+  // ============================================
+  function buildVerticalPathWithHops(x, yStart, yEnd, crossings) {
+    if (crossings.length === 0) {
+      return `V${yEnd}`;
+    }
+    
+    let path = '';
+    let currentY = yStart;
+    
+    crossings.forEach(crossY => {
+      const hopTop = crossY - hopRadius;
+      if (hopTop > currentY) {
+        path += ` V${hopTop}`;
+      }
+      
+      // Draw two quarter-circle arcs meeting at the apex (rightmost point)
+      const hopBottom = crossY + hopRadius;
+      const hopRight = x + hopRadius;
+      
+      // First arc: from top to apex (bulges right)
+      path += ` A${hopRadius},${hopRadius} 0 0 1 ${hopRight},${crossY}`;
+      // Second arc: from apex to bottom (bulges right)
+      path += ` A${hopRadius},${hopRadius} 0 0 1 ${x},${hopBottom}`;
+      
+      currentY = hopBottom;
+    });
+    
+    if (currentY < yEnd) {
+      path += ` V${yEnd}`;
+    }
+    
+    return path;
+  }
+  
+  // ============================================
+  // DRAW PARENT-CHILD LINKS WITH HOPS
+  // ============================================
   g.selectAll(".link")
     .data(nodesForLinks)
     .join("path")
@@ -5232,7 +5508,14 @@ function drawTree(savedTransform = null) {
       // Use consistent gutter level below parent (not midpoint between parent and child)
       const gutterY = d.parent.y + verticalSpacing / 2;
       
-      return `M${px},${py} V${gutterY} H${cx} V${cy}`;
+      // Check for crossings on the vertical drop from gutter to child
+      const crossings = findHopCrossings(cx, gutterY, cy);
+      
+      // Build path with hops if needed
+      let path = `M${px},${py} V${gutterY} H${cx}`;
+      path += buildVerticalPathWithHops(cx, gutterY, cy, crossings);
+      
+      return path;
     });
 
   // Draw spouse links for all spouses
@@ -5458,8 +5741,8 @@ function drawTree(savedTransform = null) {
         event.stopPropagation();
         showDnaSidebar(d.person1Id, d.person2Id, d.person1Name, d.person2Name);
       })
-      .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name))
-      .on("mousemove", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name))
+      .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name, d.person1Id, d.person2Id))
+      .on("mousemove", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name, d.person1Id, d.person2Id))
       .on("mouseleave", hideDnaTooltip);
 
     intersections.forEach(intersection => {
@@ -5474,8 +5757,8 @@ function drawTree(savedTransform = null) {
             event.stopPropagation();
             showDnaSidebar(intersection.person1Id, intersection.person2Id, intersection.person1Name, intersection.person2Name);
           })
-          .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name))
-          .on("mousemove", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name))
+          .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id))
+          .on("mousemove", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id))
           .on("mouseleave", hideDnaTooltip);
         
         labelGroup.append("rect")
@@ -5516,7 +5799,8 @@ function drawTree(savedTransform = null) {
           const cmFontSize = dnaLabelStyles.cm.fontSize;
           const relFontSize = dnaLabelStyles.relationship.fontSize;
           // Base offset plus scaling based on both font sizes to prevent overlap
-          const relOffset = 12 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+          // Increased base offset to match the visual gap of the cM label above the line
+          const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
           labelGroup.append("text")
             .attr("class", "intersection-label relationship")
             .attr("x", intersection.x)
@@ -5541,6 +5825,7 @@ function drawTree(savedTransform = null) {
     .join("g")
     .attr("class", "node")
     .attr("data-name", d => d.data.name)
+    .attr("data-id", d => d.data.id)
     .attr("transform", d => {
       const adjustedY = crossLinkYAdjustments[d.data.id] !== undefined ? crossLinkYAdjustments[d.data.id] : d.y;
       const adjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
@@ -5632,6 +5917,7 @@ function drawTree(savedTransform = null) {
     .join("g")
     .attr("class", "node spouse-node")
     .attr("data-name", d => d.spouse.name)
+    .attr("data-id", d => d.spouse.id)
     .attr("transform", d => {
       const baseY = d.parentNode.y;
       const adjustedY = crossLinkYAdjustments[d.spouse.id] !== undefined ? crossLinkYAdjustments[d.spouse.id] : baseY;
@@ -7001,24 +7287,29 @@ document.getElementById("move-right").addEventListener("click", () => {
 
 document.getElementById("vertical-spacing").addEventListener("input", (e) => {
   verticalSpacing = parseFloat(e.target.value);
+  document.getElementById("tools-vertical-spacing").value = verticalSpacing;
   drawTree(d3.zoomTransform(svg.node()));
 });
 document.getElementById("horizontal-spacing").addEventListener("input", (e) => {
   horizontalSpacing = parseFloat(e.target.value);
   spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
   drawTree(d3.zoomTransform(svg.node()));
 });
 document.getElementById("terminal-line-spacing").addEventListener("input", (e) => {
   terminalLineSpacing = parseFloat(e.target.value);
+  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
   drawTree(d3.zoomTransform(svg.node()));
 });
 document.getElementById("node-width").addEventListener("input", (e) => {
   nodeWidth = parseFloat(e.target.value);
   spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  document.getElementById("tools-node-width").value = nodeWidth;
   drawTree(d3.zoomTransform(svg.node()));
 });
 document.getElementById("node-height").addEventListener("input", (e) => {
   nodeHeight = parseFloat(e.target.value);
+  document.getElementById("tools-node-height").value = nodeHeight;
   drawTree(d3.zoomTransform(svg.node()));
 });
 
@@ -7611,49 +7902,16 @@ document.getElementById("import-input").addEventListener("change", (e) => {
 function downloadPNG() {
   const svgElement = document.querySelector("svg");
   
-  // Clone the SVG
-  const clonedSvg = svgElement.cloneNode(true);
-  
   // Get the g element and find its bounds
   const gElement = svgElement.querySelector("g");
   const bbox = gElement.getBBox();
   
   // Add padding
   const padding = 40;
-  const width = bbox.width + padding * 2;
-  const height = bbox.height + padding * 2;
+  const width = Math.ceil(bbox.width + padding * 2);
+  const height = Math.ceil(bbox.height + padding * 2);
   
-  // Reset transform on cloned g to show full content
-  const clonedG = clonedSvg.querySelector("g");
-  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
-  
-  // Inline font-family on all text elements
-  clonedSvg.querySelectorAll("text").forEach(textEl => {
-    textEl.style.fontFamily = "sans-serif";
-  });
-  
-  // Get computed styles and inline them
-  const svgStyles = document.querySelectorAll("style");
-  let styleContent = "";
-  svgStyles.forEach(style => {
-    styleContent += style.innerHTML;
-  });
-  
-  const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-  styleElement.textContent = styleContent;
-  clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
-  
-  // Set explicit dimensions to fit content
-  clonedSvg.setAttribute("width", width);
-  clonedSvg.setAttribute("height", height);
-  clonedSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  
-  // Convert to data URL
-  const svgData = new XMLSerializer().serializeToString(clonedSvg);
-  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(svgBlob);
-  
-  // Create canvas and draw
+  // Create canvas and draw white background
   const canvas = document.createElement("canvas");
   const scale = 2; // Higher resolution
   canvas.width = width * scale;
@@ -7661,22 +7919,114 @@ function downloadPNG() {
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, width, height);
   
-  const img = new Image();
-  img.onload = () => {
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-    
-    // Download
-    const pngUrl = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = pngUrl;
-    const safeFilename = currentFilename.replace(/[^a-z0-9\s\-_]/gi, '').replace(/\s+/g, '-') || 'tree';
-    a.download = safeFilename + ".png";
-    a.click();
-  };
-  img.src = url;
+  // Clone the SVG
+  const clonedSvg = svgElement.cloneNode(true);
+  
+  // Reset transform on cloned g to show full content
+  const clonedG = clonedSvg.querySelector("g");
+  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
+  
+  // Remove any external references that might cause issues
+  clonedSvg.querySelectorAll("use").forEach(el => el.remove());
+  clonedSvg.querySelectorAll("image").forEach(el => el.remove());
+  
+  // Inline all computed styles on elements
+  const allElements = clonedSvg.querySelectorAll("*");
+  allElements.forEach(el => {
+    const computed = window.getComputedStyle(svgElement.querySelector(el.tagName) || document.body);
+    if (el.tagName === "text" || el.tagName === "tspan") {
+      el.setAttribute("font-family", "sans-serif");
+    }
+  });
+  
+  // Inline font-family on all text elements explicitly
+  clonedSvg.querySelectorAll("text").forEach(textEl => {
+    textEl.setAttribute("font-family", "sans-serif");
+    textEl.style.fontFamily = "sans-serif";
+  });
+  
+  // Get all styles and inline them
+  let styleContent = "";
+  document.querySelectorAll("style").forEach(style => {
+    styleContent += style.innerHTML;
+  });
+  
+  // Create a style element in the SVG
+  const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  styleElement.textContent = styleContent;
+  clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+  
+  // Add white background rect inside SVG
+  const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  bgRect.setAttribute("x", "0");
+  bgRect.setAttribute("y", "0");
+  bgRect.setAttribute("width", String(width));
+  bgRect.setAttribute("height", String(height));
+  bgRect.setAttribute("fill", "#ffffff");
+  clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
+  
+  // Set explicit dimensions and namespace
+  clonedSvg.setAttribute("width", String(width));
+  clonedSvg.setAttribute("height", String(height));
+  clonedSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  clonedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  
+  // Serialize SVG
+  const serializer = new XMLSerializer();
+  let svgString = serializer.serializeToString(clonedSvg);
+  
+  // Ensure proper XML declaration and encoding
+  if (!svgString.startsWith("<?xml")) {
+    svgString = '<?xml version="1.0" encoding="UTF-8"?>' + svgString;
+  }
+  
+  // Create a blob and use createImageBitmap for better compatibility
+  const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  
+  // Try using createImageBitmap if available (more reliable)
+  if (typeof createImageBitmap !== "undefined") {
+    createImageBitmap(blob).then(bitmap => {
+      ctx.drawImage(bitmap, 0, 0);
+      downloadCanvasAsPNG(canvas);
+    }).catch(err => {
+      console.error("createImageBitmap failed, falling back to Image:", err);
+      loadImageFallback(blob, ctx, canvas, width, height);
+    });
+  } else {
+    loadImageFallback(blob, ctx, canvas, width, height);
+  }
+  
+  function loadImageFallback(blob, ctx, canvas, width, height) {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      downloadCanvasAsPNG(canvas);
+    };
+    img.onerror = (err) => {
+      console.error("Image load error:", err);
+      URL.revokeObjectURL(url);
+      alert("PNG export failed. Try using SVG export instead.");
+    };
+    img.src = url;
+  }
+  
+  function downloadCanvasAsPNG(canvas) {
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeFilename = currentFilename.replace(/[^a-z0-9\s\-_]/gi, '').replace(/\s+/g, '-') || 'tree';
+      a.download = safeFilename + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
 }
 
 // Tools Panel functionality
