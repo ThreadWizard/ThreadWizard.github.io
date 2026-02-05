@@ -1426,7 +1426,10 @@
   <div class="section">
     <div class="section-title">Node Name</div>
     <input type="text" id="node-name" placeholder="Enter name" />
-    <button id="update-name" class="primary full-width">Update Name</button>
+    <label style="margin-top: 8px;">Birth</label>
+    <input type="text" id="node-birth" placeholder="e.g., 1950 or Jan 1, 1950" />
+    <label>Death</label>
+    <input type="text" id="node-death" placeholder="e.g., 2020 or Dec 31, 2020" />
   </div>
 
   <!-- Home Person Section -->
@@ -1450,10 +1453,9 @@
 
   <!-- Background Color Section -->
   <div class="section">
-    <div class="section-title">Background Color</div>
-    <div class="button-row" style="align-items: center;">
-      <input type="color" id="node-color" value="#ffffff" />
-      <button id="update-color" class="primary" style="flex: 1;">Apply Color</button>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div class="section-title" style="margin-bottom: 0;">Background Color</div>
+      <input type="color" id="node-color" value="#ffffff" style="width: 60px; height: 30px;" />
     </div>
   </div>
 
@@ -1699,6 +1701,31 @@ let shadeToolActive = false;
 let shadedRegion = null; // { x, y, width, height } in SVG coordinates
 let shadeDrawing = false;
 let shadeStartPoint = null;
+
+// Debounce utility function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Debounced version of drawTree for live updates
+const debouncedDrawTree = debounce(() => {
+  drawTree(d3.zoomTransform(svg.node()));
+}, 100);
+
+// Debounced saveState for undo/redo support on live changes
+let sidebarDirty = false;
+const debouncedSaveState = debounce(() => {
+  saveState();
+  sidebarDirty = false;
+}, 500);
 
 // Home person tracking
 let homePersonName = null;
@@ -2106,12 +2133,13 @@ function displayExistingLinks(personId) {
     const otherId = link.person1Id === personId ? link.person2Id : link.person1Id;
     const otherPerson = getPersonById(otherId);
     if (otherPerson) {
-      let linkLabel = link.type;
+      let linkType = link.type.charAt(0).toUpperCase() + link.type.slice(1);
+      let linkLabel = linkType;
       if (link.type === 'spouse' && link.sharedChildren && link.sharedChildren !== 'none') {
-        linkLabel += ' (shared children)';
+        linkLabel += ' (with shared children)';
       }
       html += `<div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">`;
-      html += `<span>${linkLabel}: ${otherPerson.person.name}</span>`;
+      html += `<span>${linkLabel}:<br>${otherPerson.person.name}</span>`;
       html += `<button onclick="removeExistingLink('${link.type}', '${link.person1Id}', '${link.person2Id}')" style="padding: 5px 12px; font-size: 12px; background: #000000; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>`;
       html += `</div>`;
     }
@@ -2756,6 +2784,14 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   
   let html = `<div class="tooltip-name">${name}</div>`;
   
+  // Show birth and death years if available
+  if (nodeData.birth || nodeData.death) {
+    const birth = nodeData.birth || "?";
+    const death = nodeData.death || "";
+    const lifespan = death ? `${birth} – ${death}` : `b. ${birth}`;
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">${lifespan}</div>`;
+  }
+  
   // Count children if any (only for non-spouse nodes)
   if (!isSpouse && nodeData.children && nodeData.children.length > 0) {
     const childCount = nodeData.children.length;
@@ -2850,7 +2886,8 @@ function saveState() {
   historyStack.push({
     data: deepClone(data),
     dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks)
+    crossLinks: deepClone(crossLinks),
+    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
   });
   // Limit history size
   if (historyStack.length > MAX_HISTORY) {
@@ -2868,7 +2905,8 @@ function undo() {
   redoStack.push({
     data: deepClone(data),
     dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks)
+    crossLinks: deepClone(crossLinks),
+    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
   });
   
   // Restore previous state
@@ -2876,6 +2914,9 @@ function undo() {
   data = previousState.data;
   dnaComparisons = previousState.dnaComparisons;
   crossLinks = previousState.crossLinks || [];
+  if (previousState.defaultNodeTextStyle) {
+    defaultNodeTextStyle = previousState.defaultNodeTextStyle;
+  }
   
   // Close sidebar and redraw
   closeSidebar();
@@ -2892,7 +2933,8 @@ function redo() {
   historyStack.push({
     data: deepClone(data),
     dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks)
+    crossLinks: deepClone(crossLinks),
+    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
   });
   
   // Restore redo state
@@ -2900,6 +2942,9 @@ function redo() {
   data = redoState.data;
   dnaComparisons = redoState.dnaComparisons;
   crossLinks = redoState.crossLinks || [];
+  if (redoState.defaultNodeTextStyle) {
+    defaultNodeTextStyle = redoState.defaultNodeTextStyle;
+  }
   
   // Close sidebar and redraw
   closeSidebar();
@@ -3328,6 +3373,8 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   const editData = isSpouse ? nodeData : d3Node.data;
   
   document.getElementById("node-name").value = editData.name;
+  document.getElementById("node-birth").value = editData.birth || "";
+  document.getElementById("node-death").value = editData.death || "";
   document.getElementById("child-name").value = "";
   document.getElementById("parent-name").value = "";
   document.getElementById("spouse-name").value = "";
@@ -3442,6 +3489,10 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
 }
 
 function closeSidebar() {
+  if (selectedNode && sidebarDirty) {
+    saveState();
+    sidebarDirty = false;
+  }
   document.getElementById("sidebar").classList.remove("visible");
   selectedNode = null;
   selectedSpouse = null;
@@ -5962,20 +6013,35 @@ function drawTree(savedTransform = null) {
   autoSave();
 }
 
-document.getElementById("update-name").addEventListener("click", () => {
+// Live update for name field
+document.getElementById("node-name").addEventListener("input", () => {
   if (selectedNode) {
+    sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
-    const oldName = editData.name;
-    const newName = document.getElementById("node-name").value;
-    
-    if (oldName !== newName) {
-      saveState();
-      // Note: DNA comparison keys now use IDs, so no need to update them when name changes
-    }
-    
-    editData.name = newName;
+    editData.name = document.getElementById("node-name").value;
     drawTree(d3.zoomTransform(svg.node()));
-    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
+  }
+});
+
+// Live update for birth field
+document.getElementById("node-birth").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    const newBirth = document.getElementById("node-birth").value.trim();
+    editData.birth = newBirth || undefined;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Live update for death field
+document.getElementById("node-death").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    const newDeath = document.getElementById("node-death").value.trim();
+    editData.death = newDeath || undefined;
+    drawTree(d3.zoomTransform(svg.node()));
   }
 });
 
@@ -6412,13 +6478,14 @@ document.getElementById("toggle-ancestor-collapse").addEventListener("click", ()
 
 
 
-document.getElementById("update-color").addEventListener("click", () => {
+// Live update for background color
+document.getElementById("node-color").addEventListener("input", () => {
   if (selectedNode) {
-    saveState();
+    sidebarDirty = true;
+    debouncedSaveState();
     const editData = selectedSpouse || selectedNode.data;
     editData.color = document.getElementById("node-color").value;
-    drawTree(d3.zoomTransform(svg.node()));
-    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
+    debouncedDrawTree();
   }
 });
 
@@ -6671,21 +6738,54 @@ function showRemoveSpouseDialog(nodeData) {
   });
 }
 
-document.getElementById("update-style").addEventListener("click", () => {
+// Live update for font size
+document.getElementById("font-size").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    debouncedSaveState();
+    const editData = selectedSpouse || selectedNode.data;
+    editData.fontSize = parseInt(document.getElementById("font-size").value);
+    editData.hasCustomStyle = true;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Live update for bold checkbox
+document.getElementById("font-bold").addEventListener("change", () => {
   if (selectedNode) {
     saveState();
+    const editData = selectedSpouse || selectedNode.data;
+    editData.bold = document.getElementById("font-bold").checked;
+    editData.hasCustomStyle = true;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Live update for italic checkbox
+document.getElementById("font-italic").addEventListener("change", () => {
+  if (selectedNode) {
+    saveState();
+    const editData = selectedSpouse || selectedNode.data;
+    editData.italic = document.getElementById("font-italic").checked;
+    editData.hasCustomStyle = true;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Apply to Node button - no saveState here since live handlers already saved state
+document.getElementById("update-style").addEventListener("click", () => {
+  if (selectedNode) {
     const editData = selectedSpouse || selectedNode.data;
     editData.fontSize = parseInt(document.getElementById("font-size").value);
     editData.bold = document.getElementById("font-bold").checked;
     editData.italic = document.getElementById("font-italic").checked;
-    editData.hasCustomStyle = true; // Mark this node as having custom styling
-    autoSave();
+    editData.hasCustomStyle = true;
     drawTree(d3.zoomTransform(svg.node()));
-    showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse);
   }
 });
 
 document.getElementById("update-style-all").addEventListener("click", () => {
+  saveState();
   const fontSize = parseInt(document.getElementById("font-size").value);
   const bold = document.getElementById("font-bold").checked;
   const italic = document.getElementById("font-italic").checked;
