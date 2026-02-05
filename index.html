@@ -1219,6 +1219,10 @@
           <div class="shortcut-keys"><kbd>Delete</kbd></div>
         </div>
         <div class="shortcut-item">
+          <span class="shortcut-desc">Ripple Delete Node</span>
+          <div class="shortcut-keys"><kbd>Shift</kbd><span class="key-plus">+</span><kbd>X</kbd></div>
+        </div>
+        <div class="shortcut-item">
           <span class="shortcut-desc">Expand All Nodes</span>
           <div class="shortcut-keys"><kbd>E</kbd></div>
         </div>
@@ -1462,7 +1466,12 @@
   <!-- Family Section -->
   <div class="section">
     <div class="section-title">Add Family Members</div>
-    <label>Add Child</label>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <label style="margin-bottom: 0;">Add Child</label>
+      <label class="checkbox-label" style="margin-bottom: 0; font-size: 12px;">
+        <input type="checkbox" id="add-child-left" style="margin-right: 4px;">Add to left
+      </label>
+    </div>
     <input type="text" id="child-name" placeholder="Child's name" />
     <button id="add-child" class="primary full-width">Add Child</button>
     
@@ -1521,6 +1530,7 @@
     <div class="section-title">Delete</div>
     <div class="button-row">
       <button id="delete-node" class="danger" style="flex: 1;">Delete Node</button>
+      <button id="ripple-delete-node" class="danger" style="flex: 1;" title="Delete this node but keep its children, moving them up to the parent">Ripple Delete</button>
     </div>
   </div>
 
@@ -2784,12 +2794,12 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   
   let html = `<div class="tooltip-name">${name}</div>`;
   
-  // Show birth and death years if available
-  if (nodeData.birth || nodeData.death) {
-    const birth = nodeData.birth || "?";
-    const death = nodeData.death || "";
-    const lifespan = death ? `${birth} – ${death}` : `b. ${birth}`;
-    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">${lifespan}</div>`;
+  // Show birth and death years if available (always on separate lines)
+  if (nodeData.birth) {
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">b. ${nodeData.birth}</div>`;
+  }
+  if (nodeData.death) {
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">d. ${nodeData.death}</div>`;
   }
   
   // Count children if any (only for non-spouse nodes)
@@ -3392,6 +3402,7 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   }
   
   const deleteBtn = document.getElementById("delete-node");
+  const rippleDeleteBtn = document.getElementById("ripple-delete-node");
   const deleteSection = document.getElementById("delete-section");
   
   // Check if home person exists (allows deleting root if home person is set)
@@ -3405,6 +3416,10 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   } else {
     deleteSection.style.display = "none";
   }
+  
+  // Ripple delete: show only for non-spouse, non-root nodes
+  const canRippleDelete = !isSpouse && d3Node.parent;
+  rippleDeleteBtn.style.display = canRippleDelete ? "inline-block" : "none";
   
   const spouseSection = document.getElementById("spouse-section");
   
@@ -3441,8 +3456,8 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
     const siblings = d3Node.parent.data.children;
     const currentIndex = siblings.indexOf(d3Node.data);
     siblingSection.style.display = "block";
-    moveLeftBtn.disabled = currentIndex === 0;
-    moveRightBtn.disabled = currentIndex === siblings.length - 1;
+    moveLeftBtn.disabled = currentIndex <= 1;
+    moveRightBtn.disabled = currentIndex === siblings.length - 1 || currentIndex === 0;
   } else {
     siblingSection.style.display = "none";
   }
@@ -6045,12 +6060,26 @@ document.getElementById("node-death").addEventListener("input", () => {
   }
 });
 
+// Helper: move a child to the leftmost position (index 1, skipping index 0)
+function moveChildToVisualLeft(childData, parentData) {
+  const siblings = parentData.children;
+  if (siblings.length <= 1) return;
+  
+  let currentIndex = siblings.indexOf(childData);
+  while (currentIndex > 1) {
+    [siblings[currentIndex - 1], siblings[currentIndex]] = [siblings[currentIndex], siblings[currentIndex - 1]];
+    currentIndex--;
+  }
+  
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
 document.getElementById("add-child").addEventListener("click", () => {
   const newName = document.getElementById("child-name").value.trim();
   if (!newName) return;
+  const addToLeft = document.getElementById("add-child-left").checked;
   
   if (selectedSpouse && selectedNode) {
-    // A spouse is selected - add child to the main node with this spouse's ID
     saveState();
     const mainNodeData = selectedNode.data;
     if (!mainNodeData.children) mainNodeData.children = [];
@@ -6061,33 +6090,38 @@ document.getElementById("add-child").addEventListener("click", () => {
       bold: false, 
       italic: false,
       id: generateNodeId(),
-      spouseId: selectedSpouse.id  // Associate child with this spouse
+      spouseId: selectedSpouse.id
     };
     mainNodeData.children.push(newChild);
     document.getElementById("child-name").value = "";
-    drawTree(d3.zoomTransform(svg.node()));
+    if (addToLeft) {
+      moveChildToVisualLeft(newChild, mainNodeData);
+    } else {
+      drawTree(d3.zoomTransform(svg.node()));
+    }
     showSidebar(selectedSpouse, selectedNode, true, selectedSpouseIndex);
   } else if (selectedNode) {
     const nodeData = selectedNode.data;
     const spouses = nodeData.spouses || [];
     
     if (spouses.length > 1) {
-      // Multiple spouses - prompt user to select which parent pair
       showSpouseSelectionDialog(newName, nodeData, spouses);
     } else {
-      // 0 or 1 spouse - no need to ask
       saveState();
       if (!nodeData.children) nodeData.children = [];
       const newChild = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId() };
       
-      // If there's exactly one spouse, assign the child to that spouse
       if (spouses.length === 1) {
         newChild.spouseId = spouses[0].id;
       }
       
       nodeData.children.push(newChild);
       document.getElementById("child-name").value = "";
-      drawTree(d3.zoomTransform(svg.node()));
+      if (addToLeft) {
+        moveChildToVisualLeft(newChild, nodeData);
+      } else {
+        drawTree(d3.zoomTransform(svg.node()));
+      }
       showSidebar(nodeData, selectedNode, false);
     }
   }
@@ -6150,7 +6184,11 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
       parentNode.children.push(newChild);
       document.getElementById("child-name").value = "";
       document.body.removeChild(overlay);
-      drawTree(d3.zoomTransform(svg.node()));
+      if (document.getElementById("add-child-left").checked) {
+        moveChildToVisualLeft(newChild, parentNode);
+      } else {
+        drawTree(d3.zoomTransform(svg.node()));
+      }
       showSidebar(parentNode, selectedNode, false);
     });
   });
@@ -7222,6 +7260,90 @@ document.getElementById("delete-node").addEventListener("click", () => {
   }
 });
 
+// Ripple Delete - removes the node but keeps its children, moving them up to the parent
+document.getElementById("ripple-delete-node").addEventListener("click", () => {
+  // Not applicable for spouses - use regular delete
+  if (selectedSpouse) {
+    alert("Use regular Delete for spouses.");
+    return;
+  }
+  
+  if (!selectedNode) return;
+  
+  const nodeToDelete = selectedNode.data;
+  const nodeName = nodeToDelete.name;
+  
+  // Can't ripple-delete the home person
+  if (nodeToDelete.isHomePerson) {
+    alert("Cannot delete the home person.");
+    return;
+  }
+  
+  // Must have a parent to ripple into
+  if (!selectedNode.parent) {
+    alert("Cannot ripple delete the root node (no parent to adopt children).");
+    return;
+  }
+  
+  const parentData = selectedNode.parent.data;
+  const childrenToKeep = nodeToDelete.children || [];
+  
+  const childCount = childrenToKeep.length;
+  const childWord = childCount === 1 ? "child" : "children";
+  const childNames = childrenToKeep.map(c => c.name).join(", ");
+  
+  let msg;
+  if (childCount > 0) {
+    msg = `Ripple delete "${nodeName}"? The node will be removed and its ${childCount} ${childWord} (${childNames}) will be moved up to "${parentData.name}".`;
+  } else {
+    msg = `Ripple delete "${nodeName}"? The node has no children, so this is the same as a regular delete.`;
+  }
+  
+  if (!confirm(msg)) return;
+  
+  saveState();
+  
+  // Find the index of the node being deleted in its parent's children array
+  const indexInParent = parentData.children.indexOf(nodeToDelete);
+  
+  // Clean up DNA comparisons for the deleted node (but NOT its children)
+  if (nodeToDelete.id) {
+    for (const key in dnaComparisons) {
+      if (dnaKeyContainsId(key, nodeToDelete.id)) {
+        delete dnaComparisons[key];
+      }
+    }
+  }
+  // Also clean up DNA for the deleted node's spouses
+  if (nodeToDelete.spouses) {
+    nodeToDelete.spouses.forEach(s => {
+      if (s.id) {
+        for (const key in dnaComparisons) {
+          if (dnaKeyContainsId(key, s.id)) {
+            delete dnaComparisons[key];
+          }
+        }
+      }
+    });
+  }
+  
+  // Remove the node and splice its children into the parent's children at the same position
+  parentData.children.splice(indexInParent, 1, ...childrenToKeep);
+  
+  // Clear spouseId on promoted children since that relationship no longer applies
+  childrenToKeep.forEach(child => {
+    delete child.spouseId;
+  });
+  
+  // Clean up empty children array
+  if (parentData.children.length === 0) {
+    delete parentData.children;
+  }
+  
+  closeSidebar();
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
 // Helper: find path from a node down to home person
 function findPathFromNodeToHome(node, path = []) {
   const currentPath = [...path, node];
@@ -7363,7 +7485,7 @@ document.getElementById("move-left").addEventListener("click", () => {
   if (selectedNode && selectedNode.parent && !selectedSpouse) {
     const siblings = selectedNode.parent.data.children;
     const currentIndex = siblings.indexOf(selectedNode.data);
-    if (currentIndex > 0) {
+    if (currentIndex > 1) {
       saveState();
       [siblings[currentIndex - 1], siblings[currentIndex]] = [siblings[currentIndex], siblings[currentIndex - 1]];
       drawTree(d3.zoomTransform(svg.node()));
@@ -7376,7 +7498,7 @@ document.getElementById("move-right").addEventListener("click", () => {
   if (selectedNode && selectedNode.parent && !selectedSpouse) {
     const siblings = selectedNode.parent.data.children;
     const currentIndex = siblings.indexOf(selectedNode.data);
-    if (currentIndex < siblings.length - 1) {
+    if (currentIndex < siblings.length - 1 && currentIndex > 0) {
       saveState();
       [siblings[currentIndex], siblings[currentIndex + 1]] = [siblings[currentIndex + 1], siblings[currentIndex]];
       drawTree(d3.zoomTransform(svg.node()));
@@ -7830,6 +7952,15 @@ document.addEventListener("keydown", (e) => {
     if (selectedNode) {
       e.preventDefault();
       document.getElementById("delete-node").click();
+    }
+    return;
+  }
+  
+  // Ripple Delete: Shift+X
+  if (e.shiftKey && e.key === "X") {
+    if (selectedNode) {
+      e.preventDefault();
+      document.getElementById("ripple-delete-node").click();
     }
     return;
   }
