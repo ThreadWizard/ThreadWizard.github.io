@@ -1178,7 +1178,6 @@
   body.theme-light .link { stroke: black; }
   body.theme-light .spouse-link { stroke: black; }
   body.theme-light .cross-link-bezier { stroke: black; }
-  body.theme-light .terminal-line { }
   /* Sidebar */
   body.theme-light #sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
   body.theme-light #sidebar h2 { color: #2c3e50; }
@@ -1267,7 +1266,6 @@
   body.theme-dark .link { stroke: #888888; }
   body.theme-dark .spouse-link { stroke: #888888; }
   body.theme-dark .cross-link-bezier { stroke: #888888; }
-  body.theme-dark .terminal-line { }
   /* Sidebar */
   body.theme-dark #sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
   body.theme-dark #sidebar h2 { color: #e0e0e0; }
@@ -2101,6 +2099,14 @@ function autoLoad() {
         data = loadedData.tree;
         dnaComparisons = loadedData.dnaComparisons || {};
         dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
+        
+        // Apply theme color overrides to loaded label styles
+        if (currentTheme === 'dark') {
+          dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
+          dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
+          dnaLabelStyles.cm.color = '#ffffff';
+          dnaLabelStyles.relationship.color = '#ffffff';
+        }
         defaultNodeTextStyle = loadedData.defaultNodeTextStyle || { fontSize: 12, bold: false, italic: false };
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
@@ -3862,7 +3868,12 @@ function showDnaSidebar(person1Id, person2Id, person1Name, person2Name) {
   document.getElementById("dna-sidebar").classList.add("visible");
 }
 
+let dnaSidebarLabelDirty = false;
 function closeDnaSidebar() {
+  if (dnaSidebarLabelDirty) {
+    autoSave();
+    dnaSidebarLabelDirty = false;
+  }
   document.getElementById("dna-sidebar").classList.remove("visible");
   selectedIntersection = null;
   drawTree(d3.zoomTransform(svg.node()));
@@ -3886,6 +3897,7 @@ document.getElementById("save-dna").addEventListener("click", () => {
     }
     
     drawTree(d3.zoomTransform(svg.node()));
+    autoSave();
   }
 });
 
@@ -3897,6 +3909,7 @@ document.getElementById("clear-dna").addEventListener("click", () => {
     document.getElementById("cm-input").value = "";
     document.getElementById("relationship-input").value = "";
     drawTree(d3.zoomTransform(svg.node()));
+    autoSave();
   }
 });
 
@@ -4034,14 +4047,22 @@ function syncDnaLabelStyles(source) {
   drawTree(d3.zoomTransform(svg.node()));
 }
 
+function syncSidebarDnaLabels() {
+  if (!dnaSidebarLabelDirty) {
+    saveState();
+    dnaSidebarLabelDirty = true;
+  }
+  syncDnaLabelStyles("sidebar");
+}
+
 ["cm-font-size", "rel-font-size"].forEach(id => {
-  document.getElementById(id).addEventListener("input", () => syncDnaLabelStyles("sidebar"));
+  document.getElementById(id).addEventListener("input", syncSidebarDnaLabels);
 });
 ["cm-font-color", "rel-font-color"].forEach(id => {
-  document.getElementById(id).addEventListener("input", () => syncDnaLabelStyles("sidebar"));
+  document.getElementById(id).addEventListener("input", syncSidebarDnaLabels);
 });
 ["cm-font-bold", "cm-font-italic", "rel-font-bold", "rel-font-italic"].forEach(id => {
-  document.getElementById(id).addEventListener("change", () => syncDnaLabelStyles("sidebar"));
+  document.getElementById(id).addEventListener("change", syncSidebarDnaLabels);
 });
 
 function deleteNodeFromTree(tree, nodeToDelete) {
@@ -8528,6 +8549,9 @@ document.getElementById("new-btn").addEventListener("click", () => {
     redoStack = [];
     updateUndoRedoButtons();
     
+    // Ensure all nodes have IDs
+    ensureAllNodesHaveIds(data);
+    
     // Clear localStorage
     localStorage.removeItem('threadwizard-autosave');
     
@@ -8954,6 +8978,14 @@ document.getElementById("import-input").addEventListener("change", (e) => {
             dnaLabelStyles = imported.dnaLabelStyles;
           }
           
+          // Apply theme color overrides to imported label styles
+          if (currentTheme === 'dark') {
+            dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
+            dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
+            dnaLabelStyles.cm.color = '#ffffff';
+            dnaLabelStyles.relationship.color = '#ffffff';
+          }
+          
           if (imported.autoStrokeEnabled !== undefined) {
             autoStrokeEnabled = imported.autoStrokeEnabled;
           }
@@ -9020,6 +9052,14 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
         
+        // Apply theme color adjustments to imported data
+        if (currentTheme === 'dark') {
+          dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
+          dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
+          dnaLabelStyles.cm.color = '#ffffff';
+          dnaLabelStyles.relationship.color = '#ffffff';
+        }
+        
         // Auto-set home person if none is defined
         autoSetHomePerson();
         
@@ -9035,7 +9075,64 @@ document.getElementById("import-input").addEventListener("change", (e) => {
   }
 });
 
+function showExportDialog(exportType) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+    
+    const isDark = currentTheme === 'dark';
+    const bgColor = isDark ? '#222' : '#fff';
+    const textColor = isDark ? '#e0e0e0' : '#333';
+    const borderColor = isDark ? '#444' : '#ddd';
+    const btnBg = isDark ? '#333' : '#f0f0f0';
+    const btnHover = isDark ? '#444' : '#e0e0e0';
+    const primaryBg = isDark ? '#4a4a4a' : '#43a047';
+    const primaryHover = isDark ? '#5a5a5a' : '#2e7d32';
+    
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `background: ${bgColor}; color: ${textColor}; padding: 25px; border-radius: 10px; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3);`;
+    dialog.innerHTML = `
+      <h3 style="margin: 0 0 15px 0; font-size: 18px;">Export ${exportType.toUpperCase()}</h3>
+      <p style="margin: 0 0 20px 0; font-size: 14px; color: ${isDark ? '#aaa' : '#666'};">Include the tree name "<strong>${currentFilename}</strong>" as a title at the top of the export?</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="export-with-title" style="flex: 1; padding: 10px; border: none; border-radius: 6px; background: ${primaryBg}; color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Yes, include title</button>
+        <button id="export-no-title" style="flex: 1; padding: 10px; border: 1px solid ${borderColor}; border-radius: 6px; background: ${btnBg}; color: ${textColor}; cursor: pointer; font-size: 14px;">No title</button>
+      </div>
+      <button id="export-cancel" style="margin-top: 10px; padding: 8px; border: none; background: none; color: ${isDark ? '#888' : '#999'}; cursor: pointer; width: 100%; font-size: 13px;">Cancel</button>
+    `;
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    const withBtn = dialog.querySelector('#export-with-title');
+    const noBtn = dialog.querySelector('#export-no-title');
+    const cancelBtn = dialog.querySelector('#export-cancel');
+    
+    withBtn.addEventListener('mouseenter', () => withBtn.style.background = primaryHover);
+    withBtn.addEventListener('mouseleave', () => withBtn.style.background = primaryBg);
+    noBtn.addEventListener('mouseenter', () => noBtn.style.background = btnHover);
+    noBtn.addEventListener('mouseleave', () => noBtn.style.background = btnBg);
+    
+    function cleanup(result) {
+      document.body.removeChild(overlay);
+      resolve(result);
+    }
+    
+    withBtn.addEventListener('click', () => cleanup(true));
+    noBtn.addEventListener('click', () => cleanup(false));
+    cancelBtn.addEventListener('click', () => cleanup(null));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(null); });
+  });
+}
+
 function downloadPNG() {
+  showExportDialog('png').then(includeTitle => {
+    if (includeTitle === null) return; // cancelled
+    _exportPNG(includeTitle);
+  });
+}
+
+function _exportPNG(includeTitle) {
   const svgElement = document.querySelector("svg");
   
   // Get the g element and find its bounds
@@ -9044,8 +9141,9 @@ function downloadPNG() {
   
   // Add padding
   const padding = 40;
+  const titleHeight = includeTitle ? 50 : 0;
   const width = Math.ceil(bbox.width + padding * 2);
-  const height = Math.ceil(bbox.height + padding * 2);
+  const height = Math.ceil(bbox.height + padding * 2 + titleHeight);
   
   // Create canvas and draw white background
   const canvas = document.createElement("canvas");
@@ -9060,9 +9158,23 @@ function downloadPNG() {
   // Clone the SVG
   const clonedSvg = svgElement.cloneNode(true);
   
-  // Reset transform on cloned g to show full content
+  // Reset transform on cloned g to show full content (shifted down for title)
   const clonedG = clonedSvg.querySelector("g");
-  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
+  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding + titleHeight})`);
+  
+  // Add title text if requested
+  if (includeTitle) {
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    titleText.setAttribute("x", String(width / 2));
+    titleText.setAttribute("y", String(padding / 2 + 18));
+    titleText.setAttribute("text-anchor", "middle");
+    titleText.setAttribute("font-family", "sans-serif");
+    titleText.setAttribute("font-size", "24");
+    titleText.setAttribute("font-weight", "bold");
+    titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
+    titleText.textContent = currentFilename;
+    clonedSvg.appendChild(titleText);
+  }
   
   // Remove any external references that might cause issues
   clonedSvg.querySelectorAll("use").forEach(el => el.remove());
@@ -9557,6 +9669,13 @@ document.getElementById("tools-export-png").addEventListener("click", () => {
 });
 
 document.getElementById("tools-export-svg").addEventListener("click", () => {
+  showExportDialog('svg').then(includeTitle => {
+    if (includeTitle === null) return;
+    _exportSVG(includeTitle);
+  });
+});
+
+function _exportSVG(includeTitle) {
   const svgElement = document.querySelector("svg");
   
   // Clone the SVG
@@ -9568,12 +9687,27 @@ document.getElementById("tools-export-svg").addEventListener("click", () => {
   
   // Add padding
   const padding = 40;
+  const titleHeight = includeTitle ? 50 : 0;
   const width = bbox.width + padding * 2;
-  const height = bbox.height + padding * 2;
+  const height = bbox.height + padding * 2 + titleHeight;
   
   // Reset transform on cloned g to show full content
   const clonedG = clonedSvg.querySelector("g");
-  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding})`);
+  clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding + titleHeight})`);
+  
+  // Add title text if requested
+  if (includeTitle) {
+    const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    titleText.setAttribute("x", String(width / 2));
+    titleText.setAttribute("y", String(padding / 2 + 18));
+    titleText.setAttribute("text-anchor", "middle");
+    titleText.setAttribute("font-family", "sans-serif");
+    titleText.setAttribute("font-size", "24");
+    titleText.setAttribute("font-weight", "bold");
+    titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
+    titleText.textContent = currentFilename;
+    clonedSvg.appendChild(titleText);
+  }
   
   // Inline font-family on all text elements
   clonedSvg.querySelectorAll("text").forEach(textEl => {
@@ -9620,7 +9754,7 @@ document.getElementById("tools-export-svg").addEventListener("click", () => {
   a.click();
   
   URL.revokeObjectURL(url);
-});
+}
 
 // Close sidebars when clicking on empty SVG canvas
 svg.on("click", function(event) {
