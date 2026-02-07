@@ -1742,10 +1742,10 @@
     <label>Relationship Type</label>
     <select id="link-relationship-type" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-bottom: 8px;">
       <option value="spouse">As Spouse</option>
-      <option value="parent">As Parent of this person</option>
-      <option value="child">As Child of this person</option>
+      <option value="parent">As Parent of selected person</option>
+      <option value="child">As Child of selected person</option>
     </select>
-    <label>Select Person</label>
+    <label>Target Person</label>
     <select id="link-person-select" style="width: 100%; padding: 8px; border: 1px solid #a5d6a7; border-radius: 4px; margin-bottom: 8px;">
       <option value="">-- Choose a person --</option>
     </select>
@@ -1979,6 +1979,32 @@ const THEMES = ['fullcolor', 'light', 'dark'];
 const THEME_LABELS = { fullcolor: 'Full Color', light: 'Light Mode', dark: 'Dark Mode' };
 
 let currentTheme = 'fullcolor';
+
+// Helper: get dark-mode-aware colors for dynamically created dialogs
+function dialogColors() {
+  const dk = currentTheme === 'dark';
+  return {
+    bg: dk ? '#2a2a2a' : 'white',
+    text: dk ? '#ccc' : '#666',
+    heading: dk ? '#e0e0e0' : '#333',
+    subText: dk ? '#aaa' : '#555',
+    btnBg: dk ? '#3a3a3a' : '#f5f5f5',
+    btnHover: dk ? '#4a4a4a' : '#e0e0e0',
+    btnBorder: dk ? '#555' : '#ccc',
+    cancelBg: dk ? '#555' : '#999',
+    cancelHover: dk ? '#666' : '#777',
+    inputBg: dk ? '#333' : '#fff',
+    inputBorder: dk ? '#555' : '#ccc',
+    sectionBg: dk ? '#333' : '#f9f9f9',
+    dangerBg: dk ? '#3a2020' : '#fff',
+    dangerHover: dk ? '#4a2020' : '#d32f2f',
+    blueBg: dk ? '#1a2a3a' : '#fff',
+    blueHover: dk ? '#243a4a' : '#1976d2',
+    selectBg: dk ? '#333' : '#fff',
+    selectColor: dk ? '#e0e0e0' : '#333',
+    childSectionBg: dk ? '#333' : '#f5f5f5',
+  };
+}
 
 function applyTheme(theme) {
   currentTheme = theme;
@@ -5168,7 +5194,23 @@ function autoLayout() {
     .call(zoom.transform, transform);
 }
 
+// Recalculate all relationship labels in dnaComparisons based on current tree structure
+function recalcRelationshipLabels() {
+  const nodeMap = buildNodeMap(data);
+  for (const key of Object.keys(dnaComparisons)) {
+    const [id1, id2] = key.split("|");
+    const node1 = nodeMap.get(id1);
+    const node2 = nodeMap.get(id2);
+    if (!node1 || !node2) continue;
+    const result = findLCA(nodeMap, id1, id2);
+    if (result) {
+      dnaComparisons[key].relationship = getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship);
+    }
+  }
+}
+
 function drawTree(savedTransform = null) {
+  recalcRelationshipLabels();
   svg.selectAll("*").remove();
   const g = svg.append("g").attr("transform", "translate(50,80)");
 
@@ -6640,20 +6682,21 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
   
   // Create dialog
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   let html = `
-    <h3 style="margin-top: 0; margin-bottom: 15px;">Select Second Parent for "${childName}"</h3>
-    <p style="margin-bottom: 15px; color: #666;">Which spouse is ${childName}'s other parent?</p>
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: ${dc.heading};">Select Second Parent for "${childName}"</h3>
+    <p style="margin-bottom: 15px; color: ${dc.text};">Which spouse is ${childName}'s other parent?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         ${parentNode.name} only (no second parent)
       </button>
   `;
   
   spouses.forEach(spouse => {
     html += `
-      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         ${parentNode.name} & ${spouse.name}
       </button>
     `;
@@ -6661,7 +6704,7 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
   
   html += `
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
   `;
   
   dialog.innerHTML = html;
@@ -6670,8 +6713,8 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
   
   // Add hover effect
   dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
-    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
-    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+    btn.addEventListener('mouseenter', () => btn.style.background = dc.btnHover);
+    btn.addEventListener('mouseleave', () => btn.style.background = dc.btnBg);
   });
   
   // Handle spouse selection
@@ -6829,7 +6872,8 @@ function showMoveOrLinkDialog(nodeToMoveName, nodeToMoveData, currentParentName,
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 24px; border-radius: 10px; max-width: 480px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const isDark = currentTheme === 'dark';
+  dialog.style.cssText = `background: ${isDark ? '#2a2a2a' : 'white'}; padding: 24px; border-radius: 10px; max-width: 480px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   // Count descendants for the info message
   let descendantCount = 0;
@@ -6841,26 +6885,38 @@ function showMoveOrLinkDialog(nodeToMoveName, nodeToMoveData, currentParentName,
   }
   countDescendants(nodeToMoveData);
   
+  const textColor = isDark ? '#ccc' : '#666';
+  const headingColor = isDark ? '#e0e0e0' : '#333';
+  const subTextColor = isDark ? '#aaa' : '#555';
+  const moveBoxBg = isDark ? '#1b3a1b' : '#e8f5e9';
+  const moveBoxHover = isDark ? '#244a24' : '#c8e6c9';
+  const moveBoxBorder = isDark ? '#4caf50' : '#2e7d32';
+  const moveTitleColor = isDark ? '#66bb6a' : '#2e7d32';
+  const crossBoxBg = isDark ? '#1a2a3a' : '#e3f2fd';
+  const crossBoxHover = isDark ? '#243a4a' : '#bbdefb';
+  const crossBoxBorder = isDark ? '#42a5f5' : '#1565c0';
+  const crossTitleColor = isDark ? '#64b5f6' : '#1565c0';
+  
   const descendantInfo = descendantCount > 0 
-    ? `<p style="margin: 8px 0; color: #555; font-size: 13px;">"${nodeToMoveName}" has <strong>${descendantCount} descendant${descendantCount !== 1 ? 's' : ''}</strong> who will also move, keeping all styling and DNA data intact.</p>` 
+    ? `<p style="margin: 8px 0; color: ${subTextColor}; font-size: 13px;">"${nodeToMoveName}" has <strong>${descendantCount} descendant${descendantCount !== 1 ? 's' : ''}</strong> who will also move, keeping all styling and DNA data intact.</p>` 
     : '';
   
   dialog.innerHTML = `
-    <h3 style="margin-top: 0; margin-bottom: 10px; color: #333;">Node Already Has a Parent</h3>
-    <p style="margin-bottom: 8px; color: #666;">"<strong>${nodeToMoveName}</strong>" is currently a child of "<strong>${currentParentName}</strong>".</p>
+    <h3 style="margin-top: 0; margin-bottom: 10px; color: ${headingColor};">Node Already Has a Parent</h3>
+    <p style="margin-bottom: 8px; color: ${textColor};">"<strong>${nodeToMoveName}</strong>" is currently a child of "<strong>${currentParentName}</strong>".</p>
     ${descendantInfo}
-    <p style="margin-bottom: 18px; color: #666;">Would you like to <strong>move</strong> the node or just create a visual <strong>cross-link</strong>?</p>
+    <p style="margin-bottom: 18px; color: ${textColor};">Would you like to <strong>move</strong> the node or just create a visual <strong>cross-link</strong>?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button class="move-btn" style="padding: 12px 16px; border: 2px solid #2e7d32; border-radius: 6px; background: #e8f5e9; cursor: pointer; text-align: left; transition: background 0.15s;">
-        <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">Move Node</div>
-        <div style="font-size: 12px; color: #555;">Remove "${nodeToMoveName}" from "${currentParentName}" and re-attach under "${newParentName}". All descendants, styling, and DNA data are preserved.</div>
+      <button class="move-btn" style="padding: 12px 16px; border: 2px solid ${moveBoxBorder}; border-radius: 6px; background: ${moveBoxBg}; cursor: pointer; text-align: left; transition: background 0.15s;">
+        <div style="font-weight: bold; color: ${moveTitleColor}; margin-bottom: 3px;">Move Node</div>
+        <div style="font-size: 12px; color: ${subTextColor};">Remove "${nodeToMoveName}" from "${currentParentName}" and re-attach under "${newParentName}". All descendants, styling, and DNA data are preserved.</div>
       </button>
-      <button class="crosslink-btn" style="padding: 12px 16px; border: 2px solid #1565c0; border-radius: 6px; background: #e3f2fd; cursor: pointer; text-align: left; transition: background 0.15s;">
-        <div style="font-weight: bold; color: #1565c0; margin-bottom: 3px;">Create Cross-Link</div>
-        <div style="font-size: 12px; color: #555;">Keep "${nodeToMoveName}" under "${currentParentName}" and draw a visual link to "${newParentName}".</div>
+      <button class="crosslink-btn" style="padding: 12px 16px; border: 2px solid ${crossBoxBorder}; border-radius: 6px; background: ${crossBoxBg}; cursor: pointer; text-align: left; transition: background 0.15s;">
+        <div style="font-weight: bold; color: ${crossTitleColor}; margin-bottom: 3px;">Create Cross-Link</div>
+        <div style="font-size: 12px; color: ${subTextColor};">Keep "${nodeToMoveName}" under "${currentParentName}" and draw a visual link to "${newParentName}".</div>
       </button>
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${isDark ? '#555' : '#999'}; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
   `;
   
   overlay.appendChild(dialog);
@@ -6869,10 +6925,10 @@ function showMoveOrLinkDialog(nodeToMoveName, nodeToMoveData, currentParentName,
   // Hover effects
   const moveBtn = dialog.querySelector('.move-btn');
   const crosslinkBtn = dialog.querySelector('.crosslink-btn');
-  moveBtn.addEventListener('mouseenter', () => moveBtn.style.background = '#c8e6c9');
-  moveBtn.addEventListener('mouseleave', () => moveBtn.style.background = '#e8f5e9');
-  crosslinkBtn.addEventListener('mouseenter', () => crosslinkBtn.style.background = '#bbdefb');
-  crosslinkBtn.addEventListener('mouseleave', () => crosslinkBtn.style.background = '#e3f2fd');
+  moveBtn.addEventListener('mouseenter', () => moveBtn.style.background = moveBoxHover);
+  moveBtn.addEventListener('mouseleave', () => moveBtn.style.background = moveBoxBg);
+  crosslinkBtn.addEventListener('mouseenter', () => crosslinkBtn.style.background = crossBoxHover);
+  crosslinkBtn.addEventListener('mouseleave', () => crosslinkBtn.style.background = crossBoxBg);
   
   // Handle "Move Node"
   moveBtn.addEventListener('click', () => {
@@ -6925,20 +6981,21 @@ function showMoveSpouseSelectionDialog(nodeToMoveData, nodeToMoveName, newParent
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   let html = `
-    <h3 style="margin-top: 0; margin-bottom: 15px;">Select Second Parent for "${nodeToMoveName}"</h3>
-    <p style="margin-bottom: 15px; color: #666;">Which spouse pairing should "${nodeToMoveName}" belong to?</p>
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: ${dc.heading};">Select Second Parent for "${nodeToMoveName}"</h3>
+    <p style="margin-bottom: 15px; color: ${dc.text};">Which spouse pairing should "${nodeToMoveName}" belong to?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         ${newParentData.name} only (no second parent)
       </button>
   `;
   
   spouses.forEach(spouse => {
     html += `
-      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         ${newParentData.name} & ${spouse.name}
       </button>
     `;
@@ -6946,7 +7003,7 @@ function showMoveSpouseSelectionDialog(nodeToMoveData, nodeToMoveName, newParent
   
   html += `
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
   `;
   
   dialog.innerHTML = html;
@@ -6954,8 +7011,8 @@ function showMoveSpouseSelectionDialog(nodeToMoveData, nodeToMoveName, newParent
   document.body.appendChild(overlay);
   
   dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
-    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
-    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+    btn.addEventListener('mouseenter', () => btn.style.background = dc.btnHover);
+    btn.addEventListener('mouseleave', () => btn.style.background = dc.btnBg);
   });
   
   dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
@@ -7136,52 +7193,53 @@ function showSharedChildrenDialog(person1Id, person2Id, person1Name, person2Name
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   let html = `
-    <h3 style="margin-top: 0; margin-bottom: 15px;">Shared Children?</h3>
-    <p style="margin-bottom: 15px; color: #666;">Are existing children shared between ${person1Name} and ${person2Name}?</p>
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: ${dc.heading};">Shared Children?</h3>
+    <p style="margin-bottom: 15px; color: ${dc.text};">Are existing children shared between ${person1Name} and ${person2Name}?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
   `;
   
   if (person1HasChildren && person2HasChildren) {
     html += `
-      <button class="shared-btn" data-shared="both" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="both" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         Yes, all children are shared
       </button>
-      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         Only ${person1Name}'s children are shared
       </button>
-      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         Only ${person2Name}'s children are shared
       </button>
     `;
   } else if (person1HasChildren) {
     html += `
-      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="person1" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         Yes, ${person1Name}'s children are shared with ${person2Name}
       </button>
     `;
   } else if (person2HasChildren) {
     html += `
-      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="person2" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         Yes, ${person2Name}'s children are shared with ${person1Name}
       </button>
     `;
   }
   
   html += `
-      <button class="shared-btn" data-shared="none" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+      <button class="shared-btn" data-shared="none" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
         No, children are not shared
       </button>
     </div>
-    <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
-      <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #555;">
+    <div style="margin-top: 15px; padding: 10px; background: ${dc.sectionBg}; border-radius: 5px;">
+      <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: ${dc.subText};">
         <input type="checkbox" id="keep-terminal-line-checkbox" style="margin-right: 8px;">
         Keep terminal line for ${person1Name}
       </label>
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
   `;
   
   dialog.innerHTML = html;
@@ -7190,8 +7248,8 @@ function showSharedChildrenDialog(person1Id, person2Id, person1Name, person2Name
   
   // Add hover effects
   dialog.querySelectorAll('.shared-btn').forEach(btn => {
-    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
-    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+    btn.addEventListener('mouseenter', () => btn.style.background = dc.btnHover);
+    btn.addEventListener('mouseleave', () => btn.style.background = dc.btnBg);
   });
   
   // Handle selection
@@ -7318,23 +7376,24 @@ function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, child
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   dialog.innerHTML = `
     <h3 style="margin-top: 0; margin-bottom: 15px; color: #d32f2f;">Remove ${spouse.name}</h3>
-    <p style="margin-bottom: 10px; color: #333;">
+    <p style="margin-bottom: 10px; color: ${dc.heading};">
       <strong>${spouse.name}</strong> has ${childCount} ${childWord}: <em>${childNames}</em>
     </p>
-    <p style="margin-bottom: 20px; color: #666;">What would you like to do with the ${childWord}?</p>
+    <p style="margin-bottom: 20px; color: ${dc.text};">What would you like to do with the ${childWord}?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
-      <button class="delete-children-btn" style="padding: 12px; border: 2px solid #d32f2f; border-radius: 5px; background: #fff; color: #d32f2f; cursor: pointer; font-weight: bold;">
+      <button class="delete-children-btn" style="padding: 12px; border: 2px solid #d32f2f; border-radius: 5px; background: ${dc.dangerBg}; color: #d32f2f; cursor: pointer; font-weight: bold;">
         Remove ${spouse.name} AND delete ${childWord}
       </button>
-      <button class="keep-children-btn" style="padding: 12px; border: 2px solid #1976d2; border-radius: 5px; background: #fff; color: #1976d2; cursor: pointer; font-weight: bold;">
+      <button class="keep-children-btn" style="padding: 12px; border: 2px solid #1976d2; border-radius: 5px; background: ${dc.blueBg}; color: #1976d2; cursor: pointer; font-weight: bold;">
         Remove ${spouse.name} but keep ${childWord}
       </button>
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
   `;
   
   overlay.appendChild(dialog);
@@ -7347,7 +7406,7 @@ function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, child
     deleteBtn.style.color = 'white';
   });
   deleteBtn.addEventListener('mouseleave', () => {
-    deleteBtn.style.background = '#fff';
+    deleteBtn.style.background = dc.dangerBg;
     deleteBtn.style.color = '#d32f2f';
   });
   deleteBtn.addEventListener('click', () => {
@@ -7403,7 +7462,7 @@ function showRemoveSpouseWithChildrenDialog(nodeData, spouse, spouseIndex, child
     keepBtn.style.color = 'white';
   });
   keepBtn.addEventListener('mouseleave', () => {
-    keepBtn.style.background = '#fff';
+    keepBtn.style.background = dc.blueBg;
     keepBtn.style.color = '#1976d2';
   });
   keepBtn.addEventListener('click', () => {
@@ -7477,11 +7536,12 @@ function showRemoveSpouseDialog(nodeData) {
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
   
   let html = `
-    <h3 style="margin-top: 0; margin-bottom: 15px;">Remove Spouse</h3>
-    <p style="margin-bottom: 15px; color: #666;">Which spouse do you want to remove?</p>
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: ${dc.heading};">Remove Spouse</h3>
+    <p style="margin-bottom: 15px; color: ${dc.text};">Which spouse do you want to remove?</p>
     <div style="display: flex; flex-direction: column; gap: 10px;">
   `;
   
@@ -7490,7 +7550,7 @@ function showRemoveSpouseDialog(nodeData) {
       nodeData.children.filter(child => child.spouseId === spouse.id) : [];
     const childInfo = childrenOfSpouse.length > 0 ? ` (${childrenOfSpouse.length} ${childrenOfSpouse.length === 1 ? 'child' : 'children'})` : '';
     html += `
-      <button class="spouse-remove-btn" data-index="${index}" style="padding: 10px; border: 1px solid #dc3545; border-radius: 5px; background: #fff; color: #dc3545; cursor: pointer;">
+      <button class="spouse-remove-btn" data-index="${index}" style="padding: 10px; border: 1px solid #dc3545; border-radius: 5px; background: ${dc.dangerBg}; color: #dc3545; cursor: pointer;">
         Remove ${spouse.name}${childInfo}
       </button>
     `;
@@ -7498,7 +7558,7 @@ function showRemoveSpouseDialog(nodeData) {
   
   html += `
     </div>
-    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
   `;
   
   dialog.innerHTML = html;
@@ -7512,7 +7572,7 @@ function showRemoveSpouseDialog(nodeData) {
       btn.style.color = 'white';
     });
     btn.addEventListener('mouseleave', () => {
-      btn.style.background = '#fff';
+      btn.style.background = dc.dangerBg;
       btn.style.color = '#dc3545';
     });
     btn.addEventListener('click', () => {
@@ -8101,11 +8161,12 @@ function showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNodeRef)
   overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
   
   const dialog = document.createElement('div');
-  dialog.style.cssText = 'background: white; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto;';
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto;`;
   
   let html = `
-    <h3 style="margin-top: 0; margin-bottom: 8px;">Ripple Delete "${nodeToDelete.name}"</h3>
-    <p style="margin-bottom: 16px; color: #666; font-size: 14px;">
+    <h3 style="margin-top: 0; margin-bottom: 8px; color: ${dc.heading};">Ripple Delete "${nodeToDelete.name}"</h3>
+    <p style="margin-bottom: 16px; color: ${dc.text}; font-size: 14px;">
       "${parentData.name}" has spouses. Choose how each child should be assigned:
     </p>
   `;
@@ -8113,9 +8174,9 @@ function showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNodeRef)
   childrenToKeep.forEach((child, i) => {
     const childKey = child.id || child.name;
     html += `
-      <div style="background: #f5f5f5; border-radius: 6px; padding: 12px; margin-bottom: ${i < childrenToKeep.length - 1 ? '10px' : '0'};">
-        <div style="font-weight: 600; margin-bottom: 8px;">${child.name}</div>
-        <select data-child-key="${childKey}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+      <div style="background: ${dc.childSectionBg}; border-radius: 6px; padding: 12px; margin-bottom: ${i < childrenToKeep.length - 1 ? '10px' : '0'};">
+        <div style="font-weight: 600; margin-bottom: 8px; color: ${dc.heading};">${child.name}</div>
+        <select data-child-key="${childKey}" style="width: 100%; padding: 8px; border: 1px solid ${dc.btnBorder}; border-radius: 4px; font-size: 14px; background: ${dc.selectBg}; color: ${dc.selectColor};">
           <option value="">${parentData.name} only (no spouse)</option>
     `;
     parentSpouses.forEach(spouse => {
@@ -8129,7 +8190,7 @@ function showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNodeRef)
   
   html += `
     <div style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end;">
-      <button class="cancel-btn" style="padding: 8px 18px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+      <button class="cancel-btn" style="padding: 8px 18px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
       <button class="confirm-btn" style="padding: 8px 18px; border: none; background: #e53935; color: white; border-radius: 5px; cursor: pointer; font-weight: 600;">Delete</button>
     </div>
   `;
@@ -8140,8 +8201,8 @@ function showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNodeRef)
   
   // Hover effects
   const cancelBtn = dialog.querySelector('.cancel-btn');
-  cancelBtn.addEventListener('mouseenter', () => cancelBtn.style.background = '#777');
-  cancelBtn.addEventListener('mouseleave', () => cancelBtn.style.background = '#999');
+  cancelBtn.addEventListener('mouseenter', () => cancelBtn.style.background = dc.cancelHover);
+  cancelBtn.addEventListener('mouseleave', () => cancelBtn.style.background = dc.cancelBg);
   const confirmBtn = dialog.querySelector('.confirm-btn');
   confirmBtn.addEventListener('mouseenter', () => confirmBtn.style.background = '#c62828');
   confirmBtn.addEventListener('mouseleave', () => confirmBtn.style.background = '#e53935');
@@ -9125,6 +9186,27 @@ function showExportDialog(exportType) {
   });
 }
 
+function getLargestFontInTree() {
+  let maxFont = defaultNodeTextStyle.fontSize || 12;
+  function traverse(node) {
+    if (!node) return;
+    const fs = node.hasCustomStyle ? (node.fontSize || maxFont) : maxFont;
+    if (fs > maxFont) maxFont = fs;
+    if (node.spouses) {
+      node.spouses.forEach(sp => {
+        const sfs = sp.hasCustomStyle ? (sp.fontSize || maxFont) : maxFont;
+        if (sfs > maxFont) maxFont = sfs;
+      });
+    }
+    if (node.children) node.children.forEach(traverse);
+  }
+  traverse(data);
+  // Also check dnaLabelStyles
+  if (dnaLabelStyles.cm.fontSize > maxFont) maxFont = dnaLabelStyles.cm.fontSize;
+  if (dnaLabelStyles.relationship.fontSize > maxFont) maxFont = dnaLabelStyles.relationship.fontSize;
+  return maxFont;
+}
+
 function downloadPNG() {
   showExportDialog('png').then(includeTitle => {
     if (includeTitle === null) return; // cancelled
@@ -9141,7 +9223,8 @@ function _exportPNG(includeTitle) {
   
   // Add padding
   const padding = 40;
-  const titleHeight = includeTitle ? 50 : 0;
+  const titleFontSize = includeTitle ? getLargestFontInTree() + 4 : 0;
+  const titleHeight = includeTitle ? Math.ceil(titleFontSize * 1.5) : 0;
   const width = Math.ceil(bbox.width + padding * 2);
   const height = Math.ceil(bbox.height + padding * 2 + titleHeight);
   
@@ -9166,10 +9249,10 @@ function _exportPNG(includeTitle) {
   if (includeTitle) {
     const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     titleText.setAttribute("x", String(width / 2));
-    titleText.setAttribute("y", String(padding / 2 + 18));
+    titleText.setAttribute("y", String(padding / 2 + titleFontSize * 0.7));
     titleText.setAttribute("text-anchor", "middle");
     titleText.setAttribute("font-family", "sans-serif");
-    titleText.setAttribute("font-size", "24");
+    titleText.setAttribute("font-size", String(titleFontSize));
     titleText.setAttribute("font-weight", "bold");
     titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
     titleText.textContent = currentFilename;
@@ -9687,7 +9770,8 @@ function _exportSVG(includeTitle) {
   
   // Add padding
   const padding = 40;
-  const titleHeight = includeTitle ? 50 : 0;
+  const titleFontSize = includeTitle ? getLargestFontInTree() + 4 : 0;
+  const titleHeight = includeTitle ? Math.ceil(titleFontSize * 1.5) : 0;
   const width = bbox.width + padding * 2;
   const height = bbox.height + padding * 2 + titleHeight;
   
@@ -9699,10 +9783,10 @@ function _exportSVG(includeTitle) {
   if (includeTitle) {
     const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     titleText.setAttribute("x", String(width / 2));
-    titleText.setAttribute("y", String(padding / 2 + 18));
+    titleText.setAttribute("y", String(padding / 2 + titleFontSize * 0.7));
     titleText.setAttribute("text-anchor", "middle");
     titleText.setAttribute("font-family", "sans-serif");
-    titleText.setAttribute("font-size", "24");
+    titleText.setAttribute("font-size", String(titleFontSize));
     titleText.setAttribute("font-weight", "bold");
     titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
     titleText.textContent = currentFilename;
