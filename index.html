@@ -1355,8 +1355,6 @@
           <input type="checkbox" id="tools-rel-font-italic" />
           <label for="tools-rel-font-italic">Italic</label>
         </div>
-        <div style="flex: 1;"></div>
-        <button id="tools-apply-label-style" class="apply-btn">Apply</button>
       </div>
     </div>
 
@@ -1430,10 +1428,17 @@
   <div class="section">
     <div class="section-title">Node Name</div>
     <input type="text" id="node-name" placeholder="Enter name" />
-    <label style="margin-top: 8px;">Birth</label>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+      <label style="margin: 0;">Birth</label>
+      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-male" /> Male</label>
+      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-female" /> Female</label>
+      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-show-gender" /> Show</label>
+    </div>
     <input type="text" id="node-birth" placeholder="e.g., 1950 or Jan 1, 1950" />
     <label>Death</label>
     <input type="text" id="node-death" placeholder="e.g., 2020 or Dec 31, 2020" />
+    <label>Notes</label>
+    <textarea id="node-notes" placeholder="e.g., lived in what is now Bacon County" rows="1" style="width: 100%; resize: vertical; font-family: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></textarea>
   </div>
 
   <!-- Home Person Section -->
@@ -1619,10 +1624,6 @@
     <div class="style-row">
       <label class="checkbox-label"><input type="checkbox" id="rel-font-bold" /> Bold</label>
       <label class="checkbox-label"><input type="checkbox" id="rel-font-italic" /> Italic</label>
-    </div>
-    
-    <div class="button-row" style="margin-top: 12px;">
-      <button id="apply-label-style">Apply Style</button>
     </div>
     
     <div class="style-row" style="margin-top: 12px; border-top: 1px solid #90caf9; padding-top: 12px;">
@@ -2791,8 +2792,9 @@ const nodeTooltip = document.getElementById("node-tooltip");
 
 function showNodeTooltip(event, nodeData, isSpouse = false) {
   const name = nodeData.name || "Unnamed";
+  const genderSymbol = (nodeData.showGender && nodeData.gender) ? (nodeData.gender === "male" ? " ♂" : " ♀") : "";
   
-  let html = `<div class="tooltip-name">${name}</div>`;
+  let html = `<div class="tooltip-name">${name}${genderSymbol}</div>`;
   
   // Show birth and death years if available (always on separate lines)
   if (nodeData.birth) {
@@ -2803,6 +2805,9 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   }
   
   // Count children if any (only for non-spouse nodes)
+  if (nodeData.notes) {
+    html += `<div class="tooltip-notes" style="color: rgba(255,255,255,0.85); margin-top: 4px;">${nodeData.notes}</div>`;
+  }
   if (!isSpouse && nodeData.children && nodeData.children.length > 0) {
     const childCount = nodeData.children.length;
     html += `<div class="tooltip-children">${childCount} ${childCount === 1 ? 'child' : 'children'} in tree</div>`;
@@ -3384,7 +3389,11 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   
   document.getElementById("node-name").value = editData.name;
   document.getElementById("node-birth").value = editData.birth || "";
+  document.getElementById("node-male").checked = editData.gender === "male";
+  document.getElementById("node-female").checked = editData.gender === "female";
+  document.getElementById("node-show-gender").checked = editData.showGender || false;
   document.getElementById("node-death").value = editData.death || "";
+  document.getElementById("node-notes").value = editData.notes || "";
   document.getElementById("child-name").value = "";
   document.getElementById("parent-name").value = "";
   document.getElementById("spouse-name").value = "";
@@ -3672,7 +3681,8 @@ document.getElementById("dna-line-spacing-reset").addEventListener("click", () =
   drawTree(d3.zoomTransform(svg.node()));
 });
 
-document.getElementById("apply-label-style").addEventListener("click", () => {
+// Live update helper for DNA sidebar label controls
+function syncDnaSidebarLabels() {
   dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("cm-font-size").value);
   dnaLabelStyles.cm.color = document.getElementById("cm-font-color").value;
   dnaLabelStyles.cm.bold = document.getElementById("cm-font-bold").checked;
@@ -3683,7 +3693,27 @@ document.getElementById("apply-label-style").addEventListener("click", () => {
   dnaLabelStyles.relationship.bold = document.getElementById("rel-font-bold").checked;
   dnaLabelStyles.relationship.italic = document.getElementById("rel-font-italic").checked;
   
+  // Sync tools panel controls
+  document.getElementById("tools-cm-font-size").value = dnaLabelStyles.cm.fontSize;
+  document.getElementById("tools-cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("tools-cm-font-bold").checked = dnaLabelStyles.cm.bold;
+  document.getElementById("tools-cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  document.getElementById("tools-rel-font-size").value = dnaLabelStyles.relationship.fontSize;
+  document.getElementById("tools-rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("tools-rel-font-bold").checked = dnaLabelStyles.relationship.bold;
+  document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  
   drawTree(d3.zoomTransform(svg.node()));
+}
+
+["cm-font-size", "rel-font-size"].forEach(id => {
+  document.getElementById(id).addEventListener("input", syncDnaSidebarLabels);
+});
+["cm-font-color", "rel-font-color"].forEach(id => {
+  document.getElementById(id).addEventListener("input", syncDnaSidebarLabels);
+});
+["cm-font-bold", "cm-font-italic", "rel-font-bold", "rel-font-italic"].forEach(id => {
+  document.getElementById(id).addEventListener("change", syncDnaSidebarLabels);
 });
 
 function deleteNodeFromTree(tree, nodeToDelete) {
@@ -5933,7 +5963,11 @@ function drawTree(savedTransform = null) {
         const name = d.data.name;
         const fontSize = d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
         const isBold = d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
-        return fitName(name, fontSize, isBold);
+        let display = fitName(name, fontSize, isBold);
+        if (d.data.showGender && d.data.gender) {
+          display += d.data.gender === "male" ? " ♂" : " ♀";
+        }
+        return display;
       })
       .style("font-size", d => `${d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
       .style("font-weight", d => (d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
@@ -6012,7 +6046,11 @@ function drawTree(savedTransform = null) {
         const name = d.spouse.name;
         const fontSize = d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
         const isBold = d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
-        return fitName(name, fontSize, isBold);
+        let display = fitName(name, fontSize, isBold);
+        if (d.spouse.showGender && d.spouse.gender) {
+          display += d.spouse.gender === "male" ? " ♂" : " ♀";
+        }
+        return display;
       })
       .style("font-size", d => `${d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
       .style("font-weight", d => (d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
@@ -6049,6 +6087,52 @@ document.getElementById("node-birth").addEventListener("input", () => {
   }
 });
 
+// Live update for gender checkboxes (mutually exclusive)
+document.getElementById("node-male").addEventListener("change", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    if (document.getElementById("node-male").checked) {
+      document.getElementById("node-female").checked = false;
+      editData.gender = "male";
+    } else {
+      editData.gender = undefined;
+      document.getElementById("node-show-gender").checked = false;
+      editData.showGender = false;
+    }
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+document.getElementById("node-female").addEventListener("change", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    if (document.getElementById("node-female").checked) {
+      document.getElementById("node-male").checked = false;
+      editData.gender = "female";
+    } else {
+      editData.gender = undefined;
+      document.getElementById("node-show-gender").checked = false;
+      editData.showGender = false;
+    }
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+document.getElementById("node-show-gender").addEventListener("change", () => {
+  if (selectedNode) {
+    const editData = selectedSpouse || selectedNode.data;
+    if (!editData.gender) {
+      document.getElementById("node-show-gender").checked = false;
+      return;
+    }
+    sidebarDirty = true;
+    editData.showGender = document.getElementById("node-show-gender").checked;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
 // Live update for death field
 document.getElementById("node-death").addEventListener("input", () => {
   if (selectedNode) {
@@ -6060,15 +6144,75 @@ document.getElementById("node-death").addEventListener("input", () => {
   }
 });
 
+// Live update for notes field
+document.getElementById("node-notes").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    const newNotes = document.getElementById("node-notes").value.trim();
+    editData.notes = newNotes || undefined;
+  }
+});
+
 // Helper: move a child to the leftmost position
 function moveChildToVisualLeft(childData, parentData) {
   const siblings = parentData.children;
   if (siblings.length <= 1) return;
   
-  let currentIndex = siblings.indexOf(childData);
-  while (currentIndex > 0) {
-    [siblings[currentIndex - 1], siblings[currentIndex]] = [siblings[currentIndex], siblings[currentIndex - 1]];
-    currentIndex--;
+  // Remove childData temporarily so the layout is computed without it
+  const childIndex = siblings.indexOf(childData);
+  siblings.splice(childIndex, 1);
+  
+  // Do a temporary layout to find the visual (x-position) order of siblings
+  // without the new child interfering
+  let deepestCollapsedAncestorNode = null;
+  let maxDepthSearch = -1;
+  function findDeepestCA(node, depth = 0) {
+    if (node.ancestorsCollapsed && depth > maxDepthSearch) {
+      deepestCollapsedAncestorNode = node;
+      maxDepthSearch = depth;
+    }
+    if (node.children) {
+      node.children.forEach(child => findDeepestCA(child, depth + 1));
+    }
+  }
+  findDeepestCA(data);
+  const effectiveRoot = deepestCollapsedAncestorNode || data;
+  
+  const tempRoot = d3.hierarchy(effectiveRoot, d => d.collapsed ? null : d.children);
+  computeLayout(tempRoot);
+  
+  // Find the parent node in the temp layout
+  let parentNode = null;
+  for (const node of tempRoot.descendants()) {
+    if (node.data === parentData) {
+      parentNode = node;
+      break;
+    }
+  }
+  
+  if (parentNode && parentNode.children) {
+    // Find the visually leftmost sibling (smallest x)
+    let leftmostX = Infinity;
+    let leftmostSibling = null;
+    for (const child of parentNode.children) {
+      if (child.x < leftmostX) {
+        leftmostX = child.x;
+        leftmostSibling = child.data;
+      }
+    }
+    
+    if (leftmostSibling) {
+      // Insert childData just before the visually leftmost sibling
+      const leftmostIndex = siblings.indexOf(leftmostSibling);
+      siblings.splice(leftmostIndex, 0, childData);
+    } else {
+      // Fallback: insert at beginning
+      siblings.unshift(childData);
+    }
+  } else {
+    // Fallback: insert at beginning
+    siblings.unshift(childData);
   }
   
   drawTree(d3.zoomTransform(svg.node()));
@@ -6270,6 +6414,211 @@ document.getElementById("add-spouse").addEventListener("click", () => {
   }
 });
 
+// Check if a node is a descendant of another node (for circular reference prevention)
+function isNodeInSubtree(root, targetId) {
+  if (!root) return false;
+  if (root.id === targetId) return true;
+  if (root.spouses) {
+    for (const spouse of root.spouses) {
+      if (spouse.id === targetId) return true;
+    }
+  }
+  if (root.children) {
+    for (const child of root.children) {
+      if (isNodeInSubtree(child, targetId)) return true;
+    }
+  }
+  return false;
+}
+
+// Move a node (and its entire subtree) to become a child of a new parent
+function moveNodeToNewParent(nodeToMove, newParentData, spouseId) {
+  // 1. Find and remove from current parent
+  const currentParent = findParentNode(nodeToMove);
+  if (currentParent) {
+    const index = currentParent.children.findIndex(c => c === nodeToMove || c.id === nodeToMove.id);
+    if (index !== -1) {
+      currentParent.children.splice(index, 1);
+      if (currentParent.children.length === 0) {
+        delete currentParent.children;
+      }
+    }
+  }
+  
+  // 2. Update the spouseId on the moved node
+  if (spouseId) {
+    nodeToMove.spouseId = spouseId;
+  } else {
+    delete nodeToMove.spouseId;
+  }
+  
+  // 3. Insert into new parent's children
+  if (!newParentData.children) {
+    newParentData.children = [];
+  }
+  newParentData.children.push(nodeToMove);
+}
+
+// Dialog: Move node vs Create cross-link
+function showMoveOrLinkDialog(nodeToMoveName, nodeToMoveData, currentParentName, newParentData, newParentName, relationshipType, currentPersonId, selectedPersonId) {
+  const useBezier = document.getElementById("enable-bezier-connection").checked;
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 24px; border-radius: 10px; max-width: 480px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  // Count descendants for the info message
+  let descendantCount = 0;
+  function countDescendants(node) {
+    if (node.children) {
+      descendantCount += node.children.length;
+      node.children.forEach(countDescendants);
+    }
+  }
+  countDescendants(nodeToMoveData);
+  
+  const descendantInfo = descendantCount > 0 
+    ? `<p style="margin: 8px 0; color: #555; font-size: 13px;">"${nodeToMoveName}" has <strong>${descendantCount} descendant${descendantCount !== 1 ? 's' : ''}</strong> who will also move, keeping all styling and DNA data intact.</p>` 
+    : '';
+  
+  dialog.innerHTML = `
+    <h3 style="margin-top: 0; margin-bottom: 10px; color: #333;">Node Already Has a Parent</h3>
+    <p style="margin-bottom: 8px; color: #666;">"<strong>${nodeToMoveName}</strong>" is currently a child of "<strong>${currentParentName}</strong>".</p>
+    ${descendantInfo}
+    <p style="margin-bottom: 18px; color: #666;">Would you like to <strong>move</strong> the node or just create a visual <strong>cross-link</strong>?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="move-btn" style="padding: 12px 16px; border: 2px solid #2e7d32; border-radius: 6px; background: #e8f5e9; cursor: pointer; text-align: left; transition: background 0.15s;">
+        <div style="font-weight: bold; color: #2e7d32; margin-bottom: 3px;">Move Node</div>
+        <div style="font-size: 12px; color: #555;">Remove "${nodeToMoveName}" from "${currentParentName}" and re-attach under "${newParentName}". All descendants, styling, and DNA data are preserved.</div>
+      </button>
+      <button class="crosslink-btn" style="padding: 12px 16px; border: 2px solid #1565c0; border-radius: 6px; background: #e3f2fd; cursor: pointer; text-align: left; transition: background 0.15s;">
+        <div style="font-weight: bold; color: #1565c0; margin-bottom: 3px;">Create Cross-Link</div>
+        <div style="font-size: 12px; color: #555;">Keep "${nodeToMoveName}" under "${currentParentName}" and draw a visual link to "${newParentName}".</div>
+      </button>
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer; width: 100%;">Cancel</button>
+  `;
+  
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  // Hover effects
+  const moveBtn = dialog.querySelector('.move-btn');
+  const crosslinkBtn = dialog.querySelector('.crosslink-btn');
+  moveBtn.addEventListener('mouseenter', () => moveBtn.style.background = '#c8e6c9');
+  moveBtn.addEventListener('mouseleave', () => moveBtn.style.background = '#e8f5e9');
+  crosslinkBtn.addEventListener('mouseenter', () => crosslinkBtn.style.background = '#bbdefb');
+  crosslinkBtn.addEventListener('mouseleave', () => crosslinkBtn.style.background = '#e3f2fd');
+  
+  // Handle "Move Node"
+  moveBtn.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    
+    // Check if new parent has multiple spouses — need to ask which one
+    const spouses = newParentData.spouses || [];
+    if (spouses.length > 1) {
+      showMoveSpouseSelectionDialog(nodeToMoveData, nodeToMoveName, newParentData, spouses);
+    } else {
+      saveState();
+      const spouseId = spouses.length === 1 ? spouses[0].id : null;
+      moveNodeToNewParent(nodeToMoveData, newParentData, spouseId);
+      autoSave();
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+  });
+  
+  // Handle "Create Cross-Link"
+  crosslinkBtn.addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    saveState();
+    if (relationshipType === "parent") {
+      addCrossLink("parent", selectedPersonId, currentPersonId, { useBezier });
+    } else {
+      addCrossLink("parent", currentPersonId, selectedPersonId, { useBezier });
+    }
+    drawTree(d3.zoomTransform(svg.node()));
+    populateLinkPersonDropdown(currentPersonId);
+    displayExistingLinks(currentPersonId);
+    document.getElementById("link-person-select").value = "";
+  });
+  
+  // Handle cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
+// Dialog: Select which spouse pair when moving a node to a parent with multiple spouses
+function showMoveSpouseSelectionDialog(nodeToMoveData, nodeToMoveName, newParentData, spouses) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'background: white; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+  
+  let html = `
+    <h3 style="margin-top: 0; margin-bottom: 15px;">Select Second Parent for "${nodeToMoveName}"</h3>
+    <p style="margin-bottom: 15px; color: #666;">Which spouse pairing should "${nodeToMoveName}" belong to?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="spouse-select-btn" data-spouse-id="" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        ${newParentData.name} only (no second parent)
+      </button>
+  `;
+  
+  spouses.forEach(spouse => {
+    html += `
+      <button class="spouse-select-btn" data-spouse-id="${spouse.id}" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background: #f5f5f5; cursor: pointer;">
+        ${newParentData.name} & ${spouse.name}
+      </button>
+    `;
+  });
+  
+  html += `
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: #999; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+  `;
+  
+  dialog.innerHTML = html;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  
+  dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => btn.style.background = '#e0e0e0');
+    btn.addEventListener('mouseleave', () => btn.style.background = '#f5f5f5');
+  });
+  
+  dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      saveState();
+      const spouseId = btn.getAttribute('data-spouse-id') || null;
+      moveNodeToNewParent(nodeToMoveData, newParentData, spouseId);
+      document.body.removeChild(overlay);
+      autoSave();
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    });
+  });
+  
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
 // Create Link button handler
 document.getElementById("create-link").addEventListener("click", () => {
   const relationshipType = document.getElementById("link-relationship-type").value;
@@ -6333,23 +6682,86 @@ document.getElementById("create-link").addEventListener("click", () => {
       document.getElementById("link-person-select").value = "";
     }
   } else if (relationshipType === "parent") {
-    saveState();
-    const useBezier = document.getElementById("enable-bezier-connection").checked;
     // The selected person becomes a parent of the current person
-    addCrossLink("parent", selectedPersonId, currentPersonId, { useBezier });
-    drawTree(d3.zoomTransform(svg.node()));
-    populateLinkPersonDropdown(currentPersonId);
-    displayExistingLinks(currentPersonId);
-    document.getElementById("link-person-select").value = "";
+    // "child" = currentPerson (the one being given a new parent)
+    const childPersonInfo = getPersonById(currentPersonId);
+    const parentPersonInfo = getPersonById(selectedPersonId);
+    
+    if (!childPersonInfo || !parentPersonInfo) {
+      alert("Could not find one of the selected people.");
+      return;
+    }
+    
+    // Get the actual data objects
+    const childData = childPersonInfo.person;
+    const parentData = parentPersonInfo.person;
+    
+    // Check for circular reference: can't make someone a parent if they're a descendant of the child
+    if (isNodeInSubtree(childData, selectedPersonId)) {
+      alert(`Cannot make "${parentData.name}" a parent of "${childData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
+      return;
+    }
+    
+    // Check if the child already has a parent (i.e., it's not the root)
+    const existingParent = findParentNode(childData);
+    
+    if (existingParent && childPersonInfo.type === 'node') {
+      // Node already has a parent — show move vs cross-link dialog
+      showMoveOrLinkDialog(
+        childData.name, childData, existingParent.name,
+        parentData, parentData.name,
+        "parent", currentPersonId, selectedPersonId
+      );
+    } else {
+      // No existing parent (root node or spouse) — just create cross-link
+      saveState();
+      const useBezier = document.getElementById("enable-bezier-connection").checked;
+      addCrossLink("parent", selectedPersonId, currentPersonId, { useBezier });
+      drawTree(d3.zoomTransform(svg.node()));
+      populateLinkPersonDropdown(currentPersonId);
+      displayExistingLinks(currentPersonId);
+      document.getElementById("link-person-select").value = "";
+    }
   } else if (relationshipType === "child") {
-    saveState();
-    const useBezier = document.getElementById("enable-bezier-connection").checked;
     // The selected person becomes a child of the current person
-    addCrossLink("parent", currentPersonId, selectedPersonId, { useBezier });
-    drawTree(d3.zoomTransform(svg.node()));
-    populateLinkPersonDropdown(currentPersonId);
-    displayExistingLinks(currentPersonId);
-    document.getElementById("link-person-select").value = "";
+    // "child" = selectedPerson (the one being given a new parent)
+    const childPersonInfo = getPersonById(selectedPersonId);
+    const parentPersonInfo = getPersonById(currentPersonId);
+    
+    if (!childPersonInfo || !parentPersonInfo) {
+      alert("Could not find one of the selected people.");
+      return;
+    }
+    
+    const childData = childPersonInfo.person;
+    const parentData = parentPersonInfo.person;
+    
+    // Check for circular reference: can't make someone a child if the parent is their descendant
+    if (isNodeInSubtree(childData, currentPersonId)) {
+      alert(`Cannot make "${childData.name}" a child of "${parentData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
+      return;
+    }
+    
+    // Check if the child already has a parent
+    const existingParent = findParentNode(childData);
+    
+    if (existingParent && childPersonInfo.type === 'node') {
+      // Node already has a parent — show move vs cross-link dialog
+      showMoveOrLinkDialog(
+        childData.name, childData, existingParent.name,
+        parentData, parentData.name,
+        "child", currentPersonId, selectedPersonId
+      );
+    } else {
+      // No existing parent — just create cross-link
+      saveState();
+      const useBezier = document.getElementById("enable-bezier-connection").checked;
+      addCrossLink("parent", currentPersonId, selectedPersonId, { useBezier });
+      drawTree(d3.zoomTransform(svg.node()));
+      populateLinkPersonDropdown(currentPersonId);
+      displayExistingLinks(currentPersonId);
+      document.getElementById("link-person-select").value = "";
+    }
   }
 });
 
@@ -8393,7 +8805,13 @@ function openToolsPanel() {
   toolsOverlay.classList.add("visible");
 }
 
+let toolsDirty = false;
+
 function closeToolsPanel() {
+  if (toolsDirty) {
+    autoSave();
+    toolsDirty = false;
+  }
   toolsPanel.classList.remove("visible");
   toolsOverlay.classList.remove("visible");
 }
@@ -8481,18 +8899,20 @@ document.addEventListener("mouseup", () => {
   }
 });
 
-// Text Styling
-document.getElementById("tools-apply-style-all").addEventListener("click", () => {
+// Text Styling - live preview
+function syncToolsNodeTextStyle() {
+  if (!toolsDirty) {
+    saveState();
+  }
+  toolsDirty = true;
   const fontSize = parseInt(document.getElementById("tools-font-size").value);
   const bold = document.getElementById("tools-font-bold").checked;
   const italic = document.getElementById("tools-font-italic").checked;
   
-  // Update the global default
   defaultNodeTextStyle.fontSize = fontSize;
   defaultNodeTextStyle.bold = bold;
   defaultNodeTextStyle.italic = italic;
   
-  // Sync sidebar inputs with new defaults
   document.getElementById("font-size").value = fontSize;
   document.getElementById("font-bold").checked = bold;
   document.getElementById("font-italic").checked = italic;
@@ -8501,13 +8921,13 @@ document.getElementById("tools-apply-style-all").addEventListener("click", () =>
     node.fontSize = fontSize;
     node.bold = bold;
     node.italic = italic;
-    delete node.hasCustomStyle; // Clear individual override flag
+    delete node.hasCustomStyle;
     if (node.spouses) {
       node.spouses.forEach(spouse => {
         spouse.fontSize = fontSize;
         spouse.bold = bold;
         spouse.italic = italic;
-        delete spouse.hasCustomStyle; // Clear individual override flag
+        delete spouse.hasCustomStyle;
       });
     }
     if (node.children) {
@@ -8516,8 +8936,19 @@ document.getElementById("tools-apply-style-all").addEventListener("click", () =>
   }
   
   applyStyleToAll(data);
-  autoSave();
   drawTree(d3.zoomTransform(svg.node()));
+}
+
+document.getElementById("tools-font-size").addEventListener("input", syncToolsNodeTextStyle);
+document.getElementById("tools-font-bold").addEventListener("change", syncToolsNodeTextStyle);
+document.getElementById("tools-font-italic").addEventListener("change", syncToolsNodeTextStyle);
+
+document.getElementById("tools-apply-style-all").addEventListener("click", () => {
+  if (!toolsDirty) {
+    saveState();
+  }
+  toolsDirty = false;
+  autoSave();
 });
 
 // Layout Spacing
@@ -8583,7 +9014,12 @@ document.getElementById("tools-reset-line-spacing").addEventListener("click", ()
 });
 
 // Label Styling
-document.getElementById("tools-apply-label-style").addEventListener("click", () => {
+// Live update helper for tools DNA label controls
+function syncToolsDnaLabels() {
+  if (!toolsDirty) {
+    saveState();
+  }
+  toolsDirty = true;
   dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("tools-cm-font-size").value);
   dnaLabelStyles.cm.color = document.getElementById("tools-cm-font-color").value;
   dnaLabelStyles.cm.bold = document.getElementById("tools-cm-font-bold").checked;
@@ -8594,7 +9030,7 @@ document.getElementById("tools-apply-label-style").addEventListener("click", () 
   dnaLabelStyles.relationship.bold = document.getElementById("tools-rel-font-bold").checked;
   dnaLabelStyles.relationship.italic = document.getElementById("tools-rel-font-italic").checked;
   
-  // Also update the DNA sidebar controls
+  // Sync DNA sidebar controls
   document.getElementById("cm-font-size").value = dnaLabelStyles.cm.fontSize;
   document.getElementById("cm-font-color").value = dnaLabelStyles.cm.color;
   document.getElementById("cm-font-bold").checked = dnaLabelStyles.cm.bold;
@@ -8605,6 +9041,16 @@ document.getElementById("tools-apply-label-style").addEventListener("click", () 
   document.getElementById("rel-font-italic").checked = dnaLabelStyles.relationship.italic;
   
   drawTree(d3.zoomTransform(svg.node()));
+}
+
+["tools-cm-font-size", "tools-rel-font-size"].forEach(id => {
+  document.getElementById(id).addEventListener("input", syncToolsDnaLabels);
+});
+["tools-cm-font-color", "tools-rel-font-color"].forEach(id => {
+  document.getElementById(id).addEventListener("input", syncToolsDnaLabels);
+});
+["tools-cm-font-bold", "tools-cm-font-italic", "tools-rel-font-bold", "tools-rel-font-italic"].forEach(id => {
+  document.getElementById(id).addEventListener("change", syncToolsDnaLabels);
 });
 
 // Auto cM Stroke Colors
