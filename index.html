@@ -210,7 +210,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
     color: white;
   }
   #shortcuts-modal .modal-header h2 {
@@ -258,7 +258,7 @@
   #shortcuts-modal .shortcut-section-title {
     font-size: 12px;
     font-weight: 700;
-    color: #667eea;
+    color: #2e7d32;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
@@ -1150,6 +1150,234 @@
     text-align: center;
     white-space: nowrap;
   }
+
+  /* ===== THEME SYSTEM ===== */
+  #theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  #theme-btn .theme-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  /* --- Light Mode --- */
+  body.theme-light svg { background: #ffffff; }
+  body.theme-light #toolbar { background: #fff; border-bottom: 1px solid #e2e5ea; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  body.theme-light #toolbar button { background: #f0f2f5; color: #333; border-left: 3px solid #b0b8c4; }
+  body.theme-light #toolbar button:hover { background: #e4e7ec; border-left-color: #5b7a9d; }
+  body.theme-light #toolbar .filename-display { color: #2c3e50; }
+  body.theme-light #toolbar .filename-display:hover { background-color: rgba(0,0,0,0.04); }
+  body.theme-light #toolbar p { color: #6b7b8d; }
+  body.theme-light #toolbar .user-guide-link { color: #5b7a9d; }
+  body.theme-light #toolbar .user-guide-link:hover { background-color: rgba(91,122,157,0.08); }
+  body.theme-light .node rect { stroke: black; }
+  body.theme-light .node text { fill: #2c3e50; }
+  body.theme-light .link { stroke: black; }
+  body.theme-light .spouse-link { stroke: black; }
+  body.theme-light .cross-link-bezier { stroke: black; }
+  body.theme-light .terminal-line { }
+  /* Sidebar */
+  body.theme-light #sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
+  body.theme-light #sidebar h2 { color: #2c3e50; }
+  body.theme-light #sidebar h3 { color: #4a5568; }
+  body.theme-light #sidebar .section { background: #fff; border: 1px solid #e2e5ea !important; }
+  body.theme-light #sidebar .section-title { color: #5b7a9d; }
+  body.theme-light #sidebar label { color: #4a5568; }
+  body.theme-light #sidebar input[type="text"],
+  body.theme-light #sidebar input[type="number"] { border-color: #d1d8e0 !important; }
+  body.theme-light #sidebar input[type="color"] { border-color: #d1d8e0 !important; }
+  body.theme-light #sidebar textarea { border-color: #d1d8e0 !important; }
+  body.theme-light #sidebar select { border-color: #d1d8e0 !important; }
+  body.theme-light #sidebar .close-btn { background: rgba(91,122,157,0.12) !important; color: #5b7a9d !important; }
+  body.theme-light #sidebar .close-btn:hover { background: rgba(91,122,157,0.2) !important; }
+  body.theme-light #sidebar button.primary { background: #5b7a9d !important; color: white; }
+  body.theme-light #sidebar button.primary:hover { background: #4a6a8a !important; }
+  body.theme-light #sidebar button.secondary { background: #e2e5ea; color: #4a5568; }
+  body.theme-light #sidebar button.secondary:hover { background: #d1d8e0; }
+  body.theme-light #sidebar button.blue { background: #5b7a9d !important; color: white; }
+  body.theme-light #sidebar button.blue:hover { background: #4a6a8a !important; }
+  body.theme-light #sidebar button.danger { background: #c0616b !important; color: white; }
+  body.theme-light #sidebar button.danger:hover { background: #a8505a !important; }
+  /* DNA Sidebar */
+  body.theme-light #dna-sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
+  body.theme-light #dna-sidebar h2 { color: #2c3e50; }
+  body.theme-light #dna-sidebar .close-btn { background: rgba(91,122,157,0.12) !important; color: #5b7a9d !important; }
+  body.theme-light #dna-sidebar .close-btn:hover { background: rgba(91,122,157,0.2) !important; }
+  body.theme-light #dna-sidebar .comparison-names { background: #fff; border-color: #e2e5ea !important; }
+  body.theme-light #dna-sidebar .comparison-names span { color: #2c3e50; }
+  body.theme-light #dna-sidebar input[type="text"] { border-color: #d1d8e0 !important; }
+  body.theme-light #dna-sidebar label { color: #4a5568; }
+  body.theme-light #dna-sidebar .style-section { background: #fff; border-color: #e2e5ea !important; }
+  body.theme-light #dna-sidebar .style-section-title { color: #5b7a9d; }
+  body.theme-light #dna-sidebar #save-dna { background: #5b7a9d !important; }
+  body.theme-light #dna-sidebar #save-dna:hover { background: #4a6a8a !important; }
+  body.theme-light #dna-sidebar #clear-dna { background: #c0616b !important; }
+  body.theme-light #dna-sidebar #clear-dna:hover { background: #a8505a !important; }
+  body.theme-light #dna-sidebar .style-row input[type="color"] { border-color: #d1d8e0; }
+  body.theme-light #dna-sidebar .style-row input[type="number"] { border-color: #d1d8e0; }
+  body.theme-light #dna-sidebar .checkbox-label { color: #4a5568; }
+  /* Tools Panel */
+  body.theme-light #tools-panel .tools-header { background: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%); }
+  body.theme-light #tools-panel .tools-section { background: #f3f5f7; }
+  body.theme-light #tools-panel .tools-section-title { color: #2c3e50; }
+  body.theme-light #tools-panel .tools-row label { color: #4a5568; }
+  body.theme-light #tools-panel .apply-btn,
+  body.theme-light #tools-panel .tools-row .apply-btn,
+  body.theme-light #tools-panel .style-row .apply-btn {
+    background: linear-gradient(180deg, #5b9d7a 0%, #4a8a6a 100%) !important;
+    box-shadow: 0 2px 4px rgba(74,138,106,0.3), 0 1px 2px rgba(0,0,0,0.08) !important;
+  }
+  body.theme-light #tools-panel .apply-btn:hover,
+  body.theme-light #tools-panel .tools-row .apply-btn:hover,
+  body.theme-light #tools-panel .style-row .apply-btn:hover {
+    background: linear-gradient(180deg, #6aad89 0%, #5b9d7a 100%) !important;
+  }
+  body.theme-light #tools-panel .action-label { background: #8a9bae; }
+  body.theme-light .tooltip { background: #4a6a8a; }
+  body.theme-light #calculated-relationship { background: linear-gradient(135deg, #f3f7f5 0%, #e8f0ec 100%); border-color: #b0c8bc !important; }
+  body.theme-light #calculated-relationship .calc-label { color: #5b7a9d; }
+  body.theme-light #calculated-relationship .calc-value { color: #2c3e50; }
+  /* Shortcuts modal */
+  body.theme-light #shortcuts-modal .modal-header { background: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%); }
+  body.theme-light #shortcuts-modal .shortcut-section { background: #f3f5f7; }
+  body.theme-light #shortcuts-modal .shortcut-section-title { color: #5b7a9d; border-bottom-color: #e2e5ea; }
+  body.theme-light .intersection-label.cm-value { fill: #2c3e50; }
+  /* Collapse indicators */
+  body.theme-light .collapse-indicator circle { fill: #d4956a; stroke: #b87a50; }
+  body.theme-light .ancestor-collapse-indicator circle { fill: #5b7a9d; stroke: #3d5a7a; }
+  /* Intersection points */
+  body.theme-light .intersection-point { fill: #e8ecf0; stroke: #b0b8c4; }
+  body.theme-light .intersection-point:hover { fill: #d1d8e0; stroke: #5b7a9d; }
+
+  /* --- Dark Mode --- */
+  body.theme-dark svg { background: #1a1a1a; }
+  body.theme-dark #toolbar { background: #222222; border-bottom: 1px solid #333333; }
+  body.theme-dark #toolbar button { background: #1a1a1a; color: #e0e0e0; border-left: 3px solid #333333; }
+  body.theme-dark #toolbar button:hover { background: #333333; border-left-color: #555555; }
+  body.theme-dark #toolbar .filename-display { color: #e0e0e0; }
+  body.theme-dark #toolbar .filename-display:hover { background-color: rgba(255,255,255,0.08); }
+  body.theme-dark #toolbar p { color: #aaa; }
+  body.theme-dark #toolbar .user-guide-link { color: #ccc; }
+  body.theme-dark #toolbar .user-guide-link:hover { background-color: rgba(255,255,255,0.08); }
+  body.theme-dark .node rect { stroke: #888888; }
+  body.theme-dark .node text { fill: #e0e0e0; }
+  body.theme-dark .link { stroke: #888888; }
+  body.theme-dark .spouse-link { stroke: #888888; }
+  body.theme-dark .cross-link-bezier { stroke: #888888; }
+  body.theme-dark .terminal-line { }
+  /* Sidebar */
+  body.theme-dark #sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
+  body.theme-dark #sidebar h2 { color: #e0e0e0; }
+  body.theme-dark #sidebar h3 { color: #ccc; }
+  body.theme-dark #sidebar .section { background: #222222; border: 1px solid #333333 !important; }
+  body.theme-dark #sidebar .section-title { color: #aaaaaa; }
+  body.theme-dark #sidebar label { color: #ccc; }
+  body.theme-dark #sidebar input[type="text"],
+  body.theme-dark #sidebar input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
+  body.theme-dark #sidebar input[type="color"] { border-color: #333333 !important; }
+  body.theme-dark #sidebar textarea { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
+  body.theme-dark #sidebar select { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
+  body.theme-dark #sidebar .close-btn { background: rgba(138,180,248,0.15) !important; color: #aaaaaa !important; }
+  body.theme-dark #sidebar .close-btn:hover { background: rgba(138,180,248,0.25) !important; }
+  body.theme-dark #sidebar button.primary { background: #333333 !important; color: #e0e0e0; }
+  body.theme-dark #sidebar button.primary:hover { background: #444444 !important; }
+  body.theme-dark #sidebar button.secondary { background: #2a2a2a; color: #ccc; }
+  body.theme-dark #sidebar button.secondary:hover { background: #3a3a3a; }
+  body.theme-dark #sidebar button.blue { background: #333333 !important; color: #e0e0e0; }
+  body.theme-dark #sidebar button.blue:hover { background: #444444 !important; }
+  body.theme-dark #sidebar button.danger { background: #5a2a2a !important; color: #e0e0e0; }
+  body.theme-dark #sidebar button.danger:hover { background: #6b3333 !important; }
+  /* DNA Sidebar */
+  body.theme-dark #dna-sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
+  body.theme-dark #dna-sidebar h2 { color: #aaaaaa; }
+  body.theme-dark #dna-sidebar .close-btn { background: rgba(138,180,248,0.15) !important; color: #aaaaaa !important; }
+  body.theme-dark #dna-sidebar .close-btn:hover { background: rgba(138,180,248,0.25) !important; }
+  body.theme-dark #dna-sidebar .comparison-names { background: #222222; border-color: #333333 !important; color: #e0e0e0; }
+  body.theme-dark #dna-sidebar .comparison-names span { color: #ffffff; }
+  body.theme-dark #dna-sidebar input[type="text"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
+  body.theme-dark #dna-sidebar label { color: #ccc; }
+  body.theme-dark #dna-sidebar .style-section { background: #222222; border-color: #333333 !important; }
+  body.theme-dark #dna-sidebar .style-section-title { color: #aaaaaa; }
+  body.theme-dark #dna-sidebar #save-dna { background: #333333 !important; }
+  body.theme-dark #dna-sidebar #save-dna:hover { background: #444444 !important; }
+  body.theme-dark #dna-sidebar #clear-dna { background: #5a2a2a !important; }
+  body.theme-dark #dna-sidebar #clear-dna:hover { background: #6b3333 !important; }
+  body.theme-dark #dna-sidebar .style-row input[type="color"] { border-color: #333333; }
+  body.theme-dark #dna-sidebar .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
+  body.theme-dark #dna-sidebar .checkbox-label { color: #ccc; }
+  /* Tools Panel */
+  body.theme-dark #tools-panel { background: #1a1a1a; }
+  body.theme-dark #tools-panel .tools-header { background: linear-gradient(135deg, #333333 0%, #222222 100%); }
+  body.theme-dark #tools-panel .tools-section { background: #222222; }
+  body.theme-dark #tools-panel .tools-section-title { color: #e0e0e0; }
+  body.theme-dark #tools-panel .tools-row label { color: #ccc; }
+  body.theme-dark #tools-panel .tools-row span { color: #ccc; }
+  body.theme-dark #dna-sidebar span { color: #ccc; }
+  body.theme-dark #tools-panel .tools-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
+  body.theme-dark #tools-panel .tools-row button { background: #1a1a1a; color: #ccc; border-color: #333333; }
+  body.theme-dark #tools-panel .tools-row button:hover { background: #333333; }
+  body.theme-dark #tools-panel .style-row label { color: #ccc; }
+  body.theme-dark #tools-panel .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
+  body.theme-dark #tools-panel .style-row button { background: #1a1a1a; color: #ccc; border-color: #333333; }
+  body.theme-dark #tools-panel .style-row button:hover { background: #333333; }
+  body.theme-dark #tools-panel .checkbox-row label { color: #ccc; }
+  body.theme-dark #tools-panel .cm-legend-compact .cm-legend-item { background: #1a1a1a; border-color: #333333; color: #ccc; }
+  body.theme-dark #tools-panel .shade-btn { background: #1a1a1a; color: #ccc; border-color: #4a4a4a; }
+  body.theme-dark #tools-panel .shade-btn:hover { background: #333333; }
+  body.theme-dark #tools-panel .shade-btn.active { background: #4a4a4a; color: white; }
+  body.theme-dark #tools-panel .shade-btn-clear { background: #1a1a1a; color: #ef5350; border-color: #5a2a2a; }
+  body.theme-dark #tools-panel .shade-btn-clear:hover { background: #5a2a2a; color: white; }
+  body.theme-dark #tools-panel .action-label { background: #3a3a3a; }
+  body.theme-dark #tools-panel .apply-btn,
+  body.theme-dark #tools-panel .tools-row .apply-btn,
+  body.theme-dark #tools-panel .style-row .apply-btn {
+    background: linear-gradient(180deg, #333333 0%, #0a254a 100%) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  }
+  body.theme-dark #tools-panel .apply-btn:hover,
+  body.theme-dark #tools-panel .tools-row .apply-btn:hover,
+  body.theme-dark #tools-panel .style-row .apply-btn:hover {
+    background: linear-gradient(180deg, #444444 0%, #333333 100%) !important;
+  }
+  body.theme-dark #tools-panel .btn-secondary { background: #3a3a3a; }
+  body.theme-dark #tools-panel .btn-secondary:hover { background: #4a4a4a; }
+  body.theme-dark #tools-panel .btn-outline { background: #1a1a1a; color: #ccc; border-color: #555555; }
+  body.theme-dark #tools-panel .btn-outline:hover { background: #222222; }
+  body.theme-dark #tools-panel #tools-home-person { background: #222222; color: #ccc; border-color: #333333; }
+  body.theme-dark .tooltip { background: #333333; }
+  body.theme-dark #calculated-relationship { background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%); border-color: #333333 !important; }
+  body.theme-dark #calculated-relationship .calc-label { color: #aaaaaa; }
+  body.theme-dark #calculated-relationship .calc-value { color: #e0e0e0; }
+  body.theme-dark #calculated-relationship .calc-details { color: #999; }
+  body.theme-dark .cm-legend { background: #222222; border-color: #333333; }
+  body.theme-dark .cm-legend-item { color: #ccc; }
+  body.theme-dark .cm-range { color: #e0e0e0; }
+  body.theme-dark .cm-color-name { color: #999; }
+  /* Shortcuts modal */
+  body.theme-dark #shortcuts-modal { background: #1a1a1a; }
+  body.theme-dark #shortcuts-modal .modal-header { background: linear-gradient(135deg, #333333 0%, #555555 100%); }
+  body.theme-dark #shortcuts-modal .modal-body { color: #e0e0e0; }
+  body.theme-dark #shortcuts-modal .shortcut-section { background: #222222; }
+  body.theme-dark #shortcuts-modal .shortcut-section-title { color: #aaaaaa; border-bottom-color: #333333; }
+  body.theme-dark #shortcuts-modal .shortcut-desc { color: #ccc; }
+  body.theme-dark #shortcuts-modal .shortcut-item:not(:last-child) { border-bottom-color: #333333; }
+  body.theme-dark #shortcuts-modal kbd { background: #333333; color: #e0e0e0; border-color: #4a4a4a; box-shadow: none; }
+  body.theme-dark #shortcuts-modal .key-plus { color: #666; }
+  body.theme-dark #shortcuts-modal .modal-footer { background: #222222; border-top-color: #333333; color: #999; }
+  body.theme-dark #tools-overlay { background: rgba(0,0,0,0.6); }
+  body.theme-dark .shaded-region { fill: rgba(255,255,255,0.05); }
+  body.theme-dark .shade-preview { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.15); }
+  body.theme-dark .intersection-label.cm-value { fill: #aaaaaa; }
+  body.theme-dark .intersection-label.relationship { fill: #ccc; }
+  /* Collapse indicators */
+  body.theme-dark .collapse-indicator circle { fill: #333333; stroke: #555555; }
+  body.theme-dark .ancestor-collapse-indicator circle { fill: #333333; stroke: #555555; }
+  /* Intersection points */
+  body.theme-dark .intersection-point { fill: #2a2a2a; stroke: #4a4a4a; }
+  body.theme-dark .intersection-point:hover { fill: #3a3a3a; stroke: #aaaaaa; }
 </style>
 </head>
 <body>
@@ -1409,6 +1637,7 @@
       <div class="action-row">
         <div class="action-label">Tree View ▶</div>
         <button id="expand-all-btn" class="apply-btn export-btn-equal">Expand All</button>
+        <button id="theme-btn" class="apply-btn export-btn-equal">Full Color</button>
       </div>
       <div id="tools-home-person" style="font-size: 12px; color: #555; margin-top: 10px; padding: 8px; background: #f0f7ff; border-radius: 4px; border: 1px solid #d0e7ff; display: none;"></div>
     </div>
@@ -1421,7 +1650,7 @@
 <div id="sidebar">
   <div class="header-row">
     <h2>Edit Node</h2>
-    <button class="close-btn" onclick="closeSidebar()">×</button>
+    <button class="close-btn" id="sidebar-close-btn">×</button>
   </div>
 
   <!-- Name Section -->
@@ -1491,6 +1720,24 @@
     </div>
   </div>
   
+  <!-- Sibling Order Section -->
+  <div class="section" id="sibling-section" style="display: none;">
+    <div class="section-title">Sibling Order</div>
+    <div class="button-row">
+      <button id="move-left" class="secondary" style="flex: 1;">← Move Left</button>
+      <button id="move-right" class="secondary" style="flex: 1;">Move Right →</button>
+    </div>
+  </div>
+
+  <!-- Spouse Position Section -->
+  <div class="section" id="spouse-position-section" style="display: none;">
+    <div class="section-title">Spouse Position</div>
+    <div class="button-row">
+      <button id="swap-left" class="secondary" style="flex: 1;">← Swap Left</button>
+      <button id="swap-right" class="secondary" style="flex: 1;">Swap Right →</button>
+    </div>
+  </div>
+
   <!-- Link Existing Person Section -->
   <div class="section" id="link-existing-section">
     <div class="section-title">Link to Existing Person</div>
@@ -1511,22 +1758,41 @@
     <button id="create-link" class="primary full-width">Create Link</button>
     <div id="existing-links" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
   </div>
-  
-  <!-- Spouse Position Section -->
-  <div class="section" id="spouse-position-section" style="display: none;">
-    <div class="section-title">Spouse Position</div>
-    <div class="button-row">
-      <button id="swap-left" class="secondary" style="flex: 1;">← Swap Left</button>
-      <button id="swap-right" class="secondary" style="flex: 1;">Swap Right →</button>
-    </div>
+
+  <!-- Collapse Section -->
+  <div class="section">
+    <div class="section-title">Collapse Branches</div>
+    <button id="toggle-collapse" class="secondary full-width">Collapse Descendants</button>
+    <button id="toggle-ancestor-collapse" class="secondary full-width" style="margin-top: 8px;">Collapse Ancestors</button>
   </div>
 
-  <!-- Sibling Order Section -->
-  <div class="section" id="sibling-section" style="display: none;">
-    <div class="section-title">Sibling Order</div>
-    <div class="button-row">
-      <button id="move-left" class="secondary" style="flex: 1;">← Move Left</button>
-      <button id="move-right" class="secondary" style="flex: 1;">Move Right →</button>
+  <!-- Layout Spacing Section -->
+  <div class="section">
+    <div class="section-title">Layout Spacing</div>
+    <div class="slider-row">
+      <label>Vertical:</label>
+      <input type="range" id="vertical-spacing" min="50" max="200" step="10" value="100" />
+      <button class="secondary" id="reset-vertical">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Horizontal:</label>
+      <input type="range" id="horizontal-spacing" min="80" max="250" step="10" value="140" />
+      <button class="secondary" id="reset-horizontal">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Node Width:</label>
+      <input type="range" id="node-width" min="60" max="200" step="10" value="100" />
+      <button class="secondary" id="reset-node-width">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Node Height:</label>
+      <input type="range" id="node-height" min="20" max="60" step="2" value="30" />
+      <button class="secondary" id="reset-node-height">Reset</button>
+    </div>
+    <div class="slider-row">
+      <label>Line Spacing:</label>
+      <input type="range" id="terminal-line-spacing" min="30" max="100" step="5" value="40" />
+      <button class="secondary" id="reset-line-spacing">Reset</button>
     </div>
   </div>
 
@@ -1538,50 +1804,13 @@
       <button id="ripple-delete-node" class="danger" style="flex: 1;" title="Delete this node but keep its children, moving them up to the parent">Ripple Delete</button>
     </div>
   </div>
-
-  <!-- Layout Spacing Section -->
-  <div class="section">
-    <div class="section-title">Layout Spacing</div>
-    <div class="slider-row">
-      <label>Vertical:</label>
-      <input type="range" id="vertical-spacing" min="50" max="200" step="10" value="100" />
-      <button class="secondary" onclick="document.getElementById('vertical-spacing').value=100; document.getElementById('tools-vertical-spacing').value=100; verticalSpacing=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
-    </div>
-    <div class="slider-row">
-      <label>Horizontal:</label>
-      <input type="range" id="horizontal-spacing" min="80" max="250" step="10" value="140" />
-      <button class="secondary" onclick="document.getElementById('horizontal-spacing').value=140; document.getElementById('tools-horizontal-spacing').value=140; horizontalSpacing=140; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
-    </div>
-    <div class="slider-row">
-      <label>Node Width:</label>
-      <input type="range" id="node-width" min="60" max="200" step="10" value="100" />
-      <button class="secondary" onclick="document.getElementById('node-width').value=100; document.getElementById('tools-node-width').value=100; nodeWidth=100; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
-    </div>
-    <div class="slider-row">
-      <label>Node Height:</label>
-      <input type="range" id="node-height" min="20" max="60" step="2" value="30" />
-      <button class="secondary" onclick="document.getElementById('node-height').value=30; document.getElementById('tools-node-height').value=30; nodeHeight=30; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
-    </div>
-    <div class="slider-row">
-      <label>Line Spacing:</label>
-      <input type="range" id="terminal-line-spacing" min="30" max="100" step="5" value="40" />
-      <button class="secondary" onclick="document.getElementById('terminal-line-spacing').value=40; document.getElementById('tools-terminal-line-spacing').value=40; terminalLineSpacing=40; drawTree(d3.zoomTransform(svg.node()));">Reset</button>
-    </div>
-  </div>
-
-  <!-- Collapse Section -->
-  <div class="section">
-    <div class="section-title">Collapse Branches</div>
-    <button id="toggle-collapse" class="secondary full-width">Collapse Descendants</button>
-    <button id="toggle-ancestor-collapse" class="secondary full-width" style="margin-top: 8px;">Collapse Ancestors</button>
-  </div>
 </div>
 
 <!-- DNA Data Sidebar -->
 <div id="dna-sidebar">
   <div class="header-row">
     <h2>DNA Comparison</h2>
-    <button class="close-btn" onclick="closeDnaSidebar()">×</button>
+    <button class="close-btn" id="dna-sidebar-close-btn">×</button>
   </div>
   <div class="comparison-names">
     Comparing: <span id="person1-name">Person 1</span> ⟷ <span id="person2-name">Person 2</span>
@@ -1746,6 +1975,93 @@ let crossLinks = [];
 
 // Current filename
 let currentFilename = "New Tree";
+
+// Theme system
+const THEMES = ['fullcolor', 'light', 'dark'];
+const THEME_LABELS = { fullcolor: 'Full Color', light: 'Light Mode', dark: 'Dark Mode' };
+
+let currentTheme = 'fullcolor';
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.body.classList.remove('theme-light', 'theme-dark');
+  if (theme === 'light') document.body.classList.add('theme-light');
+  else if (theme === 'dark') document.body.classList.add('theme-dark');
+  
+  // Update button label
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.textContent = THEME_LABELS[theme];
+  }
+  
+  // Update label colors for theme
+  if (typeof dnaLabelStyles !== 'undefined') {
+    if (theme === 'dark') {
+      // Store original colors before overriding
+      if (!dnaLabelStyles.cm._origColor) dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
+      if (!dnaLabelStyles.relationship._origColor) dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
+      dnaLabelStyles.cm.color = '#ffffff';
+      dnaLabelStyles.relationship.color = '#ffffff';
+    } else if (dnaLabelStyles.cm._origColor) {
+      // Restore original colors when leaving dark mode
+      dnaLabelStyles.cm.color = dnaLabelStyles.cm._origColor;
+      dnaLabelStyles.relationship.color = dnaLabelStyles.relationship._origColor;
+      delete dnaLabelStyles.cm._origColor;
+      delete dnaLabelStyles.relationship._origColor;
+    }
+    // Update color pickers if they exist
+    try {
+      ['cm-font-color', 'tools-cm-font-color'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = dnaLabelStyles.cm.color;
+      });
+      ['rel-font-color', 'tools-rel-font-color'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = dnaLabelStyles.relationship.color;
+      });
+    } catch(e) {}
+  }
+  
+  // Persist
+  try { localStorage.setItem('threadwizard-theme', theme); } catch(e) {}
+  
+  // Redraw tree to update node fills for dark/light default colors
+  if (typeof drawTree === 'function' && typeof svg !== 'undefined') {
+    try { drawTree(d3.zoomTransform(svg.node())); } catch(e) {}
+  }
+}
+
+function cycleTheme() {
+  const idx = THEMES.indexOf(currentTheme);
+  const next = THEMES[(idx + 1) % THEMES.length];
+  applyTheme(next);
+}
+
+function getEffectiveNodeColor(color) {
+  if (!color || color === '#ffffff') {
+    if (currentTheme === 'dark') return '#2a2a2a';
+    return '#ffffff';
+  }
+  return color;
+}
+
+function getEffectiveLabelColor(color) {
+  if (currentTheme === 'dark') return '#ffffff';
+  return color;
+}
+
+// Load saved theme
+(function() {
+  try {
+    const saved = localStorage.getItem('threadwizard-theme');
+    if (saved && THEMES.includes(saved)) {
+      currentTheme = saved;
+      document.body.classList.remove('theme-light', 'theme-dark');
+      if (saved === 'light') document.body.classList.add('theme-light');
+      else if (saved === 'dark') document.body.classList.add('theme-dark');
+    }
+  } catch(e) {}
+})();
 
 // Auto-save and auto-load functionality
 function autoSave() {
@@ -2911,6 +3227,8 @@ function saveState() {
   // Clear redo stack when new action is performed
   redoStack = [];
   updateUndoRedoButtons();
+  // Persist to localStorage so changes survive page refresh
+  autoSave();
 }
 
 function undo() {
@@ -3300,25 +3618,6 @@ function dnaKeyContainsId(key, id) {
 }
 
 // Helper to find a person (node or spouse) by ID and return their name
-function findPersonNameById(id, rootData = data) {
-  function searchNode(node) {
-    if (node.id === id) return node.name;
-    if (node.spouses) {
-      for (const spouse of node.spouses) {
-        if (spouse.id === id) return spouse.name;
-      }
-    }
-    if (node.children) {
-      for (const child of node.children) {
-        const result = searchNode(child);
-        if (result) return result;
-      }
-    }
-    return null;
-  }
-  return searchNode(rootData);
-}
-
 // Helper to find ID by name (for migration only)
 function findPersonIdByName(name, rootData = data) {
   function searchNode(node) {
@@ -3397,7 +3696,7 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   document.getElementById("child-name").value = "";
   document.getElementById("parent-name").value = "";
   document.getElementById("spouse-name").value = "";
-  document.getElementById("node-color").value = editData.color || "#ffffff";
+  document.getElementById("node-color").value = getEffectiveNodeColor(editData.color);
   
   // Use node's custom style if it has one, otherwise use global defaults
   if (editData.hasCustomStyle) {
@@ -3542,12 +3841,12 @@ function showDnaSidebar(person1Id, person2Id, person1Name, person2Name) {
   }
   
   document.getElementById("cm-font-size").value = dnaLabelStyles.cm.fontSize;
-  document.getElementById("cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("cm-font-color").value = getEffectiveLabelColor(dnaLabelStyles.cm.color);
   document.getElementById("cm-font-bold").checked = dnaLabelStyles.cm.bold;
   document.getElementById("cm-font-italic").checked = dnaLabelStyles.cm.italic;
   
   document.getElementById("rel-font-size").value = dnaLabelStyles.relationship.fontSize;
-  document.getElementById("rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("rel-font-color").value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
   document.getElementById("rel-font-bold").checked = dnaLabelStyles.relationship.bold;
   document.getElementById("rel-font-italic").checked = dnaLabelStyles.relationship.italic;
   
@@ -3568,6 +3867,10 @@ function closeDnaSidebar() {
   selectedIntersection = null;
   drawTree(d3.zoomTransform(svg.node()));
 }
+
+// Close button handlers (replacing inline onclick)
+document.getElementById("sidebar-close-btn").addEventListener("click", closeSidebar);
+document.getElementById("dna-sidebar-close-btn").addEventListener("click", closeDnaSidebar);
 
 document.getElementById("save-dna").addEventListener("click", () => {
   if (selectedIntersection) {
@@ -3628,92 +3931,117 @@ function updateCalculatedRelationship(person1Name, person2Name) {
   }
 }
 
-document.getElementById("auto-stroke-toggle").addEventListener("change", (e) => {
-  autoStrokeEnabled = e.target.checked;
+// Shared auto-stroke sync
+function syncAutoStroke(enabled) {
+  autoStrokeEnabled = enabled;
+  document.getElementById("auto-stroke-toggle").checked = enabled;
+  document.getElementById("tools-auto-stroke-toggle").checked = enabled;
   
-  // When auto stroke is enabled, default to non-bold black text for cleaner appearance
-  if (autoStrokeEnabled) {
+  if (enabled) {
     dnaLabelStyles.cm.bold = false;
     dnaLabelStyles.cm.color = "#000000";
     dnaLabelStyles.relationship.bold = false;
     dnaLabelStyles.relationship.color = "#000000";
     
-    // Update the UI controls to reflect the new values
-    document.getElementById("cm-font-bold").checked = false;
-    document.getElementById("cm-font-color").value = "#000000";
-    document.getElementById("rel-font-bold").checked = false;
-    document.getElementById("rel-font-color").value = "#000000";
+    ["cm-font-bold", "tools-cm-font-bold"].forEach(id => document.getElementById(id).checked = false);
+    ["cm-font-color", "tools-cm-font-color"].forEach(id => document.getElementById(id).value = "#000000");
+    ["rel-font-bold", "tools-rel-font-bold"].forEach(id => document.getElementById(id).checked = false);
+    ["rel-font-color", "tools-rel-font-color"].forEach(id => document.getElementById(id).value = "#000000");
   }
   
   drawTree(d3.zoomTransform(svg.node()));
+}
+
+document.getElementById("auto-stroke-toggle").addEventListener("change", (e) => {
+  syncAutoStroke(e.target.checked);
 });
+
+// Shared stroke width sync
+function syncStrokeWidth(value) {
+  autoStrokeWidth = value;
+  document.getElementById("stroke-width-slider").value = value;
+  document.getElementById("stroke-width-value").textContent = value + "px";
+  document.getElementById("tools-stroke-width-slider").value = value;
+  document.getElementById("tools-stroke-width-value").textContent = value + "px";
+  drawTree(d3.zoomTransform(svg.node()));
+}
 
 document.getElementById("stroke-width-slider").addEventListener("input", (e) => {
-  autoStrokeWidth = parseFloat(e.target.value);
-  document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
-  drawTree(d3.zoomTransform(svg.node()));
+  syncStrokeWidth(parseFloat(e.target.value));
 });
+
+// Shared alternate line colors sync
+function syncAlternateLines(checked) {
+  alternateLineColors = checked;
+  document.getElementById("alternate-lines-toggle").checked = checked;
+  document.getElementById("tools-alternate-lines-toggle").checked = checked;
+  drawTree(d3.zoomTransform(svg.node()));
+}
 
 document.getElementById("alternate-lines-toggle").addEventListener("change", (e) => {
-  alternateLineColors = e.target.checked;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncAlternateLines(e.target.checked);
 });
 
-document.getElementById("dna-show-terminal-lines-toggle").addEventListener("change", (e) => {
-  showTerminalLines = e.target.checked;
-  document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
+// Shared terminal lines sync
+function syncShowTerminalLines(checked) {
+  showTerminalLines = checked;
+  document.getElementById("dna-show-terminal-lines-toggle").checked = checked;
+  document.getElementById("tools-show-terminal-lines-toggle").checked = checked;
   autoSave();
   drawTree(d3.zoomTransform(svg.node()));
+}
+
+document.getElementById("dna-show-terminal-lines-toggle").addEventListener("change", (e) => {
+  syncShowTerminalLines(e.target.checked);
 });
 
 document.getElementById("dna-line-spacing").addEventListener("input", (e) => {
   terminalLineSpacing = parseFloat(e.target.value);
-  document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
-  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("terminalLineSpacing", terminalLineSpacing);
 });
 
 document.getElementById("dna-line-spacing-reset").addEventListener("click", () => {
   terminalLineSpacing = 40;
-  document.getElementById("dna-line-spacing").value = 40;
-  document.getElementById("terminal-line-spacing").value = 40;
-  document.getElementById("tools-terminal-line-spacing").value = 40;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("terminalLineSpacing", 40);
 });
 
-// Live update helper for DNA sidebar label controls
-function syncDnaSidebarLabels() {
-  dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("cm-font-size").value);
-  dnaLabelStyles.cm.color = document.getElementById("cm-font-color").value;
-  dnaLabelStyles.cm.bold = document.getElementById("cm-font-bold").checked;
-  dnaLabelStyles.cm.italic = document.getElementById("cm-font-italic").checked;
+// Shared DNA label style sync - reads from given source IDs, writes to all
+function syncDnaLabelStyles(source) {
+  // ID prefixes: "cm-" / "rel-" for DNA sidebar, "tools-cm-" / "tools-rel-" for tools panel
+  const srcPrefix = source === "tools" ? "tools-" : "";
+  const dstPrefix = source === "tools" ? "" : "tools-";
   
-  dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById("rel-font-size").value);
-  dnaLabelStyles.relationship.color = document.getElementById("rel-font-color").value;
-  dnaLabelStyles.relationship.bold = document.getElementById("rel-font-bold").checked;
-  dnaLabelStyles.relationship.italic = document.getElementById("rel-font-italic").checked;
+  dnaLabelStyles.cm.fontSize = parseInt(document.getElementById(srcPrefix + "cm-font-size").value);
+  dnaLabelStyles.cm.color = document.getElementById(srcPrefix + "cm-font-color").value;
+  dnaLabelStyles.cm.bold = document.getElementById(srcPrefix + "cm-font-bold").checked;
+  dnaLabelStyles.cm.italic = document.getElementById(srcPrefix + "cm-font-italic").checked;
   
-  // Sync tools panel controls
-  document.getElementById("tools-cm-font-size").value = dnaLabelStyles.cm.fontSize;
-  document.getElementById("tools-cm-font-color").value = dnaLabelStyles.cm.color;
-  document.getElementById("tools-cm-font-bold").checked = dnaLabelStyles.cm.bold;
-  document.getElementById("tools-cm-font-italic").checked = dnaLabelStyles.cm.italic;
-  document.getElementById("tools-rel-font-size").value = dnaLabelStyles.relationship.fontSize;
-  document.getElementById("tools-rel-font-color").value = dnaLabelStyles.relationship.color;
-  document.getElementById("tools-rel-font-bold").checked = dnaLabelStyles.relationship.bold;
-  document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById(srcPrefix + "rel-font-size").value);
+  dnaLabelStyles.relationship.color = document.getElementById(srcPrefix + "rel-font-color").value;
+  dnaLabelStyles.relationship.bold = document.getElementById(srcPrefix + "rel-font-bold").checked;
+  dnaLabelStyles.relationship.italic = document.getElementById(srcPrefix + "rel-font-italic").checked;
+  
+  // Sync to the other panel
+  document.getElementById(dstPrefix + "cm-font-size").value = dnaLabelStyles.cm.fontSize;
+  document.getElementById(dstPrefix + "cm-font-color").value = getEffectiveLabelColor(dnaLabelStyles.cm.color);
+  document.getElementById(dstPrefix + "cm-font-bold").checked = dnaLabelStyles.cm.bold;
+  document.getElementById(dstPrefix + "cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  document.getElementById(dstPrefix + "rel-font-size").value = dnaLabelStyles.relationship.fontSize;
+  document.getElementById(dstPrefix + "rel-font-color").value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
+  document.getElementById(dstPrefix + "rel-font-bold").checked = dnaLabelStyles.relationship.bold;
+  document.getElementById(dstPrefix + "rel-font-italic").checked = dnaLabelStyles.relationship.italic;
   
   drawTree(d3.zoomTransform(svg.node()));
 }
 
 ["cm-font-size", "rel-font-size"].forEach(id => {
-  document.getElementById(id).addEventListener("input", syncDnaSidebarLabels);
+  document.getElementById(id).addEventListener("input", () => syncDnaLabelStyles("sidebar"));
 });
 ["cm-font-color", "rel-font-color"].forEach(id => {
-  document.getElementById(id).addEventListener("input", syncDnaSidebarLabels);
+  document.getElementById(id).addEventListener("input", () => syncDnaLabelStyles("sidebar"));
 });
 ["cm-font-bold", "cm-font-italic", "rel-font-bold", "rel-font-italic"].forEach(id => {
-  document.getElementById(id).addEventListener("change", syncDnaSidebarLabels);
+  document.getElementById(id).addEventListener("change", () => syncDnaLabelStyles("sidebar"));
 });
 
 function deleteNodeFromTree(tree, nodeToDelete) {
@@ -5788,10 +6116,12 @@ function drawTree(savedTransform = null) {
       .join("path")
       .attr("class", "terminal-line")
       .attr("stroke", (d, i) => {
+        const defaultColor = currentTheme === 'dark' ? '#888888' : currentTheme === 'light' ? 'black' : 'black';
+        const altColor = currentTheme === 'dark' ? '#7799bb' : '#0066cc';
         if (alternateLineColors) {
-          return i % 2 === 0 ? "black" : "#0066cc";
+          return i % 2 === 0 ? defaultColor : altColor;
         }
-        return "black";
+        return defaultColor;
       })
       .attr("d", (d, i) => {
         const startX = d.x;
@@ -5953,8 +6283,12 @@ function drawTree(savedTransform = null) {
   node.append("rect")
       .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
       .attr("rx", 5).attr("ry", 5)
-      .attr("fill", d => d.data.color || "#ffffff")
-      .attr("stroke", "black")
+      .attr("fill", d => {
+        if (d.data.color && d.data.color !== "#ffffff") return d.data.color;
+        if (currentTheme === 'dark') return '#2a2a2a';
+        return '#ffffff';
+      })
+      .attr("stroke", currentTheme === 'dark' ? '#888888' : currentTheme === 'light' ? 'black' : 'black')
       .attr("stroke-width", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2)
       .style("filter", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none");
 
@@ -6036,8 +6370,12 @@ function drawTree(savedTransform = null) {
   spouseNodes.append("rect")
       .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
       .attr("rx", 5).attr("ry", 5)
-      .attr("fill", d => d.spouse.color || "#ffffff")
-      .attr("stroke", "black")
+      .attr("fill", d => {
+        if (d.spouse.color && d.spouse.color !== "#ffffff") return d.spouse.color;
+        if (currentTheme === 'dark') return '#2a2a2a';
+        return '#ffffff';
+      })
+      .attr("stroke", currentTheme === 'dark' ? '#888888' : currentTheme === 'light' ? 'black' : 'black')
       .attr("stroke-width", d => selectedSpouse && selectedSpouse === d.spouse ? 4 : 2)
       .style("filter", d => selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none");
 
@@ -6238,6 +6576,7 @@ document.getElementById("add-child").addEventListener("click", () => {
     };
     mainNodeData.children.push(newChild);
     document.getElementById("child-name").value = "";
+    document.getElementById("add-child-left").checked = false;
     if (addToLeft) {
       moveChildToVisualLeft(newChild, mainNodeData);
     } else {
@@ -6261,6 +6600,7 @@ document.getElementById("add-child").addEventListener("click", () => {
       
       nodeData.children.push(newChild);
       document.getElementById("child-name").value = "";
+      document.getElementById("add-child-left").checked = false;
       if (addToLeft) {
         moveChildToVisualLeft(newChild, nodeData);
       } else {
@@ -6329,6 +6669,7 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
       document.getElementById("child-name").value = "";
       document.body.removeChild(overlay);
       if (document.getElementById("add-child-left").checked) {
+        document.getElementById("add-child-left").checked = false;
         moveChildToVisualLeft(newChild, parentNode);
       } else {
         drawTree(d3.zoomTransform(svg.node()));
@@ -6929,14 +7270,21 @@ document.getElementById("toggle-ancestor-collapse").addEventListener("click", ()
 
 
 // Live update for background color
+let colorChangeSaved = false;
 document.getElementById("node-color").addEventListener("input", () => {
   if (selectedNode) {
-    sidebarDirty = true;
-    debouncedSaveState();
+    if (!colorChangeSaved) {
+      saveState();
+      colorChangeSaved = true;
+    }
     const editData = selectedSpouse || selectedNode.data;
     editData.color = document.getElementById("node-color").value;
     debouncedDrawTree();
   }
+});
+document.getElementById("node-color").addEventListener("change", () => {
+  colorChangeSaved = false;
+  autoSave();
 });
 
 // Dialog for removing a spouse that has children
@@ -8012,32 +8360,71 @@ document.getElementById("move-right").addEventListener("click", () => {
   }
 });
 
+// Shared layout setting sync: handles both sidebar and tools panel sliders
+function syncLayoutSetting(settingName, value, extraFn) {
+  const idPairs = {
+    verticalSpacing:      { sidebar: "vertical-spacing",        tools: "tools-vertical-spacing" },
+    horizontalSpacing:    { sidebar: "horizontal-spacing",      tools: "tools-horizontal-spacing" },
+    terminalLineSpacing:  { sidebar: "terminal-line-spacing",   tools: "tools-terminal-line-spacing",  dna: "dna-line-spacing" },
+    nodeWidth:            { sidebar: "node-width",              tools: "tools-node-width" },
+    nodeHeight:           { sidebar: "node-height",             tools: "tools-node-height" }
+  };
+  const ids = idPairs[settingName];
+  if (ids.sidebar) document.getElementById(ids.sidebar).value = value;
+  if (ids.tools)   document.getElementById(ids.tools).value = value;
+  if (ids.dna)     document.getElementById(ids.dna).value = value;
+  if (extraFn) extraFn();
+  drawTree(d3.zoomTransform(svg.node()));
+}
+
+// Sidebar layout sliders
 document.getElementById("vertical-spacing").addEventListener("input", (e) => {
   verticalSpacing = parseFloat(e.target.value);
-  document.getElementById("tools-vertical-spacing").value = verticalSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("verticalSpacing", verticalSpacing);
 });
 document.getElementById("horizontal-spacing").addEventListener("input", (e) => {
   horizontalSpacing = parseFloat(e.target.value);
-  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-  document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("horizontalSpacing", horizontalSpacing, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
 });
 document.getElementById("terminal-line-spacing").addEventListener("input", (e) => {
   terminalLineSpacing = parseFloat(e.target.value);
-  document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("terminalLineSpacing", terminalLineSpacing);
 });
 document.getElementById("node-width").addEventListener("input", (e) => {
   nodeWidth = parseFloat(e.target.value);
-  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-  document.getElementById("tools-node-width").value = nodeWidth;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeWidth", nodeWidth, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
 });
 document.getElementById("node-height").addEventListener("input", (e) => {
   nodeHeight = parseFloat(e.target.value);
-  document.getElementById("tools-node-height").value = nodeHeight;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeHeight", nodeHeight);
+});
+
+// Sidebar reset buttons (use shared syncLayoutSetting)
+document.getElementById("reset-vertical").addEventListener("click", () => {
+  verticalSpacing = 100;
+  syncLayoutSetting("verticalSpacing", 100);
+});
+document.getElementById("reset-horizontal").addEventListener("click", () => {
+  horizontalSpacing = 140;
+  syncLayoutSetting("horizontalSpacing", 140, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
+});
+document.getElementById("reset-node-width").addEventListener("click", () => {
+  nodeWidth = 100;
+  syncLayoutSetting("nodeWidth", 100);
+});
+document.getElementById("reset-node-height").addEventListener("click", () => {
+  nodeHeight = 30;
+  syncLayoutSetting("nodeHeight", 30);
+});
+document.getElementById("reset-line-spacing").addEventListener("click", () => {
+  terminalLineSpacing = 40;
+  syncLayoutSetting("terminalLineSpacing", 40);
 });
 
 document.getElementById("export-btn").addEventListener("click", () => {
@@ -8511,6 +8898,19 @@ document.getElementById("expand-all-btn").addEventListener("click", () => {
   drawTree(d3.zoomTransform(svg.node()));
 });
 
+// Theme cycle button
+document.getElementById("theme-btn").addEventListener("click", () => {
+  cycleTheme();
+});
+
+// Update theme button label on load
+(function() {
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.textContent = THEME_LABELS[currentTheme];
+  }
+})();
+
 function normalizeDnaKeys() {
   const normalized = {};
   let fixedCount = 0;
@@ -8654,7 +9054,7 @@ function downloadPNG() {
   canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
-  ctx.fillStyle = "white";
+  ctx.fillStyle = currentTheme === 'dark' ? '#1a1a1a' : '#ffffff';
   ctx.fillRect(0, 0, width, height);
   
   // Clone the SVG
@@ -8691,8 +9091,13 @@ function downloadPNG() {
   
   // Create a style element in the SVG
   const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-  styleElement.textContent = styleContent;
+  // Replace body.theme- with .theme- so selectors work inside the SVG
+  styleElement.textContent = styleContent.replace(/body\.theme-/g, '.theme-');
   clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+  
+  // Add theme class to cloned SVG so theme CSS rules apply
+  if (currentTheme === 'dark') clonedSvg.classList.add('theme-dark');
+  else if (currentTheme === 'light') clonedSvg.classList.add('theme-light');
   
   // Add white background rect inside SVG
   const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -8700,7 +9105,7 @@ function downloadPNG() {
   bgRect.setAttribute("y", "0");
   bgRect.setAttribute("width", String(width));
   bgRect.setAttribute("height", String(height));
-  bgRect.setAttribute("fill", "#ffffff");
+  bgRect.setAttribute("fill", currentTheme === 'dark' ? '#1a1a1a' : currentTheme === 'light' ? '#ffffff' : '#ffffff');
   clonedSvg.insertBefore(bgRect, clonedSvg.firstChild);
   
   // Set explicit dimensions and namespace
@@ -8787,12 +9192,12 @@ function openToolsPanel() {
   document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
   
   document.getElementById("tools-cm-font-size").value = dnaLabelStyles.cm.fontSize;
-  document.getElementById("tools-cm-font-color").value = dnaLabelStyles.cm.color;
+  document.getElementById("tools-cm-font-color").value = getEffectiveLabelColor(dnaLabelStyles.cm.color);
   document.getElementById("tools-cm-font-bold").checked = dnaLabelStyles.cm.bold;
   document.getElementById("tools-cm-font-italic").checked = dnaLabelStyles.cm.italic;
   
   document.getElementById("tools-rel-font-size").value = dnaLabelStyles.relationship.fontSize;
-  document.getElementById("tools-rel-font-color").value = dnaLabelStyles.relationship.color;
+  document.getElementById("tools-rel-font-color").value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
   document.getElementById("tools-rel-font-bold").checked = dnaLabelStyles.relationship.bold;
   document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
   
@@ -8951,96 +9356,63 @@ document.getElementById("tools-apply-style-all").addEventListener("click", () =>
   autoSave();
 });
 
-// Layout Spacing
+// Tools panel layout sliders (use shared syncLayoutSetting)
 document.getElementById("tools-vertical-spacing").addEventListener("input", (e) => {
   verticalSpacing = parseFloat(e.target.value);
-  document.getElementById("vertical-spacing").value = verticalSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("verticalSpacing", verticalSpacing);
 });
 document.getElementById("tools-horizontal-spacing").addEventListener("input", (e) => {
   horizontalSpacing = parseFloat(e.target.value);
-  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-  document.getElementById("horizontal-spacing").value = horizontalSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("horizontalSpacing", horizontalSpacing, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
 });
 document.getElementById("tools-node-width").addEventListener("input", (e) => {
   nodeWidth = parseFloat(e.target.value);
-  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-  document.getElementById("node-width").value = nodeWidth;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeWidth", nodeWidth, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
 });
 document.getElementById("tools-node-height").addEventListener("input", (e) => {
   nodeHeight = parseFloat(e.target.value);
-  document.getElementById("node-height").value = nodeHeight;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeHeight", nodeHeight);
 });
 document.getElementById("tools-terminal-line-spacing").addEventListener("input", (e) => {
   terminalLineSpacing = parseFloat(e.target.value);
-  document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("terminalLineSpacing", terminalLineSpacing);
 });
 
-// Reset buttons
+// Reset buttons (use shared syncLayoutSetting)
 document.getElementById("tools-reset-vertical").addEventListener("click", () => {
   verticalSpacing = 100;
-  document.getElementById("tools-vertical-spacing").value = 100;
-  document.getElementById("vertical-spacing").value = 100;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("verticalSpacing", 100);
 });
 document.getElementById("tools-reset-horizontal").addEventListener("click", () => {
   horizontalSpacing = 140;
-  spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-  document.getElementById("tools-horizontal-spacing").value = 140;
-  document.getElementById("horizontal-spacing").value = 140;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("horizontalSpacing", 140, () => {
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  });
 });
 document.getElementById("tools-reset-node-width").addEventListener("click", () => {
   nodeWidth = 100;
-  document.getElementById("tools-node-width").value = 100;
-  document.getElementById("node-width").value = 100;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeWidth", 100);
 });
 document.getElementById("tools-reset-node-height").addEventListener("click", () => {
   nodeHeight = 30;
-  document.getElementById("tools-node-height").value = 30;
-  document.getElementById("node-height").value = 30;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("nodeHeight", 30);
 });
 document.getElementById("tools-reset-line-spacing").addEventListener("click", () => {
   terminalLineSpacing = 40;
-  document.getElementById("tools-terminal-line-spacing").value = 40;
-  document.getElementById("terminal-line-spacing").value = 40;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncLayoutSetting("terminalLineSpacing", 40);
 });
 
-// Label Styling
-// Live update helper for tools DNA label controls
+// Label Styling (use shared syncDnaLabelStyles)
 function syncToolsDnaLabels() {
   if (!toolsDirty) {
     saveState();
   }
   toolsDirty = true;
-  dnaLabelStyles.cm.fontSize = parseInt(document.getElementById("tools-cm-font-size").value);
-  dnaLabelStyles.cm.color = document.getElementById("tools-cm-font-color").value;
-  dnaLabelStyles.cm.bold = document.getElementById("tools-cm-font-bold").checked;
-  dnaLabelStyles.cm.italic = document.getElementById("tools-cm-font-italic").checked;
-  
-  dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById("tools-rel-font-size").value);
-  dnaLabelStyles.relationship.color = document.getElementById("tools-rel-font-color").value;
-  dnaLabelStyles.relationship.bold = document.getElementById("tools-rel-font-bold").checked;
-  dnaLabelStyles.relationship.italic = document.getElementById("tools-rel-font-italic").checked;
-  
-  // Sync DNA sidebar controls
-  document.getElementById("cm-font-size").value = dnaLabelStyles.cm.fontSize;
-  document.getElementById("cm-font-color").value = dnaLabelStyles.cm.color;
-  document.getElementById("cm-font-bold").checked = dnaLabelStyles.cm.bold;
-  document.getElementById("cm-font-italic").checked = dnaLabelStyles.cm.italic;
-  document.getElementById("rel-font-size").value = dnaLabelStyles.relationship.fontSize;
-  document.getElementById("rel-font-color").value = dnaLabelStyles.relationship.color;
-  document.getElementById("rel-font-bold").checked = dnaLabelStyles.relationship.bold;
-  document.getElementById("rel-font-italic").checked = dnaLabelStyles.relationship.italic;
-  
-  drawTree(d3.zoomTransform(svg.node()));
+  syncDnaLabelStyles("tools");
 }
 
 ["tools-cm-font-size", "tools-rel-font-size"].forEach(id => {
@@ -9053,45 +9425,21 @@ function syncToolsDnaLabels() {
   document.getElementById(id).addEventListener("change", syncToolsDnaLabels);
 });
 
-// Auto cM Stroke Colors
+// Auto cM Stroke Colors (use shared syncAutoStroke)
 document.getElementById("tools-auto-stroke-toggle").addEventListener("change", (e) => {
-  autoStrokeEnabled = e.target.checked;
-  document.getElementById("auto-stroke-toggle").checked = autoStrokeEnabled;
-  
-  if (autoStrokeEnabled) {
-    dnaLabelStyles.cm.bold = false;
-    dnaLabelStyles.cm.color = "#000000";
-    dnaLabelStyles.relationship.bold = false;
-    dnaLabelStyles.relationship.color = "#000000";
-    
-    document.getElementById("tools-cm-font-bold").checked = false;
-    document.getElementById("tools-cm-font-color").value = "#000000";
-    document.getElementById("tools-rel-font-bold").checked = false;
-    document.getElementById("tools-rel-font-color").value = "#000000";
-  }
-  
-  drawTree(d3.zoomTransform(svg.node()));
+  syncAutoStroke(e.target.checked);
 });
 
 document.getElementById("tools-stroke-width-slider").addEventListener("input", (e) => {
-  autoStrokeWidth = parseFloat(e.target.value);
-  document.getElementById("tools-stroke-width-value").textContent = autoStrokeWidth + "px";
-  document.getElementById("stroke-width-slider").value = autoStrokeWidth;
-  document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
-  drawTree(d3.zoomTransform(svg.node()));
+  syncStrokeWidth(parseFloat(e.target.value));
 });
 
 document.getElementById("tools-show-terminal-lines-toggle").addEventListener("change", (e) => {
-  showTerminalLines = e.target.checked;
-  document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
-  autoSave();
-  drawTree(d3.zoomTransform(svg.node()));
+  syncShowTerminalLines(e.target.checked);
 });
 
 document.getElementById("tools-alternate-lines-toggle").addEventListener("change", (e) => {
-  alternateLineColors = e.target.checked;
-  document.getElementById("alternate-lines-toggle").checked = alternateLineColors;
-  drawTree(d3.zoomTransform(svg.node()));
+  syncAlternateLines(e.target.checked);
 });
 
 // Shade Tool functionality
@@ -9240,8 +9588,12 @@ document.getElementById("tools-export-svg").addEventListener("click", () => {
   });
   
   const styleElement = document.createElementNS("http://www.w3.org/2000/svg", "style");
-  styleElement.textContent = styleContent;
+  styleElement.textContent = styleContent.replace(/body\.theme-/g, '.theme-');
   clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+  
+  // Add theme class to cloned SVG so theme CSS rules apply
+  if (currentTheme === 'dark') clonedSvg.classList.add('theme-dark');
+  else if (currentTheme === 'light') clonedSvg.classList.add('theme-light');
   
   // Set explicit dimensions to fit content
   clonedSvg.setAttribute("width", width);
@@ -9253,7 +9605,7 @@ document.getElementById("tools-export-svg").addEventListener("click", () => {
   const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   bgRect.setAttribute("width", "100%");
   bgRect.setAttribute("height", "100%");
-  bgRect.setAttribute("fill", "white");
+  bgRect.setAttribute("fill", currentTheme === 'dark' ? '#1a1a1a' : currentTheme === 'light' ? '#ffffff' : 'white');
   clonedG.insertBefore(bgRect, clonedG.firstChild);
   
   // Convert to data URL and download
