@@ -1181,7 +1181,7 @@ the Free Software Foundation, version 3.
   body.theme-light #toolbar .user-guide-link { color: #5b7a9d; }
   body.theme-light #toolbar .user-guide-link:hover { background-color: rgba(91,122,157,0.08); }
   body.theme-light .node rect { stroke: black; }
-  body.theme-light .node text { fill: #2c3e50; }
+  body.theme-light .node text { fill: #000000; }
   body.theme-light .link { stroke: black; }
   body.theme-light .spouse-link { stroke: black; }
   body.theme-light .cross-link-bezier { stroke: black; }
@@ -2065,6 +2065,8 @@ function getEffectiveNodeColor(color) {
 
 function getEffectiveLabelColor(color) {
   if (currentTheme === 'dark') return '#ffffff';
+  // If stored color is white (e.g. imported from a dark-mode tree), return the default
+  if (color && color.toLowerCase() === '#ffffff') return '#000000';
   return color;
 }
 
