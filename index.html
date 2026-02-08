@@ -145,7 +145,7 @@
     color: white;
     padding: 10px 14px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 18px;
     pointer-events: none;
     z-index: 5000;
     max-width: 300px;
@@ -159,7 +159,7 @@
   }
   .tooltip .tooltip-name {
     font-weight: bold;
-    font-size: 15px;
+    font-size: 18px;
   }
   .tooltip .tooltip-children {
     color: rgba(255,255,255,0.85);
@@ -3199,7 +3199,7 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
   
   if (dnaData) {
     if (dnaData.cm) {
-      html += `<br><span style="color: rgba(255,255,255,0.9);">${dnaData.cm} cM</span>`;
+      html += `<br><span style="color: rgba(255,255,255,0.9);">${dnaData.cm}</span>`;
     }
     if (dnaData.relationship) {
       html += `<br><span style="color: rgba(255,255,255,0.85);">${dnaData.relationship}</span>`;
@@ -3211,12 +3211,12 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
         // Zero cM — show no-match probability message
         const zeroMsg = getZeroCmMessage(dnaData.relationship);
         if (zeroMsg) {
-          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 12px;">${zeroMsg}</span>`;
+          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 16px;">${zeroMsg}</span>`;
         }
       } else {
         const pctResult = calculateCmPercentile(dnaData.cm, dnaData.relationship);
         if (pctResult) {
-          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 12px;">${formatPercentileOrdinal(pctResult.below)} percentile for ${dnaData.relationship}</span>`;
+          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 16px;">${formatPercentileOrdinal(pctResult.below)} percentile for ${dnaData.relationship}</span>`;
         }
       }
     }
