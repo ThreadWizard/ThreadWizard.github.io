@@ -3978,14 +3978,10 @@ function syncAutoStroke(enabled) {
   
   if (enabled) {
     dnaLabelStyles.cm.bold = false;
-    dnaLabelStyles.cm.color = "#000000";
     dnaLabelStyles.relationship.bold = false;
-    dnaLabelStyles.relationship.color = "#000000";
     
     ["cm-font-bold", "tools-cm-font-bold"].forEach(id => document.getElementById(id).checked = false);
-    ["cm-font-color", "tools-cm-font-color"].forEach(id => document.getElementById(id).value = "#000000");
     ["rel-font-bold", "tools-rel-font-bold"].forEach(id => document.getElementById(id).checked = false);
-    ["rel-font-color", "tools-rel-font-color"].forEach(id => document.getElementById(id).value = "#000000");
   }
   
   drawTree(d3.zoomTransform(svg.node()));
