@@ -51,7 +51,7 @@ No endorsement by the original author is implied.
 ## Third-Party Libraries
 
 - D3.js v7 — https://d3js.org  
-  License: BSD-style license
+  License: ISC
 
 ## License
 
