@@ -2018,30 +2018,17 @@ function applyTheme(theme) {
     btn.textContent = THEME_LABELS[theme];
   }
   
-  // Update label colors for theme
+  // Update label color pickers for theme (never mutate .color, use getEffectiveLabelColor at render time)
   if (typeof dnaLabelStyles !== 'undefined') {
-    if (theme === 'dark') {
-      // Store original colors before overriding
-      if (!dnaLabelStyles.cm._origColor) dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
-      if (!dnaLabelStyles.relationship._origColor) dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
-      dnaLabelStyles.cm.color = '#ffffff';
-      dnaLabelStyles.relationship.color = '#ffffff';
-    } else if (dnaLabelStyles.cm._origColor) {
-      // Restore original colors when leaving dark mode
-      dnaLabelStyles.cm.color = dnaLabelStyles.cm._origColor;
-      dnaLabelStyles.relationship.color = dnaLabelStyles.relationship._origColor;
-      delete dnaLabelStyles.cm._origColor;
-      delete dnaLabelStyles.relationship._origColor;
-    }
     // Update color pickers if they exist
     try {
       ['cm-font-color', 'tools-cm-font-color'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = dnaLabelStyles.cm.color;
+        if (el) el.value = getEffectiveLabelColor(dnaLabelStyles.cm.color);
       });
       ['rel-font-color', 'tools-rel-font-color'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.value = dnaLabelStyles.relationship.color;
+        if (el) el.value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
       });
     } catch(e) {}
   }
@@ -2126,13 +2113,10 @@ function autoLoad() {
         dnaComparisons = loadedData.dnaComparisons || {};
         dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
         
-        // Apply theme color overrides to loaded label styles
-        if (currentTheme === 'dark') {
-          dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
-          dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
-          dnaLabelStyles.cm.color = '#ffffff';
-          dnaLabelStyles.relationship.color = '#ffffff';
-        }
+        // Clean up any stale _origColor from saved data
+        delete dnaLabelStyles.cm._origColor;
+        delete dnaLabelStyles.relationship._origColor;
+        
         defaultNodeTextStyle = loadedData.defaultNodeTextStyle || { fontSize: 12, bold: false, italic: false };
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
@@ -3207,7 +3191,38 @@ function clearNodeHighlights() {
 }
 
 function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
-  dnaTooltip.innerHTML = `<span style="font-weight: bold;">${person1Name} ⟷ ${person2Name}</span>`;
+  let html = `<span style="font-weight: bold;">${person1Name} ⟷ ${person2Name}</span>`;
+  
+  // Look up DNA comparison data
+  const key = getDnaKey(person1Id, person2Id);
+  const dnaData = dnaComparisons[key];
+  
+  if (dnaData) {
+    if (dnaData.cm) {
+      html += `<br><span style="color: rgba(255,255,255,0.9);">${dnaData.cm} cM</span>`;
+    }
+    if (dnaData.relationship) {
+      html += `<br><span style="color: rgba(255,255,255,0.85);">${dnaData.relationship}</span>`;
+    }
+    // Calculate and show percentile if both cM and relationship exist
+    if (dnaData.cm && dnaData.relationship) {
+      const cmNum = parseFloat(dnaData.cm);
+      if (!isNaN(cmNum) && cmNum === 0) {
+        // Zero cM — show no-match probability message
+        const zeroMsg = getZeroCmMessage(dnaData.relationship);
+        if (zeroMsg) {
+          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 12px;">${zeroMsg}</span>`;
+        }
+      } else {
+        const pctResult = calculateCmPercentile(dnaData.cm, dnaData.relationship);
+        if (pctResult) {
+          html += `<br><span style="color: rgba(255,255,255,0.7); font-size: 12px;">${formatPercentileOrdinal(pctResult.below)} percentile for ${dnaData.relationship}</span>`;
+        }
+      }
+    }
+  }
+  
+  dnaTooltip.innerHTML = html;
   dnaTooltip.classList.add("visible");
   
   // Highlight the compared nodes using IDs
@@ -3357,6 +3372,296 @@ function getCmStrokeColor(cmValue) {
 // Tree-based relationship calculator
 // Builds a map of all nodes with their depths and paths to root
 // FIXED: Uses node IDs as map keys to handle duplicate names correctly
+
+// ===== Shared cM Project v4.0 Percentile Data =====
+// Data by Blaine T. Bettinger, Ph.D., J.D. (https://thegeneticgenealogist.com)
+// License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+// Adapted: histogram bin counts extracted and converted to JS lookup table for percentile calculation
+// Each entry: { bins: [upper bound of each bin], counts: [submissions in each bin] }
+const SHARED_CM_HISTOGRAMS = {
+  "Parent/Child": {
+    bins: [2500,2600,2700,2800,2900,3000,3100,3200,3300,3400,3500,3600,3700,3800,3900],
+    counts: [0,1,2,0,3,3,2,0,2,1,7,742,746,733,28,142]
+  },
+  "Sibling": {
+    bins: [1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,3000,3100,3200,3300,3400,3500,3600],
+    counts: [0,9,6,8,10,9,18,56,155,333,521,566,425,218,91,19,6,1,9,5,0]
+  },
+  "Aunt/Uncle": {
+    bins: [1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400],
+    counts: [0,26,66,158,333,513,605,486,311,144,41,12,0]
+  },
+  "Grandparent/GC": {
+    bins: [900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600],
+    counts: [0,2,4,12,22,35,69,110,196,199,174,128,85,28,28,11,3,0]
+  },
+  "Half Sibling": {
+    bins: [1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600],
+    counts: [0,6,20,33,80,117,226,245,234,158,87,37,14,6,3,0]
+  },
+  "1C": {
+    bins: [300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500],
+    counts: [0,2,34,108,342,653,870,680,419,147,52,30,0]
+  },
+  "Great Aunt/Uncle": {
+    bins: [300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600],
+    counts: [0,7,24,39,68,176,201,161,94,43,15,4,1,0]
+  },
+  "Great-GP/GGC": {
+    bins: [400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600],
+    counts: [0,1,4,15,31,28,35,19,7,5,2,2,0]
+  },
+  "Half Aunt/Uncle": {
+    bins: [400,500,600,700,800,900,1000,1100,1200,1300,1400,1500],
+    counts: [0,3,42,82,144,188,182,100,51,20,3,0]
+  },
+  "1C1R": {
+    bins: [100,200,300,400,500,600,700,800,900,1000,1100],
+    counts: [0,97,374,1015,1196,701,235,55,18,9,0]
+  },
+  "GG-Aunt/Uncle": {
+    bins: [100,200,300,400,500,600,700,800,900],
+    counts: [0,2,27,32,38,30,7,1,0]
+  },
+  "Half 1C": {
+    bins: [100,200,300,400,500,600,700,800,900,1000,1100],
+    counts: [0,9,63,180,243,119,44,16,11,6,0]
+  },
+  "Half Great Aunt/Uncle": {
+    bins: [150,200,250,300,350,400,450,500,550,600,650,700,750],
+    counts: [0,1,9,15,28,47,46,28,28,18,15,3,0]
+  },
+  "1C2R": {
+    bins: [0,50,100,150,200,250,300,350,400,450,500,550],
+    counts: [0,9,63,173,261,265,216,119,55,21,5,0]
+  },
+  "2C": {
+    bins: [0,50,100,150,200,250,300,350,400,450,500,550,600,650],
+    counts: [0,23,162,534,943,1001,761,386,197,92,50,14,9,0]
+  },
+  "Half 1C1R": {
+    bins: [50,100,150,200,250,300,350,400,450,500,550],
+    counts: [0,19,89,148,159,83,56,34,15,2,0]
+  },
+  "Half GG-Aunt/Uncle": {
+    bins: [100,125,150,175,200,225,250,275,300,325],
+    counts: [0,1,2,4,9,9,1,5,3,0]
+  },
+  "1C3R": {
+    bins: [0,25,50,75,100,125,150,175,200,225,250,275],
+    counts: [0,1,15,28,33,46,23,29,17,8,2,0]
+  },
+  "2C1R": {
+    bins: [25,50,75,100,125,150,175,200,225,250,275,300,325,350,375,400],
+    counts: [89,500,725,667,1020,791,563,400,227,151,82,35,17,10,4,0]
+  },
+  "Half 1C2R": {
+    bins: [25,50,75,100,125,150,175,200,225,250,275,300],
+    counts: [2,13,22,17,32,20,29,18,7,3,2,0]
+  },
+  "Half 2C": {
+    bins: [25,50,75,100,125,150,175,200,225,250,275,300,325,350],
+    counts: [22,45,72,68,96,60,54,39,25,13,7,7,4,0]
+  },
+  "2C2R": {
+    bins: [25,50,75,100,125,150,175,200,225,250,275],
+    counts: [156,408,302,205,168,89,49,19,7,1,0]
+  },
+  "3C": {
+    bins: [25,50,75,100,125,150,175,200,225,250,275],
+    counts: [425,1311,1154,689,604,304,149,84,46,9,0]
+  },
+  "Half 1C3R": {
+    bins: [25,50,75,100,125,150],
+    counts: [4,9,9,7,4,0]
+  },
+  "Half 2C1R": {
+    bins: [25,50,75,100,125,150,175,200,225],
+    counts: [60,128,128,60,52,34,8,4,0]
+  },
+  "2C3R": {
+    bins: [25,50,75,100,125,150,175,200],
+    counts: [35,60,39,14,8,6,1,0]
+  },
+  "3C1R": {
+    bins: [25,50,75,100,125,150,175,200,225],
+    counts: [1140,1686,955,387,208,96,30,12,0]
+  },
+  "Half 2C2R": {
+    bins: [25,50,75,100,125,150,175],
+    counts: [29,29,23,9,4,4,0]
+  },
+  "Half 3C": {
+    bins: [25,50,75,100,125,150,175,200],
+    counts: [75,117,61,21,19,3,6,0]
+  },
+  "3C2R": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180],
+    counts: [96,219,186,140,111,69,53,21,10,23,10,9,8,3,1,5,1,0]
+  },
+  "4C": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150],
+    counts: [245,579,582,433,330,222,148,78,44,42,19,20,4,6,0]
+  },
+  "Half 3C1R": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150],
+    counts: [19,43,57,50,29,15,15,8,2,3,3,2,2,1,0]
+  },
+  "3C3R": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110],
+    counts: [17,35,23,8,10,6,3,2,1,1,0]
+  },
+  "4C1R": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110,120,130,140],
+    counts: [335,671,531,342,217,133,62,34,15,18,16,5,4,0]
+  },
+  "Half 3C2R": {
+    bins: [10,20,30,40,50,60,70,80,90],
+    counts: [6,13,18,10,5,1,1,1,0]
+  },
+  "Half 4C": {
+    bins: [10,20,30,40,50,60,70,80,90],
+    counts: [5,29,18,16,8,5,5,3,0]
+  },
+  "4C2R": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110],
+    counts: [140,200,132,63,26,22,9,5,4,2,0]
+  },
+  "5C": {
+    bins: [10,20,30,40,50,60,70,80,90,100,110,120,130],
+    counts: [213,353,246,120,80,52,31,19,5,6,2,3,0]
+  },
+  "4C3R": {
+    bins: [10,20,30,40,50,60,70,80],
+    counts: [22,32,19,11,3,1,1,0]
+  },
+  "5C1R": {
+    bins: [10,20,30,40,50,60,70,80,90],
+    counts: [262,325,178,96,49,37,21,7,0]
+  },
+  "5C2R": {
+    bins: [10,20,30,40,50,60,70,80],
+    counts: [71,97,47,11,8,7,1,0]
+  },
+  "6C": {
+    bins: [10,20,30,40,50,60,70,80,90],
+    counts: [140,172,64,38,15,5,5,2,0]
+  },
+  "5C3R": {
+    bins: [10,20,30,40],
+    counts: [14,15,5,0]
+  },
+  "6C1R": {
+    bins: [10,20,30,40,50,60,70],
+    counts: [170,174,70,16,9,2,0]
+  },
+  "6C2R": {
+    bins: [10,20,30,40,50,60],
+    counts: [74,61,21,3,2,0]
+  },
+  "7C": {
+    bins: [10,20,30,40,50,60,70],
+    counts: [113,104,28,7,3,3,0]
+  },
+  "7C1R": {
+    bins: [10,20,30,40,50,60],
+    counts: [175,113,29,8,5,0]
+  },
+  "8C": {
+    bins: [10,20,30,40,50,60],
+    counts: [142,81,13,2,1,0]
+  }
+};
+
+// Map relationship labels to SHARED_CM_HISTOGRAMS keys
+// Handles variations in how relationships might be labeled
+function getHistogramKey(relationship) {
+  if (!relationship) return null;
+  const r = relationship.trim();
+  
+  // Direct match
+  if (SHARED_CM_HISTOGRAMS[r]) return r;
+  
+  // Handle Niece/Nephew variants (map to Aunt/Uncle)
+  const niece = r.replace(/Niece\/Nephew/g, "Aunt/Uncle");
+  if (SHARED_CM_HISTOGRAMS[niece]) return niece;
+  
+  return null;
+}
+
+// Calculate empirical percentile from histogram bin data
+// Returns { below: percent below, above: percent above } or null
+function calculateCmPercentile(cmValue, relationship) {
+  const key = getHistogramKey(relationship);
+  if (!key) return null;
+  
+  const hist = SHARED_CM_HISTOGRAMS[key];
+  if (!hist) return null;
+  
+  const num = parseFloat(cmValue);
+  if (isNaN(num) || num < 0) return null;
+  
+  const { bins, counts } = hist;
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total === 0) return null;
+  
+  // Determine bin boundaries
+  // First bin starts at 0 (for bins starting at 10 or 25) or the implied lower bound
+  // The bins array gives upper bounds; each bin covers (prevUpper, upper]
+  // For the first bin, lower bound is 0
+  let cumulative = 0;
+  
+  for (let i = 0; i < bins.length; i++) {
+    const binLower = i === 0 ? 0 : bins[i - 1];
+    const binUpper = bins[i];
+    
+    if (num <= binUpper) {
+      // The value falls in this bin — interpolate
+      const binWidth = binUpper - binLower;
+      const fraction = binWidth > 0 ? (num - binLower) / binWidth : 0.5;
+      cumulative += fraction * counts[i];
+      const below = Math.round(cumulative / total * 100);
+      return { below: below, above: 100 - below };
+    }
+    
+    cumulative += counts[i];
+  }
+  
+  // Value is above all bins
+  return { below: 100, above: 0 };
+}
+
+// Format percentile for display (handles "1st", "2nd", "3rd", etc.)
+function formatPercentileOrdinal(n) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// Probability of sharing NO detectable DNA for distant relationships
+// Sources: ISOGG, FTDNA, The DNA Geek, Henn et al. (2012)
+// Values represent approximate % of pairs that share no detectable DNA
+const NO_MATCH_PROBABILITY = {
+  "3C": 10, "Half 2C1R": 10,
+  "3C1R": 20, "Half 3C": 20, "2C3R": 20, "Half 2C2R": 20,
+  "3C2R": 35, "4C": 50, "Half 3C1R": 35,
+  "3C3R": 50, "4C1R": 55, "Half 3C2R": 50, "Half 4C": 55,
+  "4C2R": 65, "5C": 84, "4C3R": 75,
+  "5C1R": 87, "5C2R": 90, "6C": 92,
+  "5C3R": 93, "6C1R": 94, "6C2R": 95,
+  "7C": 96, "7C1R": 97, "8C": 98
+};
+
+// Get display text for 0 cM matches
+function getZeroCmMessage(relationship) {
+  const key = getHistogramKey(relationship);
+  if (!key) return null;
+  const pct = NO_MATCH_PROBABILITY[key];
+  if (pct !== undefined) {
+    return `~${pct}% of ${key} pairs share no detectable DNA`;
+  }
+  return null;
+}
 function buildNodeMap(tree, depth = 0, path = [], parentId = null, parentSpouseId = null) {
   const nodeMap = new Map();
   
@@ -3498,7 +3803,7 @@ function findLCA(nodeMap, id1, id2) {
   };
 }
 
-// Convert generation distances to relationship label
+// Convert generation distances to relationship label (Shared cM Project short-form)
 function getRelationshipLabel(gen1, gen2, isHalfRelationship = false) {
   // Sort so minGen <= maxGen
   const [minGen, maxGen] = gen1 <= gen2 ? [gen1, gen2] : [gen2, gen1];
@@ -3514,9 +3819,8 @@ function getRelationshipLabel(gen1, gen2, isHalfRelationship = false) {
     if (maxGen === 1) return "Parent/Child";
     if (maxGen === 2) return "Grandparent/GC";
     if (maxGen === 3) return "Great-GP/GGC";
-    if (maxGen === 4) return "2x Great-GP/GGC";
-    if (maxGen === 5) return "3x Great-GP/GGC";
-    if (maxGen === 6) return "4x Great-GP/GGC";
+    if (maxGen === 4) return "GG-GP/GGGC";
+    if (maxGen === 5) return "GGG-GP/GGGGC";
     const greats = maxGen - 2;
     return `${greats}x Great-GP/GGC`;
   }
@@ -3527,10 +3831,13 @@ function getRelationshipLabel(gen1, gen2, isHalfRelationship = false) {
   // Aunt/Uncle - Niece/Nephew (1 gen and 2 gen from common ancestor)
   if (minGen === 1 && maxGen === 2) return `${halfPrefix}Aunt/Uncle`;
   
-  // Great Aunt/Uncle etc.
+  // Great Aunt/Uncle etc. — use Shared cM Project conventions
   if (minGen === 1) {
     const greats = maxGen - 2;
     if (greats === 1) return `${halfPrefix}Great Aunt/Uncle`;
+    if (greats === 2) return `${halfPrefix}GG-Aunt/Uncle`;
+    if (greats === 3) return `${halfPrefix}GGG-Aunt/Uncle`;
+    if (greats === 4) return `${halfPrefix}GGGG-Aunt/Uncle`;
     return `${halfPrefix}${greats}x Great Aunt/Uncle`;
   }
   
@@ -4047,14 +4354,25 @@ function syncDnaLabelStyles(source) {
   const dstPrefix = source === "tools" ? "" : "tools-";
   
   dnaLabelStyles.cm.fontSize = parseInt(document.getElementById(srcPrefix + "cm-font-size").value);
-  dnaLabelStyles.cm.color = document.getElementById(srcPrefix + "cm-font-color").value;
   dnaLabelStyles.cm.bold = document.getElementById(srcPrefix + "cm-font-bold").checked;
   dnaLabelStyles.cm.italic = document.getElementById(srcPrefix + "cm-font-italic").checked;
   
   dnaLabelStyles.relationship.fontSize = parseInt(document.getElementById(srcPrefix + "rel-font-size").value);
-  dnaLabelStyles.relationship.color = document.getElementById(srcPrefix + "rel-font-color").value;
   dnaLabelStyles.relationship.bold = document.getElementById(srcPrefix + "rel-font-bold").checked;
   dnaLabelStyles.relationship.italic = document.getElementById(srcPrefix + "rel-font-italic").checked;
+  
+  // Only update stored .color from picker if NOT in dark mode
+  // (in dark mode the picker shows #ffffff override, not the user's real color)
+  const pickedCmColor = document.getElementById(srcPrefix + "cm-font-color").value;
+  const pickedRelColor = document.getElementById(srcPrefix + "rel-font-color").value;
+  if (currentTheme !== 'dark') {
+    dnaLabelStyles.cm.color = pickedCmColor;
+    dnaLabelStyles.relationship.color = pickedRelColor;
+  } else {
+    // In dark mode, only update if user explicitly chose a non-white color
+    if (pickedCmColor.toLowerCase() !== '#ffffff') dnaLabelStyles.cm.color = pickedCmColor;
+    if (pickedRelColor.toLowerCase() !== '#ffffff') dnaLabelStyles.relationship.color = pickedRelColor;
+  }
   
   // Sync to the other panel
   document.getElementById(dstPrefix + "cm-font-size").value = dnaLabelStyles.cm.fontSize;
@@ -6264,7 +6582,7 @@ function drawTree(savedTransform = null) {
             .attr("x", intersection.x)
             .attr("y", intersection.y - cmOffset)
             .style("font-size", `${cmFontSize}px`)
-            .style("fill", dnaLabelStyles.cm.color)
+            .style("fill", getEffectiveLabelColor(dnaLabelStyles.cm.color))
             .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
             .style("font-style", dnaLabelStyles.cm.italic ? "italic" : "normal")
             .text(dnaData.cm);
@@ -6291,7 +6609,7 @@ function drawTree(savedTransform = null) {
             .attr("x", intersection.x)
             .attr("y", intersection.y + relOffset)
             .style("font-size", `${relFontSize}px`)
-            .style("fill", dnaLabelStyles.relationship.color)
+            .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
             .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
             .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
             .text(dnaData.relationship);
@@ -9035,13 +9353,9 @@ document.getElementById("import-input").addEventListener("change", (e) => {
             dnaLabelStyles = imported.dnaLabelStyles;
           }
           
-          // Apply theme color overrides to imported label styles
-          if (currentTheme === 'dark') {
-            dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
-            dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
-            dnaLabelStyles.cm.color = '#ffffff';
-            dnaLabelStyles.relationship.color = '#ffffff';
-          }
+          // Clean up any stale _origColor from imported data
+          delete dnaLabelStyles.cm._origColor;
+          delete dnaLabelStyles.relationship._origColor;
           
           if (imported.autoStrokeEnabled !== undefined) {
             autoStrokeEnabled = imported.autoStrokeEnabled;
@@ -9109,13 +9423,9 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
         
-        // Apply theme color adjustments to imported data
-        if (currentTheme === 'dark') {
-          dnaLabelStyles.cm._origColor = dnaLabelStyles.cm.color;
-          dnaLabelStyles.relationship._origColor = dnaLabelStyles.relationship.color;
-          dnaLabelStyles.cm.color = '#ffffff';
-          dnaLabelStyles.relationship.color = '#ffffff';
-        }
+        // Clean up any stale _origColor from imported data
+        delete dnaLabelStyles.cm._origColor;
+        delete dnaLabelStyles.relationship._origColor;
         
         // Auto-set home person if none is defined
         autoSetHomePerson();
