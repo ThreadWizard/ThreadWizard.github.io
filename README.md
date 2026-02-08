@@ -25,7 +25,7 @@ ThreadWizard is an interactive genealogy visualization and analysis tool for bui
 
 ## Usage
 
-Open the HTML file in a modern browser. No server is required.
+Open the HTML file or go to threadwizard.github.io in a modern browser. No server is required.
 
 Compatible browsers:
 - Chrome
