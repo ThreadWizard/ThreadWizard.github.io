@@ -25,8 +25,9 @@ the Free Software Foundation, version 3.
   .node text {
     font-size: 12px;
     text-anchor: middle;
-    dominant-baseline: central;
     pointer-events: none;
+  }
+  .node text tspan {
   }
   .link {
     stroke: black;
@@ -491,6 +492,20 @@ the Free Software Foundation, version 3.
     margin-bottom: 8px;
     cursor: pointer;
   }
+  #sidebar .gender-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f0f0;
+    border: 1px solid #d4d4d4;
+    border-radius: 5px;
+    padding: 5px 8px;
+    margin-bottom: 10px;
+  }
+  #sidebar .gender-box label {
+    margin: 0;
+    font-size: 11px;
+  }
   #sidebar .button-row {
     display: flex;
     gap: 8px;
@@ -862,6 +877,164 @@ the Free Software Foundation, version 3.
     opacity: 1;
     visibility: visible;
   }
+  /* Advanced Tools Panel — inherits tools-panel styles */
+  #advanced-tools-panel {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    padding: 0;
+    z-index: 3000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    width: 480px;
+    max-width: 90vw;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+  #advanced-tools-panel::-webkit-scrollbar { width: 8px; }
+  #advanced-tools-panel::-webkit-scrollbar-track { background: transparent; }
+  #advanced-tools-panel::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+  #advanced-tools-panel::-webkit-scrollbar-thumb:hover { background: #999; }
+  #advanced-tools-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+  }
+  #advanced-tools-panel.dragging {
+    transition: none;
+  }
+  #advanced-tools-panel .tools-header {
+    background: linear-gradient(135deg, #6A1B9A 0%, #4A148C 50%, #2E0854 100%);
+    box-shadow: inset 0 -2px 10px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.1);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    user-select: none;
+  }
+  #advanced-tools-panel .tools-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #advanced-tools-panel .tools-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  #advanced-tools-panel .tools-close:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  #advanced-tools-panel .tools-body {
+    padding: 16px;
+  }
+  #advanced-tools-panel .tools-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  #advanced-tools-panel .tools-section:last-child {
+    margin-bottom: 0;
+  }
+  #advanced-tools-panel .tools-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6A1B9A;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  #advanced-tools-panel .advanced-placeholder {
+    color: #888;
+    font-size: 13px;
+    text-align: center;
+    padding: 30px 10px;
+  }
+  #advanced-tools-panel .back-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  #advanced-tools-panel .back-btn:hover {
+    opacity: 0.9;
+  }
+  #advanced-tools-panel .style-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #advanced-tools-panel .style-row label.style-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    min-width: 80px;
+  }
+  #advanced-tools-panel .style-row input[type="color"] {
+    width: 40px;
+    height: 28px;
+    padding: 1px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #advanced-tools-panel .style-row input[type="number"] {
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  #advanced-tools-panel .adv-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+    margin-bottom: 8px;
+  }
+  #advanced-tools-panel .adv-checkboxes label {
+    font-size: 12px;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  #advanced-tools-panel .adv-checkboxes input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
+  #advanced-tools-panel .adv-divider {
+    border-top: 1px solid #ddd;
+    margin: 12px 0;
+  }
   #tools-panel .tools-header {
     background: linear-gradient(135deg, #3F51B5 0%, #1A237E 50%, #0D1B4D 100%);
     box-shadow: inset 0 -2px 10px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.1);
@@ -1207,6 +1380,7 @@ the Free Software Foundation, version 3.
   body.theme-light #sidebar button.blue:hover { background: #4a6a8a !important; }
   body.theme-light #sidebar button.danger { background: #c0616b !important; color: white; }
   body.theme-light #sidebar button.danger:hover { background: #a8505a !important; }
+  body.theme-light #sidebar .gender-box { background: #eef1f5; border-color: #d1d8e0; }
   /* DNA Sidebar */
   body.theme-light #dna-sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
   body.theme-light #dna-sidebar h2 { color: #2c3e50; }
@@ -1295,6 +1469,7 @@ the Free Software Foundation, version 3.
   body.theme-dark #sidebar button.blue:hover { background: #444444 !important; }
   body.theme-dark #sidebar button.danger { background: #5a2a2a !important; color: #e0e0e0; }
   body.theme-dark #sidebar button.danger:hover { background: #6b3333 !important; }
+  body.theme-dark #sidebar .gender-box { background: #2a2a2a; border-color: #404040; }
   /* DNA Sidebar */
   body.theme-dark #dna-sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
   body.theme-dark #dna-sidebar h2 { color: #aaaaaa; }
@@ -1322,6 +1497,7 @@ the Free Software Foundation, version 3.
   body.theme-dark #tools-panel .tools-row span { color: #ccc; }
   body.theme-dark #dna-sidebar span { color: #ccc; }
   body.theme-dark #tools-panel .tools-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
+  body.theme-dark #tools-panel .tools-row select { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
   body.theme-dark #tools-panel .tools-row button { background: #1a1a1a; color: #ccc; border-color: #333333; }
   body.theme-dark #tools-panel .tools-row button:hover { background: #333333; }
   body.theme-dark #tools-panel .style-row label { color: #ccc; }
@@ -1525,8 +1701,23 @@ the Free Software Foundation, version 3.
           <input type="checkbox" id="tools-font-italic" />
           <label for="tools-font-italic">Italic</label>
         </div>
-        <div style="flex: 1;"></div>
-        <button id="tools-apply-style-all" class="apply-btn">Apply to All</button>
+        <select id="tools-font-family" style="padding: 3px 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px;">
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="'Courier New', Courier, monospace">Courier New</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Tahoma, sans-serif">Tahoma</option>
+          <option value="'Lucida Console', monospace">Lucida Console</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+          <option value="Garamond, serif">Garamond</option>
+          <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+        </select>
       </div>
     </div>
 
@@ -1643,9 +1834,66 @@ the Free Software Foundation, version 3.
         <div class="action-label">Tree View ▶</div>
         <button id="expand-all-btn" class="apply-btn export-btn-equal">Expand All</button>
         <button id="theme-btn" class="apply-btn export-btn-equal">Full Color</button>
+        <button id="advanced-tools-btn" class="apply-btn export-btn-equal">Advanced</button>
       </div>
       <div id="tools-home-person" style="font-size: 12px; color: #555; margin-top: 10px; padding: 8px; background: #f0f7ff; border-radius: 4px; border: 1px solid #d0e7ff; display: none;"></div>
     </div>
+  </div>
+</div>
+
+<!-- Advanced Tools Panel -->
+<div id="advanced-tools-panel">
+  <div class="tools-header" id="advanced-tools-header">
+    <h2>Advanced Tools</h2>
+    <button class="tools-close" id="advanced-tools-close">×</button>
+  </div>
+  <div class="tools-body">
+    <div class="tools-section">
+      <div class="tools-section-title">Node Styling</div>
+      <div class="style-row">
+        <label class="style-label">Font Size:</label>
+        <input type="number" id="adv-font-size" min="8" max="48" value="12" style="width: 55px;" />
+      </div>
+      <div class="style-row">
+        <label class="style-label">Font Family:</label>
+        <select id="adv-font-family" style="flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="'Courier New', Courier, monospace">Courier New</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Tahoma, sans-serif">Tahoma</option>
+          <option value="'Lucida Console', monospace">Lucida Console</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+          <option value="Garamond, serif">Garamond</option>
+          <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+        </select>
+      </div>
+      <div class="style-row">
+        <label class="style-label">Text Color:</label>
+        <input type="color" id="adv-text-color" value="#000000" />
+      </div>
+      <div class="adv-checkboxes">
+        <label><input type="checkbox" id="adv-bold" /> Bold</label>
+        <label><input type="checkbox" id="adv-italic" /> Italic</label>
+      </div>
+      <div class="adv-divider"></div>
+      <div class="tools-section-title" style="margin-top: 0;">Display Fields</div>
+      <div class="adv-checkboxes">
+        <label><input type="checkbox" id="adv-show-birth-year" /> Show Birth Year</label>
+        <label><input type="checkbox" id="adv-show-birth-location" /> Show Birth Location</label>
+        <label><input type="checkbox" id="adv-show-death-year" /> Show Year of Death</label>
+        <label><input type="checkbox" id="adv-show-death-location" /> Show Location of Death</label>
+        <label><input type="checkbox" id="adv-show-gender" /> Show Gender</label>
+        <label><input type="checkbox" id="adv-show-notes" /> Show Notes</label>
+      </div>
+    </div>
+    <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
   </div>
 </div>
 
@@ -1662,16 +1910,24 @@ the Free Software Foundation, version 3.
   <div class="section">
     <div class="section-title">Node Name</div>
     <input type="text" id="node-name" placeholder="Enter name" />
-    <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-      <label style="margin: 0;">Birth</label>
-      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-male" /> Male</label>
-      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-female" /> Female</label>
-      <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-show-gender" /> Show</label>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 8px;">
+      <label style="margin: 0; font-weight: bold;">Birth</label>
+      <div class="gender-box" style="margin: 0; padding: 3px 8px;">
+        <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-male" style="margin-right: 4px;" /> Male</label>
+        <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-female" style="margin-right: 4px;" /> Female</label>
+        <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-show-gender" style="margin-right: 4px;" /> Show</label>
+      </div>
     </div>
-    <input type="text" id="node-birth" placeholder="e.g., 1950 or Jan 1, 1950" />
-    <label>Death</label>
-    <input type="text" id="node-death" placeholder="e.g., 2020 or Dec 31, 2020" />
-    <label>Notes</label>
+    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+      <input type="text" id="node-birth" placeholder="e.g., 1950" style="flex: 1; min-width: 0; margin-bottom: 0;" />
+      <input type="text" id="node-birth-location" placeholder="e.g., Atlanta, GA" style="flex: 1; min-width: 0; margin-bottom: 0;" />
+    </div>
+    <label style="margin-bottom: 8px; font-weight: bold;">Death</label>
+    <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+      <input type="text" id="node-death" placeholder="e.g., 2020" style="flex: 1; min-width: 0; margin-bottom: 0;" />
+      <input type="text" id="node-death-location" placeholder="e.g., Savannah, GA" style="flex: 1; min-width: 0; margin-bottom: 0;" />
+    </div>
+    <label style="font-weight: bold;">Notes</label>
     <textarea id="node-notes" placeholder="e.g., lived in what is now Bacon County" rows="1" style="width: 100%; resize: vertical; font-family: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></textarea>
   </div>
 
@@ -1694,11 +1950,16 @@ the Free Software Foundation, version 3.
     </div>
   </div>
 
-  <!-- Background Color Section -->
+  <!-- Node Color Section -->
   <div class="section">
     <div style="display: flex; align-items: center; justify-content: space-between;">
-      <div class="section-title" style="margin-bottom: 0;">Background Color</div>
-      <input type="color" id="node-color" value="#ffffff" style="width: 60px; height: 30px;" />
+      <div class="section-title" style="margin-bottom: 0;">Node Color</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="color" id="node-color" value="#ffffff" style="width: 60px; height: 30px;" />
+        <label class="checkbox-label" style="margin-bottom: 0; font-size: 11px; white-space: nowrap;">
+          <input type="checkbox" id="apply-color-descendants" style="margin-right: 4px;" /> Apply to Descendants
+        </label>
+      </div>
     </div>
   </div>
 
@@ -1893,6 +2154,15 @@ the Free Software Foundation, version 3.
       <button id="dna-line-spacing-reset" style="padding: 4px 8px; font-size: 11px; border: 1px solid #90caf9; background: #fff; border-radius: 4px; cursor: pointer;">Reset</button>
     </div>
   </div>
+  
+  <div class="style-section">
+    <div class="style-section-title">Options</div>
+    <div class="style-row">
+      <label class="checkbox-label" style="flex: 1;">
+        <input type="checkbox" id="show-percentile-toggle" /> Show Percentile on Labels
+      </label>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1928,7 +2198,15 @@ let dnaLabelStyles = {
 let defaultNodeTextStyle = {
   fontSize: 12,
   bold: false,
-  italic: false
+  italic: false,
+  fontFamily: "sans-serif",
+  textColor: "",
+  showGender: false,
+  showBirthYear: false,
+  showBirthLocation: false,
+  showDeathYear: false,
+  showDeathLocation: false,
+  showNotes: false
 };
 
 // Auto-stroke feature
@@ -1940,6 +2218,9 @@ let alternateLineColors = false;
 
 // Show/hide terminal lines and DNA data
 let showTerminalLines = true;
+
+// Show percentile on McGuire line labels
+let showPercentileOnLabels = false;
 
 // Shading tool
 let shadeToolActive = false;
@@ -2095,6 +2376,7 @@ function autoSave() {
       autoStrokeWidth: autoStrokeWidth,
       alternateLineColors: alternateLineColors,
       showTerminalLines: showTerminalLines,
+      showPercentileOnLabels: showPercentileOnLabels,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -2126,11 +2408,25 @@ function autoLoad() {
         delete dnaLabelStyles.cm._origColor;
         delete dnaLabelStyles.relationship._origColor;
         
-        defaultNodeTextStyle = loadedData.defaultNodeTextStyle || { fontSize: 12, bold: false, italic: false };
+        const loadedStyle = loadedData.defaultNodeTextStyle || {};
+        defaultNodeTextStyle = {
+          fontSize: loadedStyle.fontSize || 12,
+          bold: loadedStyle.bold || false,
+          italic: loadedStyle.italic || false,
+          fontFamily: loadedStyle.fontFamily || "sans-serif",
+          textColor: loadedStyle.textColor || "",
+          showGender: loadedStyle.showGender || false,
+          showBirthYear: loadedStyle.showBirthYear || false,
+          showBirthLocation: loadedStyle.showBirthLocation || false,
+          showDeathYear: loadedStyle.showDeathYear || false,
+          showDeathLocation: loadedStyle.showDeathLocation || false,
+          showNotes: loadedStyle.showNotes || false
+        };
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
         alternateLineColors = loadedData.alternateLineColors || false;
         showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
+        showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
         shadedRegion = loadedData.shadedRegion || null;
         crossLinks = loadedData.crossLinks || [];
         currentFilename = loadedData.filename || "New Tree";
@@ -2142,6 +2438,21 @@ function autoLoad() {
           nodeWidth = loadedData.settings.nodeWidth || 100;
           nodeHeight = loadedData.settings.nodeHeight || 30;
           spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+          
+          // Sync slider UI elements to loaded values
+          document.getElementById("vertical-spacing").value = verticalSpacing;
+          document.getElementById("horizontal-spacing").value = horizontalSpacing;
+          document.getElementById("node-width").value = nodeWidth;
+          document.getElementById("node-height").value = nodeHeight;
+          document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+          
+          document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+          document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+          document.getElementById("tools-node-width").value = nodeWidth;
+          document.getElementById("tools-node-height").value = nodeHeight;
+          document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+          
+          document.getElementById("dna-line-spacing").value = terminalLineSpacing;
         }
         
         // Migrate old single-spouse format to new multi-spouse format
@@ -2157,6 +2468,7 @@ function autoLoad() {
         document.getElementById("filename-display").textContent = currentFilename;
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
+        document.getElementById("show-percentile-toggle").checked = showPercentileOnLabels;
         return true;
       }
     }
@@ -2386,6 +2698,16 @@ function getPersonById(id) {
   }
   
   return search(data);
+}
+
+// Apply a color to all descendants of a node (not spouses)
+function applyColorToDescendants(node, color) {
+  if (node.children) {
+    node.children.forEach(child => {
+      child.color = color;
+      applyColorToDescendants(child, color);
+    });
+  }
 }
 
 // Find the parent node of a given node
@@ -3137,15 +3459,25 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   
   let html = `<div class="tooltip-name">${name}${genderSymbol}</div>`;
   
-  // Show birth and death years if available (always on separate lines)
+  // Show birth info if available
   if (nodeData.birth) {
-    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">b. ${nodeData.birth}</div>`;
-  }
-  if (nodeData.death) {
-    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">d. ${nodeData.death}</div>`;
+    let birthLine = "b. " + nodeData.birth;
+    if (nodeData.birthLocation) birthLine += ", " + nodeData.birthLocation;
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">${birthLine}</div>`;
+  } else if (nodeData.birthLocation) {
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">b. ${nodeData.birthLocation}</div>`;
   }
   
-  // Count children if any (only for non-spouse nodes)
+  // Show death info if available
+  if (nodeData.death) {
+    let deathLine = "d. " + nodeData.death;
+    if (nodeData.deathLocation) deathLine += ", " + nodeData.deathLocation;
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">${deathLine}</div>`;
+  } else if (nodeData.deathLocation) {
+    html += `<div class="tooltip-lifespan" style="color: rgba(255,255,255,0.85); margin-top: 2px;">d. ${nodeData.deathLocation}</div>`;
+  }
+  
+  // Show notes if available
   if (nodeData.notes) {
     html += `<div class="tooltip-notes" style="color: rgba(255,255,255,0.85); margin-top: 4px;">${nodeData.notes}</div>`;
   }
@@ -3667,7 +3999,7 @@ function getZeroCmMessage(relationship) {
   if (!key) return null;
   const pct = NO_MATCH_PROBABILITY[key];
   if (pct !== undefined) {
-    return `~${pct}% of ${key} pairs share no detectable DNA`;
+    return `~${pct}% of ${key} pairs share no DNA`;
   }
   return null;
 }
@@ -4036,15 +4368,18 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   
   document.getElementById("node-name").value = editData.name;
   document.getElementById("node-birth").value = editData.birth || "";
+  document.getElementById("node-birth-location").value = editData.birthLocation || "";
   document.getElementById("node-male").checked = editData.gender === "male";
   document.getElementById("node-female").checked = editData.gender === "female";
   document.getElementById("node-show-gender").checked = editData.showGender || false;
   document.getElementById("node-death").value = editData.death || "";
+  document.getElementById("node-death-location").value = editData.deathLocation || "";
   document.getElementById("node-notes").value = editData.notes || "";
   document.getElementById("child-name").value = "";
   document.getElementById("parent-name").value = "";
   document.getElementById("spouse-name").value = "";
   document.getElementById("node-color").value = getEffectiveNodeColor(editData.color);
+  document.getElementById("apply-color-descendants").checked = false;
   
   // Use node's custom style if it has one, otherwise use global defaults
   if (editData.hasCustomStyle) {
@@ -4203,6 +4538,7 @@ function showDnaSidebar(person1Id, person2Id, person1Name, person2Name) {
   document.getElementById("stroke-width-value").textContent = autoStrokeWidth + "px";
   document.getElementById("alternate-lines-toggle").checked = alternateLineColors;
   document.getElementById("dna-line-spacing").value = terminalLineSpacing;
+  document.getElementById("show-percentile-toggle").checked = showPercentileOnLabels;
   
   // Calculate and display the tree-based relationship (uses names for now)
   updateCalculatedRelationship(person1Name, person2Name);
@@ -4354,6 +4690,12 @@ document.getElementById("dna-line-spacing").addEventListener("input", (e) => {
 document.getElementById("dna-line-spacing-reset").addEventListener("click", () => {
   terminalLineSpacing = 40;
   syncLayoutSetting("terminalLineSpacing", 40);
+});
+
+document.getElementById("show-percentile-toggle").addEventListener("change", (e) => {
+  showPercentileOnLabels = e.target.checked;
+  autoSave();
+  drawTree(d3.zoomTransform(svg.node()));
 });
 
 // Shared DNA label style sync - reads from given source IDs, writes to all
@@ -5439,11 +5781,13 @@ function autoLayout() {
   document.getElementById("vertical-spacing").value = verticalSpacing;
   document.getElementById("horizontal-spacing").value = horizontalSpacing;
   document.getElementById("node-width").value = nodeWidth;
+  document.getElementById("node-height").value = nodeHeight;
   document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
   
   document.getElementById("tools-vertical-spacing").value = verticalSpacing;
   document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
   document.getElementById("tools-node-width").value = nodeWidth;
+  document.getElementById("tools-node-height").value = nodeHeight;
   document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
   
   document.getElementById("dna-line-spacing").value = terminalLineSpacing;
@@ -6613,6 +6957,25 @@ function drawTree(savedTransform = null) {
           // Base offset plus scaling based on both font sizes to prevent overlap
           // Increased base offset to match the visual gap of the cM label above the line
           const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+          
+          // Build label text: relationship, optionally with percentile
+          let relLabelText = dnaData.relationship;
+          if (showPercentileOnLabels && dnaData.cm) {
+            const cmNum = parseFloat(dnaData.cm);
+            if (!isNaN(cmNum) && cmNum > 0) {
+              const pctResult = calculateCmPercentile(dnaData.cm, dnaData.relationship);
+              if (pctResult) {
+                relLabelText += `, ${formatPercentileOrdinal(pctResult.below)} %ile`;
+              }
+            } else if (!isNaN(cmNum) && cmNum === 0) {
+              const noMatchKey = getHistogramKey(dnaData.relationship);
+              const noMatchPct = noMatchKey ? NO_MATCH_PROBABILITY[noMatchKey] : undefined;
+              if (noMatchPct !== undefined) {
+                relLabelText += ` (${noMatchPct}%)`;
+              }
+            }
+          }
+          
           labelGroup.append("text")
             .attr("class", "intersection-label relationship")
             .attr("x", intersection.x)
@@ -6621,7 +6984,36 @@ function drawTree(savedTransform = null) {
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
             .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
             .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
-            .text(dnaData.relationship);
+            .text(relLabelText);
+        } else if (showPercentileOnLabels && dnaData.cm) {
+          // No relationship label, but show percentile on its own if calculable
+          // Use the calculated relationship from the tree to determine percentile
+          const cmNum = parseFloat(dnaData.cm);
+          if (!isNaN(cmNum) && cmNum > 0) {
+            // Try to calculate relationship from tree structure
+            const person1Result = getPersonById(intersection.person1Id);
+            const person2Result = getPersonById(intersection.person2Id);
+            if (person1Result && person2Result) {
+              const calcRel = calculateTreeRelationship(person1Result.person.name || intersection.person1Name, person2Result.person.name || intersection.person2Name);
+              if (calcRel && calcRel.label) {
+                const pctResult = calculateCmPercentile(dnaData.cm, calcRel.label);
+                if (pctResult) {
+                  const cmFontSize = dnaLabelStyles.cm.fontSize;
+                  const relFontSize = dnaLabelStyles.relationship.fontSize;
+                  const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+                  labelGroup.append("text")
+                    .attr("class", "intersection-label relationship")
+                    .attr("x", intersection.x)
+                    .attr("y", intersection.y + relOffset)
+                    .style("font-size", `${relFontSize}px`)
+                    .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
+                    .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
+                    .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
+                    .text(`${formatPercentileOrdinal(pctResult.below)} %ile`);
+                }
+              }
+            }
+          }
         }
       }
     });
@@ -6651,19 +7043,259 @@ function drawTree(savedTransform = null) {
   const halfWidth = nodeWidth / 2;
   
   // Helper function to fit name within node width
-  function fitName(name, fontSize, isBold) {
-    // Approximate character width based on font size (bold is ~10% wider)
+  // Estimate whether a string fits within the node width
+  function textFits(text, fontSize, isBold) {
     const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
     const availableWidth = nodeWidth - 10; // padding
-    const maxChars = Math.floor(availableWidth / avgCharWidth);
-    
-    if (name.length <= maxChars) {
-      return name;
-    }
-    
-    // Name doesn't fit: use initials
+    return text.length <= Math.floor(availableWidth / avgCharWidth);
+  }
+
+  function fitName(name, fontSize, isBold) {
     const words = name.split(' ').filter(w => w.length > 0);
-    return words.map(word => word[0]).join('').toUpperCase();
+
+    // Build cascade of progressively shorter representations
+    const candidates = [];
+
+    if (words.length >= 3) {
+      // Level 1: Full name — "John Willis Smith"
+      candidates.push(name);
+      // Level 2: Abbreviate middle names — "John W. Smith"
+      candidates.push(words[0] + ' ' + words.slice(1, -1).map(w => w[0].toUpperCase() + '.').join(' ') + ' ' + words[words.length - 1]);
+      // Level 3: Abbreviate first + middle — "J. W. Smith"
+      candidates.push(words.slice(0, -1).map(w => w[0].toUpperCase() + '.').join(' ') + ' ' + words[words.length - 1]);
+      // Level 4: First initial + last name — "J. Smith"
+      candidates.push(words[0][0].toUpperCase() + '. ' + words[words.length - 1]);
+      // Level 5: All initials — "JWS"
+      candidates.push(words.map(w => w[0].toUpperCase()).join(''));
+      // Level 6: First + last initial — "JS"
+      candidates.push(words[0][0].toUpperCase() + words[words.length - 1][0].toUpperCase());
+      // Level 7: First initial — "J"
+      candidates.push(words[0][0].toUpperCase());
+    } else if (words.length === 2) {
+      // Level 1: Full name — "John Smith"
+      candidates.push(name);
+      // Level 2: Abbreviate first — "J. Smith"
+      candidates.push(words[0][0].toUpperCase() + '. ' + words[1]);
+      // Level 3: Initials — "JS"
+      candidates.push(words[0][0].toUpperCase() + words[1][0].toUpperCase());
+      // Level 4: First initial — "J"
+      candidates.push(words[0][0].toUpperCase());
+    } else {
+      // Single word
+      // Level 1: Full name — "Mary"
+      candidates.push(name);
+      // Level 2: First initial — "M"
+      candidates.push(name[0].toUpperCase());
+    }
+
+    // Return the first (longest) candidate that fits
+    for (const candidate of candidates) {
+      if (textFits(candidate, fontSize, isBold)) {
+        return candidate;
+      }
+    }
+
+    // Ultimate fallback: first character
+    return words[0][0].toUpperCase();
+  }
+
+  // Truncate a single line to fit within node width, adding ellipsis if needed
+  function truncateLine(text, fontSize, isBold) {
+    const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
+    const availableWidth = nodeWidth - 10;
+    const maxChars = Math.floor(availableWidth / avgCharWidth);
+    if (text.length <= maxChars) return text;
+    return text.substring(0, maxChars - 1) + "…";
+  }
+
+  // US state name → postal abbreviation map
+  const US_STATE_ABBREV = {
+    "alabama":"AL","alaska":"AK","arizona":"AZ","arkansas":"AR","california":"CA",
+    "colorado":"CO","connecticut":"CT","delaware":"DE","florida":"FL","georgia":"GA",
+    "hawaii":"HI","idaho":"ID","illinois":"IL","indiana":"IN","iowa":"IA",
+    "kansas":"KS","kentucky":"KY","louisiana":"LA","maine":"ME","maryland":"MD",
+    "massachusetts":"MA","michigan":"MI","minnesota":"MN","mississippi":"MS","missouri":"MO",
+    "montana":"MT","nebraska":"NE","nevada":"NV","new hampshire":"NH","new jersey":"NJ",
+    "new mexico":"NM","new york":"NY","north carolina":"NC","north dakota":"ND","ohio":"OH",
+    "oklahoma":"OK","oregon":"OR","pennsylvania":"PA","rhode island":"RI","south carolina":"SC",
+    "south dakota":"SD","tennessee":"TN","texas":"TX","utah":"UT","vermont":"VT",
+    "virginia":"VA","washington":"WA","west virginia":"WV","wisconsin":"WI","wyoming":"WY",
+    "district of columbia":"DC"
+  };
+
+  // Format a location string for node display:
+  // - Abbreviate US state names to postal codes
+  // - Drop middle parts (county) if 3+ comma-separated parts and last is a US state
+  function formatLocationForNode(location) {
+    if (!location) return "";
+    const parts = location.split(",").map(p => p.trim()).filter(p => p.length > 0);
+    if (parts.length === 0) return "";
+
+    const lastPart = parts[parts.length - 1];
+    const stateKey = lastPart.toLowerCase().replace(/\s+/g, " ");
+    const abbrev = US_STATE_ABBREV[stateKey];
+
+    if (abbrev) {
+      if (parts.length === 1) {
+        return abbrev;
+      } else {
+        // 2+ parts: keep first, abbreviate last, drop middles
+        // Abbreviate "County" to "Co." in the kept first part
+        let firstPart = parts[0].replace(/\bCounty\b/gi, "Co.");
+        return firstPart + ", " + abbrev;
+      }
+    }
+
+    // Not a recognized US state — abbreviate "County" to "Co." anyway
+    return location.replace(/\bCounty\b/gi, "Co.");
+  }
+
+  // Check if a date string is more than just a year (not exactly 4 digits)
+  function isMoreThanYear(dateStr) {
+    if (!dateStr) return false;
+    return !/^\d{4}$/.test(dateStr.trim());
+  }
+
+  // Build an array of display lines for a node
+  function buildNodeDisplayLines(nodeData, fontSize, isBold) {
+    const style = defaultNodeTextStyle;
+    const lines = [];
+
+    // Line 1: Name + optional gender symbol
+    let nameLine = fitName(nodeData.name, fontSize, isBold);
+    if ((style.showGender || nodeData.showGender) && nodeData.gender) {
+      nameLine += nodeData.gender === "male" ? " ♂" : " ♀";
+    }
+    lines.push(nameLine);
+
+    // Determine what's toggled and what data exists
+    const hasBirthYear = style.showBirthYear && nodeData.birth;
+    const hasBirthLoc = style.showBirthLocation && nodeData.birthLocation;
+    const hasDeathYear = style.showDeathYear && nodeData.death;
+    const hasDeathLoc = style.showDeathLocation && nodeData.deathLocation;
+    const anyLocationToggled = style.showBirthLocation || style.showDeathLocation;
+
+    // Compact mode: only birth year + death year toggled, no locations toggled,
+    // and both dates are simple years (4 digits)
+    const compactMode = style.showBirthYear && style.showDeathYear
+                     && !anyLocationToggled
+                     && (!nodeData.birth || !isMoreThanYear(nodeData.birth))
+                     && (!nodeData.death || !isMoreThanYear(nodeData.death));
+
+    if (compactMode) {
+      if (hasBirthYear && hasDeathYear) {
+        lines.push(truncateLine(nodeData.birth + "-" + nodeData.death, fontSize, isBold));
+      } else if (hasBirthYear) {
+        lines.push(truncateLine(nodeData.birth + "-", fontSize, isBold));
+      } else if (hasDeathYear) {
+        lines.push(truncateLine("-" + nodeData.death, fontSize, isBold));
+      }
+    } else {
+      // Birth line: combine date + location on one line with b. prefix
+      if (hasBirthYear || hasBirthLoc) {
+        let birthLine = "b.";
+        if (hasBirthYear) birthLine += nodeData.birth;
+        if (hasBirthYear && hasBirthLoc) birthLine += ", ";
+        if (hasBirthLoc) birthLine += formatLocationForNode(nodeData.birthLocation);
+        lines.push(truncateLine(birthLine, fontSize, isBold));
+      }
+
+      // Death line: combine date + location on one line with d. prefix
+      if (hasDeathYear || hasDeathLoc) {
+        let deathLine = "d.";
+        if (hasDeathYear) deathLine += nodeData.death;
+        if (hasDeathYear && hasDeathLoc) deathLine += ", ";
+        if (hasDeathLoc) deathLine += formatLocationForNode(nodeData.deathLocation);
+        lines.push(truncateLine(deathLine, fontSize, isBold));
+      }
+    }
+
+    if (style.showNotes && nodeData.notes) lines.push(truncateLine(nodeData.notes, fontSize, isBold));
+
+    return lines;
+  }
+
+  // Calculate how many lines fit in the node, and apply ellipsis to the last visible line if truncated
+  function getVisibleLines(lines, fontSize) {
+    const lineHeight = fontSize * 1.3;
+    const availableHeight = nodeHeight - 8; // vertical padding
+    const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+
+    if (lines.length <= maxLines) return lines;
+
+    // Truncate: take maxLines, add ellipsis to the last visible line
+    // but never modify the first line (name), since fitName already handles its own fitting
+    const visible = lines.slice(0, maxLines);
+    if (maxLines > 1) {
+      const last = visible[maxLines - 1];
+      if (!last.endsWith("…")) {
+        visible[maxLines - 1] = last.length > 2 ? last.substring(0, last.length - 1) + "…" : "…";
+      }
+    }
+    return visible;
+  }
+
+  // Append multiline text (tspans) to a node selection
+  function appendNodeText(selection, getNodeData, getCustomStyle) {
+    selection.each(function(d) {
+      const nodeData = getNodeData(d);
+      const custom = getCustomStyle(d);
+      const fontSize = custom.hasCustomStyle ? (custom.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
+      const isBold = custom.hasCustomStyle ? (custom.bold !== undefined ? custom.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
+      const isItalic = custom.hasCustomStyle ? (custom.italic !== undefined ? custom.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic;
+
+      const allLines = buildNodeDisplayLines(nodeData, fontSize, isBold);
+      const lines = getVisibleLines(allLines, fontSize);
+      const lineHeight = fontSize * 1.3;
+
+      const textEl = d3.select(this).append("text")
+        .style("font-size", `${fontSize}px`)
+        .style("font-weight", isBold ? "bold" : "normal")
+        .style("font-style", isItalic ? "italic" : "normal")
+        .style("font-family", getEffectiveFontFamily())
+        .attr("fill", getEffectiveTextColor());
+
+      const maxTextWidth = nodeWidth - 16; // 8px padding on each side
+
+      // Lay out tspans with simple relative spacing (no vertical offset yet)
+      lines.forEach((line, i) => {
+        const tspan = textEl.append("tspan")
+          .attr("x", 0)
+          .attr("dy", i === 0 ? 0 : `${lineHeight}px`)
+          .text(line);
+
+        // After rendering, constrain any tspan that exceeds the padded width
+        try {
+          const actualWidth = tspan.node().getComputedTextLength();
+          if (actualWidth > maxTextWidth) {
+            tspan.attr("textLength", maxTextWidth)
+                 .attr("lengthAdjust", "spacingAndGlyphs");
+          }
+        } catch(e) {}
+      });
+
+      // Post-render: measure actual bounding box and shift to center in node
+      try {
+        const bbox = textEl.node().getBBox();
+        const textMidY = bbox.y + bbox.height / 2;
+        // Shift the entire text element so its visual center sits at y=0 (node center)
+        textEl.attr("transform", `translate(0, ${-textMidY})`);
+      } catch(e) {}
+    });
+  }
+
+  // Helper to resolve effective font-family for a node
+  function getEffectiveFontFamily() {
+    return defaultNodeTextStyle.fontFamily || "sans-serif";
+  }
+
+  // Helper to resolve effective text color for a node
+  function getEffectiveTextColor() {
+    const c = defaultNodeTextStyle.textColor;
+    if (c && c !== "" && c !== "#000000") return c;
+    if (currentTheme === 'dark') return '#e0e0e0';
+    if (currentTheme === 'light') return '#000000';
+    return null; // let CSS handle it
   }
   
   node.append("rect")
@@ -6678,20 +7310,11 @@ function drawTree(savedTransform = null) {
       .attr("stroke-width", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2)
       .style("filter", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none");
 
-  node.append("text")
-      .text(d => {
-        const name = d.data.name;
-        const fontSize = d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
-        const isBold = d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
-        let display = fitName(name, fontSize, isBold);
-        if (d.data.showGender && d.data.gender) {
-          display += d.data.gender === "male" ? " ♂" : " ♀";
-        }
-        return display;
-      })
-      .style("font-size", d => `${d.data.hasCustomStyle ? (d.data.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
-      .style("font-weight", d => (d.data.hasCustomStyle ? (d.data.bold !== undefined ? d.data.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
-      .style("font-style", d => (d.data.hasCustomStyle ? (d.data.italic !== undefined ? d.data.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic) ? "italic" : "normal");
+  // Append multiline text to regular nodes
+  appendNodeText(node,
+    d => d.data,
+    d => ({ hasCustomStyle: d.data.hasCustomStyle, fontSize: d.data.fontSize, bold: d.data.bold, italic: d.data.italic })
+  );
 
   // Add collapse indicator for collapsed nodes
   const collapsedNodes = node.filter(d => d.data.collapsed);
@@ -6765,20 +7388,11 @@ function drawTree(savedTransform = null) {
       .attr("stroke-width", d => selectedSpouse && selectedSpouse === d.spouse ? 4 : 2)
       .style("filter", d => selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none");
 
-  spouseNodes.append("text")
-      .text(d => {
-        const name = d.spouse.name;
-        const fontSize = d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize;
-        const isBold = d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
-        let display = fitName(name, fontSize, isBold);
-        if (d.spouse.showGender && d.spouse.gender) {
-          display += d.spouse.gender === "male" ? " ♂" : " ♀";
-        }
-        return display;
-      })
-      .style("font-size", d => `${d.spouse.hasCustomStyle ? (d.spouse.fontSize || defaultNodeTextStyle.fontSize) : defaultNodeTextStyle.fontSize}px`)
-      .style("font-weight", d => (d.spouse.hasCustomStyle ? (d.spouse.bold !== undefined ? d.spouse.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold) ? "bold" : "normal")
-      .style("font-style", d => (d.spouse.hasCustomStyle ? (d.spouse.italic !== undefined ? d.spouse.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic) ? "italic" : "normal");
+  // Append multiline text to spouse nodes
+  appendNodeText(spouseNodes,
+    d => d.spouse,
+    d => ({ hasCustomStyle: d.spouse.hasCustomStyle, fontSize: d.spouse.fontSize, bold: d.spouse.bold, italic: d.spouse.italic })
+  );
   
   // Update home person display in Tools panel
   updateToolsHomePerson();
@@ -6807,6 +7421,17 @@ document.getElementById("node-birth").addEventListener("input", () => {
     const editData = selectedSpouse || selectedNode.data;
     const newBirth = document.getElementById("node-birth").value.trim();
     editData.birth = newBirth || undefined;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Live update for birth location field
+document.getElementById("node-birth-location").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    const newBirthLocation = document.getElementById("node-birth-location").value.trim();
+    editData.birthLocation = newBirthLocation || undefined;
     drawTree(d3.zoomTransform(svg.node()));
   }
 });
@@ -6864,6 +7489,17 @@ document.getElementById("node-death").addEventListener("input", () => {
     const editData = selectedSpouse || selectedNode.data;
     const newDeath = document.getElementById("node-death").value.trim();
     editData.death = newDeath || undefined;
+    drawTree(d3.zoomTransform(svg.node()));
+  }
+});
+
+// Live update for death location field
+document.getElementById("node-death-location").addEventListener("input", () => {
+  if (selectedNode) {
+    sidebarDirty = true;
+    const editData = selectedSpouse || selectedNode.data;
+    const newDeathLocation = document.getElementById("node-death-location").value.trim();
+    editData.deathLocation = newDeathLocation || undefined;
     drawTree(d3.zoomTransform(svg.node()));
   }
 });
@@ -7681,12 +8317,29 @@ document.getElementById("node-color").addEventListener("input", () => {
     }
     const editData = selectedSpouse || selectedNode.data;
     editData.color = document.getElementById("node-color").value;
+    
+    // Apply to all descendants if checkbox is checked
+    if (document.getElementById("apply-color-descendants").checked && !selectedSpouse) {
+      applyColorToDescendants(selectedNode.data, editData.color);
+    }
+    
     debouncedDrawTree();
   }
 });
 document.getElementById("node-color").addEventListener("change", () => {
   colorChangeSaved = false;
   autoSave();
+});
+
+// Apply color to descendants immediately when checkbox is checked
+document.getElementById("apply-color-descendants").addEventListener("change", (e) => {
+  if (e.target.checked && selectedNode && !selectedSpouse) {
+    saveState();
+    const color = selectedNode.data.color || document.getElementById("node-color").value;
+    applyColorToDescendants(selectedNode.data, color);
+    autoSave();
+    drawTree(d3.zoomTransform(svg.node()));
+  }
 });
 
 // Dialog for removing a spouse that has children
@@ -8001,6 +8654,7 @@ document.getElementById("update-style-all").addEventListener("click", () => {
   document.getElementById("tools-font-size").value = fontSize;
   document.getElementById("tools-font-bold").checked = bold;
   document.getElementById("tools-font-italic").checked = italic;
+  document.getElementById("tools-font-family").value = defaultNodeTextStyle.fontFamily || "sans-serif";
   
   function applyStyleToAll(node) {
     node.fontSize = fontSize;
@@ -8840,6 +9494,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
     autoStrokeEnabled: autoStrokeEnabled,
     autoStrokeWidth: autoStrokeWidth,
     alternateLineColors: alternateLineColors,
+    showPercentileOnLabels: showPercentileOnLabels,
     shadedRegion: shadedRegion,
     crossLinks: crossLinks,
     homePersonName: homePersonName,
@@ -8896,6 +9551,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     autoStrokeWidth = 1;
     alternateLineColors = false;
     showTerminalLines = true;
+    showPercentileOnLabels = false;
     shadedRegion = null;
     homePersonName = null;
     crossLinks = [];
@@ -9210,11 +9866,14 @@ document.addEventListener("keydown", (e) => {
     const sidebar = document.getElementById("sidebar");
     const dnaSidebar = document.getElementById("dna-sidebar");
     const toolsPanel = document.getElementById("tools-panel");
+    const advToolsPanel = document.getElementById("advanced-tools-panel");
     
     if (sidebar.classList.contains("visible")) {
       closeSidebar();
     } else if (dnaSidebar.classList.contains("visible")) {
       closeDnaSidebar();
+    } else if (advToolsPanel.classList.contains("visible")) {
+      closeAdvancedToolsPanel();
     } else if (toolsPanel.classList.contains("visible")) {
       closeToolsPanel();
     }
@@ -9378,6 +10037,12 @@ document.getElementById("import-input").addEventListener("change", (e) => {
             alternateLineColors = imported.alternateLineColors;
           }
           
+          if (imported.showPercentileOnLabels !== undefined) {
+            showPercentileOnLabels = imported.showPercentileOnLabels;
+          } else {
+            showPercentileOnLabels = false;
+          }
+          
           // Always default to showing terminal lines on import
           showTerminalLines = true;
           
@@ -9406,6 +10071,11 @@ document.getElementById("import-input").addEventListener("change", (e) => {
             document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
             document.getElementById("node-width").value = nodeWidth;
             document.getElementById("node-height").value = nodeHeight;
+            document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+            document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+            document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+            document.getElementById("tools-node-width").value = nodeWidth;
+            document.getElementById("tools-node-height").value = nodeHeight;
           }
           
           // Always derive filename from the imported file name
@@ -9694,6 +10364,7 @@ function openToolsPanel() {
   document.getElementById("tools-font-size").value = defaultNodeTextStyle.fontSize;
   document.getElementById("tools-font-bold").checked = defaultNodeTextStyle.bold;
   document.getElementById("tools-font-italic").checked = defaultNodeTextStyle.italic;
+  document.getElementById("tools-font-family").value = defaultNodeTextStyle.fontFamily || "sans-serif";
   
   document.getElementById("tools-vertical-spacing").value = verticalSpacing;
   document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
@@ -9733,7 +10404,154 @@ function closeToolsPanel() {
 
 document.getElementById("tools-btn").addEventListener("click", openToolsPanel);
 document.getElementById("tools-close").addEventListener("click", closeToolsPanel);
-toolsOverlay.addEventListener("click", closeToolsPanel);
+toolsOverlay.addEventListener("click", () => {
+  if (advancedToolsPanel.classList.contains("visible")) {
+    closeAdvancedToolsPanel();
+  } else {
+    closeToolsPanel();
+  }
+});
+
+// === Advanced Tools Panel ===
+const advancedToolsPanel = document.getElementById("advanced-tools-panel");
+
+function openAdvancedToolsPanel() {
+  // Close the main tools panel (without closing overlay)
+  toolsPanel.classList.remove("visible");
+  
+  // Center the advanced panel
+  advancedToolsPanel.style.left = "50%";
+  advancedToolsPanel.style.top = "50%";
+  advancedToolsPanel.style.transform = "translate(-50%, -50%) scale(1)";
+  
+  // Sync controls to current state
+  syncAdvancedToolsToState();
+  advDirty = false;
+  
+  advancedToolsPanel.classList.add("visible");
+  toolsOverlay.classList.add("visible");
+}
+
+function closeAdvancedToolsPanel() {
+  if (advDirty) {
+    autoSave();
+    advDirty = false;
+  }
+  advancedToolsPanel.classList.remove("visible");
+  toolsOverlay.classList.remove("visible");
+}
+
+function advancedBackToTools() {
+  advancedToolsPanel.classList.remove("visible");
+  openToolsPanel();
+}
+
+document.getElementById("advanced-tools-btn").addEventListener("click", openAdvancedToolsPanel);
+document.getElementById("advanced-tools-close").addEventListener("click", closeAdvancedToolsPanel);
+document.getElementById("advanced-tools-back").addEventListener("click", advancedBackToTools);
+
+// Make Advanced Tools panel draggable by its header
+let advDragging = false;
+let advDragOffsetX = 0;
+let advDragOffsetY = 0;
+let advPanelX = 0;
+let advPanelY = 0;
+
+const advancedToolsHeader = document.getElementById("advanced-tools-header");
+
+advancedToolsHeader.addEventListener("mousedown", (e) => {
+  if (e.target === document.getElementById("advanced-tools-close")) return;
+  
+  advDragging = true;
+  advancedToolsPanel.classList.add("dragging");
+  
+  const rect = advancedToolsPanel.getBoundingClientRect();
+  advPanelX = rect.left + rect.width / 2;
+  advPanelY = rect.top;
+  
+  advDragOffsetX = e.clientX - advPanelX;
+  advDragOffsetY = e.clientY - advPanelY;
+  
+  advancedToolsPanel.style.left = advPanelX + "px";
+  advancedToolsPanel.style.top = advPanelY + "px";
+  advancedToolsPanel.style.transform = "translateX(-50%)";
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!advDragging) return;
+  
+  advPanelX = e.clientX - advDragOffsetX;
+  advPanelY = e.clientY - advDragOffsetY;
+  
+  advancedToolsPanel.style.left = advPanelX + "px";
+  advancedToolsPanel.style.top = advPanelY + "px";
+});
+
+document.addEventListener("mouseup", () => {
+  if (advDragging) {
+    advDragging = false;
+    advancedToolsPanel.classList.remove("dragging");
+  }
+});
+
+// === Advanced Tools: Node Styling Controls ===
+function syncAdvancedToolsToState() {
+  document.getElementById("adv-font-size").value = defaultNodeTextStyle.fontSize;
+  document.getElementById("adv-font-family").value = defaultNodeTextStyle.fontFamily || "sans-serif";
+  document.getElementById("adv-text-color").value = defaultNodeTextStyle.textColor || "#000000";
+  document.getElementById("adv-bold").checked = defaultNodeTextStyle.bold;
+  document.getElementById("adv-italic").checked = defaultNodeTextStyle.italic;
+  document.getElementById("adv-show-gender").checked = defaultNodeTextStyle.showGender || false;
+  document.getElementById("adv-show-birth-year").checked = defaultNodeTextStyle.showBirthYear || false;
+  document.getElementById("adv-show-birth-location").checked = defaultNodeTextStyle.showBirthLocation || false;
+  document.getElementById("adv-show-death-year").checked = defaultNodeTextStyle.showDeathYear || false;
+  document.getElementById("adv-show-death-location").checked = defaultNodeTextStyle.showDeathLocation || false;
+  document.getElementById("adv-show-notes").checked = defaultNodeTextStyle.showNotes || false;
+}
+
+let advDirty = false;
+
+function applyAdvancedNodeStyling() {
+  if (!advDirty) {
+    saveState();
+  }
+  advDirty = true;
+
+  defaultNodeTextStyle.fontSize = parseInt(document.getElementById("adv-font-size").value) || 12;
+  defaultNodeTextStyle.fontFamily = document.getElementById("adv-font-family").value;
+  defaultNodeTextStyle.textColor = document.getElementById("adv-text-color").value;
+  defaultNodeTextStyle.bold = document.getElementById("adv-bold").checked;
+  defaultNodeTextStyle.italic = document.getElementById("adv-italic").checked;
+  defaultNodeTextStyle.showGender = document.getElementById("adv-show-gender").checked;
+  defaultNodeTextStyle.showBirthYear = document.getElementById("adv-show-birth-year").checked;
+  defaultNodeTextStyle.showBirthLocation = document.getElementById("adv-show-birth-location").checked;
+  defaultNodeTextStyle.showDeathYear = document.getElementById("adv-show-death-year").checked;
+  defaultNodeTextStyle.showDeathLocation = document.getElementById("adv-show-death-location").checked;
+  defaultNodeTextStyle.showNotes = document.getElementById("adv-show-notes").checked;
+
+  // Also sync the main Tools panel font size/bold/italic/font-family to stay consistent
+  document.getElementById("tools-font-size").value = defaultNodeTextStyle.fontSize;
+  document.getElementById("tools-font-bold").checked = defaultNodeTextStyle.bold;
+  document.getElementById("tools-font-italic").checked = defaultNodeTextStyle.italic;
+  document.getElementById("tools-font-family").value = defaultNodeTextStyle.fontFamily;
+
+  drawTree(d3.zoomTransform(svg.node()));
+  autoSave();
+}
+
+// Wire up all advanced controls for live preview
+["adv-font-size"].forEach(id => {
+  document.getElementById(id).addEventListener("input", applyAdvancedNodeStyling);
+});
+["adv-font-family"].forEach(id => {
+  document.getElementById(id).addEventListener("change", applyAdvancedNodeStyling);
+});
+["adv-text-color"].forEach(id => {
+  document.getElementById(id).addEventListener("input", applyAdvancedNodeStyling);
+});
+["adv-bold", "adv-italic", "adv-show-gender", "adv-show-birth-year", "adv-show-birth-location", "adv-show-death-year", "adv-show-death-location", "adv-show-notes"].forEach(id => {
+  document.getElementById(id).addEventListener("change", applyAdvancedNodeStyling);
+});
 
 // Fit to screen button
 document.getElementById("fit-btn").addEventListener("click", () => {
@@ -9823,14 +10641,17 @@ function syncToolsNodeTextStyle() {
   const fontSize = parseInt(document.getElementById("tools-font-size").value);
   const bold = document.getElementById("tools-font-bold").checked;
   const italic = document.getElementById("tools-font-italic").checked;
+  const fontFamily = document.getElementById("tools-font-family").value;
   
   defaultNodeTextStyle.fontSize = fontSize;
   defaultNodeTextStyle.bold = bold;
   defaultNodeTextStyle.italic = italic;
+  defaultNodeTextStyle.fontFamily = fontFamily;
   
   document.getElementById("font-size").value = fontSize;
   document.getElementById("font-bold").checked = bold;
   document.getElementById("font-italic").checked = italic;
+  document.getElementById("adv-font-family").value = fontFamily;
   
   function applyStyleToAll(node) {
     node.fontSize = fontSize;
@@ -9857,14 +10678,7 @@ function syncToolsNodeTextStyle() {
 document.getElementById("tools-font-size").addEventListener("input", syncToolsNodeTextStyle);
 document.getElementById("tools-font-bold").addEventListener("change", syncToolsNodeTextStyle);
 document.getElementById("tools-font-italic").addEventListener("change", syncToolsNodeTextStyle);
-
-document.getElementById("tools-apply-style-all").addEventListener("click", () => {
-  if (!toolsDirty) {
-    saveState();
-  }
-  toolsDirty = false;
-  autoSave();
-});
+document.getElementById("tools-font-family").addEventListener("change", syncToolsNodeTextStyle);
 
 // Tools panel layout sliders (use shared syncLayoutSetting)
 document.getElementById("tools-vertical-spacing").addEventListener("input", (e) => {
