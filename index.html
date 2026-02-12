@@ -1211,28 +1211,28 @@ the Free Software Foundation, version 3.
   #tools-panel .style-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     margin-bottom: 8px;
   }
   #tools-panel .style-row:last-child {
     margin-bottom: 0;
   }
   #tools-panel .style-row label.style-label {
-    min-width: 65px;
+    min-width: 55px;
     font-size: 12px;
     color: #555;
   }
   #tools-panel .style-row input[type="color"] {
-    width: 32px;
-    height: 26px;
+    width: 48px;
+    height: 28px;
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
     padding: 1px;
   }
   #tools-panel .style-row input[type="number"] {
-    width: 50px;
-    padding: 5px 6px;
+    width: 40px;
+    padding: 5px 4px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 12px;
@@ -1756,7 +1756,7 @@ the Free Software Foundation, version 3.
       <div class="tools-section-title">Label Styling</div>
       <div class="style-row">
         <label class="style-label">cM Font:</label>
-        <input type="number" id="tools-cm-font-size" min="8" max="48" value="11" style="width: 45px;" />
+        <input type="number" id="tools-cm-font-size" min="8" max="48" value="11" style="width: 40px;" />
         <input type="color" id="tools-cm-font-color" value="#0d47a1" />
         <div class="checkbox-row">
           <input type="checkbox" id="tools-cm-font-bold" checked />
@@ -1766,10 +1766,27 @@ the Free Software Foundation, version 3.
           <input type="checkbox" id="tools-cm-font-italic" />
           <label for="tools-cm-font-italic">Italic</label>
         </div>
+        <select id="tools-cm-font-family" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px;">
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="'Courier New', Courier, monospace">Courier New</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Tahoma, sans-serif">Tahoma</option>
+          <option value="'Lucida Console', monospace">Lucida Console</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+          <option value="Garamond, serif">Garamond</option>
+          <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+        </select>
       </div>
       <div class="style-row">
         <label class="style-label">Rel. Font:</label>
-        <input type="number" id="tools-rel-font-size" min="8" max="48" value="11" style="width: 45px;" />
+        <input type="number" id="tools-rel-font-size" min="8" max="48" value="11" style="width: 40px;" />
         <input type="color" id="tools-rel-font-color" value="#000000" />
         <div class="checkbox-row">
           <input type="checkbox" id="tools-rel-font-bold" />
@@ -1779,6 +1796,23 @@ the Free Software Foundation, version 3.
           <input type="checkbox" id="tools-rel-font-italic" />
           <label for="tools-rel-font-italic">Italic</label>
         </div>
+        <select id="tools-rel-font-family" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px;">
+          <option value="sans-serif">Sans-serif</option>
+          <option value="serif">Serif</option>
+          <option value="monospace">Monospace</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="'Courier New', Courier, monospace">Courier New</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+          <option value="Tahoma, sans-serif">Tahoma</option>
+          <option value="'Lucida Console', monospace">Lucida Console</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+          <option value="Garamond, serif">Garamond</option>
+          <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+        </select>
       </div>
     </div>
 
@@ -1912,7 +1946,7 @@ the Free Software Foundation, version 3.
     <input type="text" id="node-name" placeholder="Enter name" />
     <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 8px;">
       <label style="margin: 0; font-weight: bold;">Birth</label>
-      <div class="gender-box" style="margin: 0; padding: 3px 8px;">
+      <div class="gender-box" style="margin: 0; margin-left: auto; padding: 3px 8px;">
         <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-male" style="margin-right: 4px;" /> Male</label>
         <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-female" style="margin-right: 4px;" /> Female</label>
         <label class="checkbox-label" style="margin: 0; font-size: 12px;"><input type="checkbox" id="node-show-gender" style="margin-right: 4px;" /> Show</label>
@@ -2028,8 +2062,8 @@ the Free Software Foundation, version 3.
   <!-- Collapse Section -->
   <div class="section">
     <div class="section-title">Collapse Branches</div>
-    <button id="toggle-collapse" class="secondary full-width">Collapse Descendants</button>
-    <button id="toggle-ancestor-collapse" class="secondary full-width" style="margin-top: 8px;">Collapse Ancestors</button>
+    <button id="toggle-ancestor-collapse" class="secondary full-width">Collapse Ancestors</button>
+    <button id="toggle-collapse" class="secondary full-width" style="margin-top: 8px;">Collapse Descendants</button>
   </div>
 
   <!-- Layout Spacing Section -->
@@ -2190,8 +2224,8 @@ let dnaComparisons = {};
 
 // DNA label styling
 let dnaLabelStyles = {
-  cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false },
-  relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
+  cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false, fontFamily: "sans-serif" },
+  relationship: { fontSize: 11, color: "#000000", bold: false, italic: false, fontFamily: "sans-serif" }
 };
 
 // Global default node text styling (used for nodes without individual overrides)
@@ -2201,6 +2235,7 @@ let defaultNodeTextStyle = {
   italic: false,
   fontFamily: "sans-serif",
   textColor: "",
+  textColorExplicit: false,
   showGender: false,
   showBirthYear: false,
   showBirthLocation: false,
@@ -2415,6 +2450,7 @@ function autoLoad() {
           italic: loadedStyle.italic || false,
           fontFamily: loadedStyle.fontFamily || "sans-serif",
           textColor: loadedStyle.textColor || "",
+          textColorExplicit: loadedStyle.textColorExplicit || false,
           showGender: loadedStyle.showGender || false,
           showBirthYear: loadedStyle.showBirthYear || false,
           showBirthLocation: loadedStyle.showBirthLocation || false,
@@ -4712,6 +4748,12 @@ function syncDnaLabelStyles(source) {
   dnaLabelStyles.relationship.bold = document.getElementById(srcPrefix + "rel-font-bold").checked;
   dnaLabelStyles.relationship.italic = document.getElementById(srcPrefix + "rel-font-italic").checked;
   
+  // fontFamily only exists in tools panel
+  if (source === "tools") {
+    dnaLabelStyles.cm.fontFamily = document.getElementById("tools-cm-font-family").value;
+    dnaLabelStyles.relationship.fontFamily = document.getElementById("tools-rel-font-family").value;
+  }
+  
   // Only update stored .color from picker if NOT in dark mode
   // (in dark mode the picker shows #ffffff override, not the user's real color)
   const pickedCmColor = document.getElementById(srcPrefix + "cm-font-color").value;
@@ -4734,6 +4776,10 @@ function syncDnaLabelStyles(source) {
   document.getElementById(dstPrefix + "rel-font-color").value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
   document.getElementById(dstPrefix + "rel-font-bold").checked = dnaLabelStyles.relationship.bold;
   document.getElementById(dstPrefix + "rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  
+  // fontFamily only exists in tools panel
+  document.getElementById("tools-cm-font-family").value = dnaLabelStyles.cm.fontFamily;
+  document.getElementById("tools-rel-font-family").value = dnaLabelStyles.relationship.fontFamily;
   
   drawTree(d3.zoomTransform(svg.node()));
 }
@@ -6938,6 +6984,7 @@ function drawTree(savedTransform = null) {
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.cm.color))
             .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
             .style("font-style", dnaLabelStyles.cm.italic ? "italic" : "normal")
+            .style("font-family", dnaLabelStyles.cm.fontFamily || "sans-serif")
             .text(dnaData.cm);
           
           if (autoStrokeEnabled) {
@@ -6984,6 +7031,7 @@ function drawTree(savedTransform = null) {
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
             .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
             .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
+            .style("font-family", dnaLabelStyles.relationship.fontFamily || "sans-serif")
             .text(relLabelText);
         } else if (showPercentileOnLabels && dnaData.cm) {
           // No relationship label, but show percentile on its own if calculable
@@ -7009,6 +7057,7 @@ function drawTree(savedTransform = null) {
                     .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
                     .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
                     .style("font-style", dnaLabelStyles.relationship.italic ? "italic" : "normal")
+                    .style("font-family", dnaLabelStyles.relationship.fontFamily || "sans-serif")
                     .text(`${formatPercentileOrdinal(pctResult.below)} %ile`);
                 }
               }
@@ -7253,7 +7302,7 @@ function drawTree(savedTransform = null) {
         .style("font-weight", isBold ? "bold" : "normal")
         .style("font-style", isItalic ? "italic" : "normal")
         .style("font-family", getEffectiveFontFamily())
-        .attr("fill", getEffectiveTextColor());
+        .style("fill", getEffectiveTextColor());
 
       const maxTextWidth = nodeWidth - 16; // 8px padding on each side
 
@@ -7292,10 +7341,10 @@ function drawTree(savedTransform = null) {
   // Helper to resolve effective text color for a node
   function getEffectiveTextColor() {
     const c = defaultNodeTextStyle.textColor;
-    if (c && c !== "" && c !== "#000000") return c;
+    if (defaultNodeTextStyle.textColorExplicit && c) return c;
     if (currentTheme === 'dark') return '#e0e0e0';
     if (currentTheme === 'light') return '#000000';
-    return null; // let CSS handle it
+    return '#000000'; // fullcolor default
   }
   
   node.append("rect")
@@ -10230,13 +10279,18 @@ function _exportPNG(includeTitle) {
   const clonedG = clonedSvg.querySelector("g");
   clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding + titleHeight})`);
   
+  // Resolve the user's chosen fonts
+  const nodeFont = defaultNodeTextStyle.fontFamily || "sans-serif";
+  const cmFont = dnaLabelStyles.cm.fontFamily || "sans-serif";
+  const relFont = dnaLabelStyles.relationship.fontFamily || "sans-serif";
+  
   // Add title text if requested
   if (includeTitle) {
     const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     titleText.setAttribute("x", String(width / 2));
     titleText.setAttribute("y", String(padding / 2 + titleFontSize * 0.7));
     titleText.setAttribute("text-anchor", "middle");
-    titleText.setAttribute("font-family", "sans-serif");
+    titleText.setAttribute("font-family", nodeFont);
     titleText.setAttribute("font-size", String(titleFontSize));
     titleText.setAttribute("font-weight", "bold");
     titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
@@ -10248,19 +10302,33 @@ function _exportPNG(includeTitle) {
   clonedSvg.querySelectorAll("use").forEach(el => el.remove());
   clonedSvg.querySelectorAll("image").forEach(el => el.remove());
   
-  // Inline all computed styles on elements
-  const allElements = clonedSvg.querySelectorAll("*");
-  allElements.forEach(el => {
-    const computed = window.getComputedStyle(svgElement.querySelector(el.tagName) || document.body);
-    if (el.tagName === "text" || el.tagName === "tspan") {
-      el.setAttribute("font-family", "sans-serif");
+  // Inline font-family on all text elements, preserving chosen fonts
+  // Node text and DNA label text get their respective fonts
+  clonedSvg.querySelectorAll("text").forEach(textEl => {
+    // Check if this is a DNA label (cM value or relationship label)
+    if (textEl.classList.contains("intersection-label")) {
+      if (textEl.classList.contains("cm-value")) {
+        textEl.setAttribute("font-family", cmFont);
+        textEl.style.fontFamily = cmFont;
+      } else if (textEl.classList.contains("relationship")) {
+        textEl.setAttribute("font-family", relFont);
+        textEl.style.fontFamily = relFont;
+      }
+    } else {
+      // Node text and other text uses the node font
+      const existingFont = textEl.style.fontFamily || textEl.getAttribute("font-family");
+      if (!existingFont || existingFont === "sans-serif") {
+        textEl.setAttribute("font-family", nodeFont);
+        textEl.style.fontFamily = nodeFont;
+      }
     }
   });
-  
-  // Inline font-family on all text elements explicitly
-  clonedSvg.querySelectorAll("text").forEach(textEl => {
-    textEl.setAttribute("font-family", "sans-serif");
-    textEl.style.fontFamily = "sans-serif";
+  clonedSvg.querySelectorAll("tspan").forEach(tspanEl => {
+    const existingFont = tspanEl.style.fontFamily || tspanEl.getAttribute("font-family");
+    if (!existingFont || existingFont === "sans-serif") {
+      tspanEl.setAttribute("font-family", nodeFont);
+      tspanEl.style.fontFamily = nodeFont;
+    }
   });
   
   // Get all styles and inline them
@@ -10354,11 +10422,30 @@ function _exportPNG(includeTitle) {
 const toolsPanel = document.getElementById("tools-panel");
 const toolsOverlay = document.getElementById("tools-overlay");
 
-function openToolsPanel() {
-  // Reset position to center
-  toolsPanel.style.left = "50%";
-  toolsPanel.style.top = "50%";
-  toolsPanel.style.transform = "translate(-50%, -50%) scale(1)";
+// Shared position for tools/advanced panels (null = centered)
+let sharedPanelPos = null;
+
+function applySharedPanelPos(panel) {
+  if (sharedPanelPos) {
+    panel.style.left = sharedPanelPos.x + "px";
+    panel.style.top = sharedPanelPos.y + "px";
+    panel.style.transform = "translateX(-50%)";
+  } else {
+    panel.style.left = "50%";
+    panel.style.top = "50%";
+    panel.style.transform = "translate(-50%, -50%) scale(1)";
+  }
+}
+
+function capturePanelPos(panel) {
+  const rect = panel.getBoundingClientRect();
+  sharedPanelPos = { x: rect.left + rect.width / 2, y: rect.top };
+}
+
+function openToolsPanel(skipPositionReset) {
+  if (!skipPositionReset) {
+    applySharedPanelPos(toolsPanel);
+  }
   
   // Sync current values to tools panel - always show global defaults
   document.getElementById("tools-font-size").value = defaultNodeTextStyle.fontSize;
@@ -10376,11 +10463,13 @@ function openToolsPanel() {
   document.getElementById("tools-cm-font-color").value = getEffectiveLabelColor(dnaLabelStyles.cm.color);
   document.getElementById("tools-cm-font-bold").checked = dnaLabelStyles.cm.bold;
   document.getElementById("tools-cm-font-italic").checked = dnaLabelStyles.cm.italic;
+  document.getElementById("tools-cm-font-family").value = dnaLabelStyles.cm.fontFamily || "sans-serif";
   
   document.getElementById("tools-rel-font-size").value = dnaLabelStyles.relationship.fontSize;
   document.getElementById("tools-rel-font-color").value = getEffectiveLabelColor(dnaLabelStyles.relationship.color);
   document.getElementById("tools-rel-font-bold").checked = dnaLabelStyles.relationship.bold;
   document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
+  document.getElementById("tools-rel-font-family").value = dnaLabelStyles.relationship.fontFamily || "sans-serif";
   
   document.getElementById("tools-auto-stroke-toggle").checked = autoStrokeEnabled;
   document.getElementById("tools-stroke-width-slider").value = autoStrokeWidth;
@@ -10416,13 +10505,14 @@ toolsOverlay.addEventListener("click", () => {
 const advancedToolsPanel = document.getElementById("advanced-tools-panel");
 
 function openAdvancedToolsPanel() {
+  // Capture tools panel position before hiding it
+  capturePanelPos(toolsPanel);
+  
   // Close the main tools panel (without closing overlay)
   toolsPanel.classList.remove("visible");
   
-  // Center the advanced panel
-  advancedToolsPanel.style.left = "50%";
-  advancedToolsPanel.style.top = "50%";
-  advancedToolsPanel.style.transform = "translate(-50%, -50%) scale(1)";
+  // Position advanced panel at the same spot
+  applySharedPanelPos(advancedToolsPanel);
   
   // Sync controls to current state
   syncAdvancedToolsToState();
@@ -10442,8 +10532,17 @@ function closeAdvancedToolsPanel() {
 }
 
 function advancedBackToTools() {
+  // Capture advanced panel position before hiding it
+  capturePanelPos(advancedToolsPanel);
+  
   advancedToolsPanel.classList.remove("visible");
-  openToolsPanel();
+  
+  // Position tools panel at the same spot
+  applySharedPanelPos(toolsPanel);
+  panelX = sharedPanelPos ? sharedPanelPos.x : 0;
+  panelY = sharedPanelPos ? sharedPanelPos.y : 0;
+  
+  openToolsPanel(true);
 }
 
 document.getElementById("advanced-tools-btn").addEventListener("click", openAdvancedToolsPanel);
@@ -10491,6 +10590,7 @@ document.addEventListener("mouseup", () => {
   if (advDragging) {
     advDragging = false;
     advancedToolsPanel.classList.remove("dragging");
+    sharedPanelPos = { x: advPanelX, y: advPanelY };
   }
 });
 
@@ -10520,6 +10620,7 @@ function applyAdvancedNodeStyling() {
   defaultNodeTextStyle.fontSize = parseInt(document.getElementById("adv-font-size").value) || 12;
   defaultNodeTextStyle.fontFamily = document.getElementById("adv-font-family").value;
   defaultNodeTextStyle.textColor = document.getElementById("adv-text-color").value;
+  defaultNodeTextStyle.textColorExplicit = true;
   defaultNodeTextStyle.bold = document.getElementById("adv-bold").checked;
   defaultNodeTextStyle.italic = document.getElementById("adv-italic").checked;
   defaultNodeTextStyle.showGender = document.getElementById("adv-show-gender").checked;
@@ -10629,6 +10730,7 @@ document.addEventListener("mouseup", () => {
   if (isDragging) {
     isDragging = false;
     toolsPanel.classList.remove("dragging");
+    sharedPanelPos = { x: panelX, y: panelY };
   }
 });
 
@@ -10746,6 +10848,9 @@ function syncToolsDnaLabels() {
   document.getElementById(id).addEventListener("input", syncToolsDnaLabels);
 });
 ["tools-cm-font-bold", "tools-cm-font-italic", "tools-rel-font-bold", "tools-rel-font-italic"].forEach(id => {
+  document.getElementById(id).addEventListener("change", syncToolsDnaLabels);
+});
+["tools-cm-font-family", "tools-rel-font-family"].forEach(id => {
   document.getElementById(id).addEventListener("change", syncToolsDnaLabels);
 });
 
@@ -10908,13 +11013,18 @@ function _exportSVG(includeTitle) {
   const clonedG = clonedSvg.querySelector("g");
   clonedG.setAttribute("transform", `translate(${-bbox.x + padding}, ${-bbox.y + padding + titleHeight})`);
   
+  // Resolve the user's chosen fonts
+  const nodeFont = defaultNodeTextStyle.fontFamily || "sans-serif";
+  const cmFont = dnaLabelStyles.cm.fontFamily || "sans-serif";
+  const relFont = dnaLabelStyles.relationship.fontFamily || "sans-serif";
+  
   // Add title text if requested
   if (includeTitle) {
     const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     titleText.setAttribute("x", String(width / 2));
     titleText.setAttribute("y", String(padding / 2 + titleFontSize * 0.7));
     titleText.setAttribute("text-anchor", "middle");
-    titleText.setAttribute("font-family", "sans-serif");
+    titleText.setAttribute("font-family", nodeFont);
     titleText.setAttribute("font-size", String(titleFontSize));
     titleText.setAttribute("font-weight", "bold");
     titleText.setAttribute("fill", currentTheme === 'dark' ? '#e0e0e0' : '#333');
@@ -10922,9 +11032,26 @@ function _exportSVG(includeTitle) {
     clonedSvg.appendChild(titleText);
   }
   
-  // Inline font-family on all text elements
+  // Inline font-family on all text elements, preserving chosen fonts
   clonedSvg.querySelectorAll("text").forEach(textEl => {
-    textEl.style.fontFamily = "sans-serif";
+    if (textEl.classList.contains("intersection-label")) {
+      if (textEl.classList.contains("cm-value")) {
+        textEl.style.fontFamily = cmFont;
+      } else if (textEl.classList.contains("relationship")) {
+        textEl.style.fontFamily = relFont;
+      }
+    } else {
+      const existingFont = textEl.style.fontFamily || textEl.getAttribute("font-family");
+      if (!existingFont || existingFont === "sans-serif") {
+        textEl.style.fontFamily = nodeFont;
+      }
+    }
+  });
+  clonedSvg.querySelectorAll("tspan").forEach(tspanEl => {
+    const existingFont = tspanEl.style.fontFamily || tspanEl.getAttribute("font-family");
+    if (!existingFont || existingFont === "sans-serif") {
+      tspanEl.style.fontFamily = nodeFont;
+    }
   });
   
   // Get computed styles and inline them
