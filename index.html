@@ -1926,6 +1926,7 @@ the Free Software Foundation, version 3.
         <label><input type="checkbox" id="adv-show-gender" /> Show Gender</label>
         <label><input type="checkbox" id="adv-show-notes" /> Show Notes</label>
         <label><input type="checkbox" id="adv-show-tooltips" checked /> Show Tooltips</label>
+        <label><input type="checkbox" id="adv-show-toolbar" checked /> Show Toolbar</label>
       </div>
     </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
@@ -2258,6 +2259,7 @@ let showTerminalLines = true;
 // Show percentile on McGuire line labels
 let showPercentileOnLabels = false;
 let tooltipsEnabled = true;
+let toolbarEnabled = true;
 
 // Shading tool
 let shadeToolActive = false;
@@ -2415,6 +2417,7 @@ function autoSave() {
       showTerminalLines: showTerminalLines,
       showPercentileOnLabels: showPercentileOnLabels,
       tooltipsEnabled: tooltipsEnabled,
+      toolbarEnabled: toolbarEnabled,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -2467,6 +2470,7 @@ function autoLoad() {
         showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
         showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
         tooltipsEnabled = loadedData.tooltipsEnabled !== undefined ? loadedData.tooltipsEnabled : true;
+        toolbarEnabled = loadedData.toolbarEnabled !== undefined ? loadedData.toolbarEnabled : true;
         shadedRegion = loadedData.shadedRegion || null;
         crossLinks = loadedData.crossLinks || [];
         currentFilename = loadedData.filename || "New Tree";
@@ -9791,10 +9795,22 @@ function jumpToHomePerson() {
 // Helper: fit tree to screen (duplicates fit-btn logic for reuse)
 function fitTreeToScreen(animate = true) {
   const g = svg.select("g");
+  
+  // When toolbar is hidden, exclude collapse indicators from bounding box
+  // since the extra space they consume is noticeable in full-screen mode
+  let indicators;
+  if (!toolbarEnabled) {
+    indicators = g.selectAll(".collapse-indicator, .ancestor-collapse-indicator");
+    indicators.attr("display", "none");
+  }
   const bbox = g.node().getBBox();
+  if (!toolbarEnabled && indicators) {
+    indicators.attr("display", null);
+  }
   
   const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight - 40;
+  const toolbarOffset = toolbarEnabled ? 40 : 0;
+  const viewportHeight = window.innerHeight - toolbarOffset;
   
   const padding = 20;
   const scaleX = (viewportWidth - padding * 2) / bbox.width;
@@ -9805,7 +9821,7 @@ function fitTreeToScreen(animate = true) {
   const centerY = bbox.y + bbox.height / 2;
   
   const translateX = viewportWidth / 2 - centerX * scale;
-  const translateY = (viewportHeight / 2 + 40) - centerY * scale;
+  const translateY = (viewportHeight / 2 + toolbarOffset) - centerY * scale;
   
   const transform = d3.zoomIdentity
     .translate(translateX, translateY)
@@ -9963,6 +9979,11 @@ document.addEventListener("keydown", (e) => {
       closeAdvancedToolsPanel();
     } else if (toolsPanel.classList.contains("visible")) {
       closeToolsPanel();
+    } else if (!toolbarEnabled) {
+      toolbarEnabled = true;
+      document.getElementById("adv-show-toolbar").checked = true;
+      applyToolbarVisibility();
+      autoSave();
     }
     return;
   }
@@ -10687,6 +10708,7 @@ function syncAdvancedToolsToState() {
   document.getElementById("adv-show-death-location").checked = defaultNodeTextStyle.showDeathLocation || false;
   document.getElementById("adv-show-notes").checked = defaultNodeTextStyle.showNotes || false;
   document.getElementById("adv-show-tooltips").checked = tooltipsEnabled;
+  document.getElementById("adv-show-toolbar").checked = toolbarEnabled;
 }
 
 let advDirty = false;
@@ -10738,6 +10760,29 @@ document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
   if (!tooltipsEnabled) { hideNodeTooltip(); hideDnaTooltip(); }
   autoSave();
 });
+document.getElementById("adv-show-toolbar").addEventListener("change", (e) => {
+  toolbarEnabled = e.target.checked;
+  applyToolbarVisibility();
+  autoSave();
+});
+
+function applyToolbarVisibility() {
+  const toolbar = document.getElementById("toolbar");
+  const sidebar = document.getElementById("sidebar");
+  const dnaSidebar = document.getElementById("dna-sidebar");
+  if (toolbarEnabled) {
+    toolbar.style.display = "";
+    sidebar.style.top = "40px";
+    sidebar.style.height = "calc(100vh - 40px)";
+    if (dnaSidebar) { dnaSidebar.style.top = "40px"; dnaSidebar.style.height = "calc(100vh - 40px)"; }
+    requestAnimationFrame(() => checkFilenameOverlap());
+  } else {
+    toolbar.style.display = "none";
+    sidebar.style.top = "0";
+    sidebar.style.height = "100vh";
+    if (dnaSidebar) { dnaSidebar.style.top = "0"; dnaSidebar.style.height = "100vh"; }
+  }
+}
 
 // Fit to screen button
 document.getElementById("fit-btn").addEventListener("click", () => {
@@ -11199,6 +11244,9 @@ svg.on("click", function(event) {
 
 // Auto-load saved tree from localStorage
 const loaded = autoLoad();
+
+// Apply toolbar visibility from saved state
+applyToolbarVisibility();
 
 // Auto-set home person on initial load (only if no tree was loaded)
 if (!loaded) {
