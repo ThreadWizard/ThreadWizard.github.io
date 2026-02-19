@@ -258,6 +258,11 @@ the Free Software Foundation, version 3.
       grid-template-columns: 1fr;
     }
   }
+  @media (hover: none), (pointer: coarse) {
+    #adv-show-toolbar-label {
+      display: none !important;
+    }
+  }
   #shortcuts-modal .shortcut-section {
     background: #f8f9fa;
     border-radius: 8px;
@@ -1926,7 +1931,7 @@ the Free Software Foundation, version 3.
         <label><input type="checkbox" id="adv-show-gender" /> Show Gender</label>
         <label><input type="checkbox" id="adv-show-notes" /> Show Notes</label>
         <label><input type="checkbox" id="adv-show-tooltips" checked /> Show Tooltips</label>
-        <label><input type="checkbox" id="adv-show-toolbar" checked /> Show Toolbar</label>
+        <label id="adv-show-toolbar-label"><input type="checkbox" id="adv-show-toolbar" checked /> Show Toolbar</label>
       </div>
     </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
