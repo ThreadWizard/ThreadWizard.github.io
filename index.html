@@ -3480,6 +3480,7 @@ function checkFilenameOverlap() {
 
 // Check on load and resize
 window.addEventListener("resize", checkFilenameOverlap);
+window.addEventListener("orientationchange", () => setTimeout(checkFilenameOverlap, 100));
 setTimeout(checkFilenameOverlap, 0);
 
 function startFilenameEdit() {
@@ -7171,6 +7172,7 @@ function drawTree(savedTransform = null) {
         const touch = event.touches[0];
         hideAllTooltips();
         showNodeTooltip(touch, d.data, false);
+        showSidebar(d.data, d, false);
       }, { passive: true });
     });
 
@@ -7513,9 +7515,11 @@ function drawTree(savedTransform = null) {
     .each(function(d) {
       const el = this;
       el.addEventListener("touchstart", (event) => {
+        event.stopPropagation();
         const touch = event.touches[0];
         hideAllTooltips();
         showNodeTooltip(touch, d.spouse, true);
+        showSidebar(d.spouse, d.parentNode, true, d.index);
       }, { passive: true });
     });
 
