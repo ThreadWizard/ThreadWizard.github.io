@@ -386,10 +386,13 @@ the Free Software Foundation, version 3.
     cursor: not-allowed;
   }
   #toolbar .filename-container {
-    flex: 1;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: left 0.15s ease, transform 0.15s ease;
   }
   #toolbar .filename-display {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -430,6 +433,7 @@ the Free Software Foundation, version 3.
     font-size: 13px;
   }
   #toolbar .user-guide-link {
+    margin-left: auto;
     color: white;
     text-decoration: none;
     font-size: 14px;
@@ -1593,22 +1597,18 @@ the Free Software Foundation, version 3.
 <!-- Toolbar -->
 <div id="toolbar">
   <input type="file" id="import-input" style="display:none" />
-  <div class="toolbar-left" style="flex:1;display:flex;align-items:center;">
-    <button id="import-btn">Import</button>
-    <button id="new-btn">New</button>
-    <button id="tools-btn">Tools</button>
-    <button id="fit-btn">Fit</button>
-    <button id="undo-btn">Undo</button>
-    <button id="redo-btn">Redo</button>
-    <p>ThreadWizard</p>
-  </div>
+  <button id="import-btn">Import</button>
+  <button id="new-btn">New</button>
+  <button id="tools-btn">Tools</button>
+  <button id="fit-btn">Fit</button>
+  <button id="undo-btn">Undo</button>
+  <button id="redo-btn">Redo</button>
+  <p>ThreadWizard</p>
   <div class="filename-container">
     <span id="filename-display" class="filename-display" title="Click to rename">New Tree</span>
     <input type="text" id="filename-input" class="filename-input" style="display: none;" />
   </div>
-  <div class="toolbar-right" style="flex:1;display:flex;align-items:center;justify-content:flex-end;">
-    <a href="/home.html" class="user-guide-link" target="_blank">User Guide</a>
-  </div>
+  <a href="/home.html" class="user-guide-link" target="_blank">User Guide</a>
 </div>
 
 <!-- Node Tooltip -->
@@ -3445,7 +3445,42 @@ const filenameContainer = document.querySelector(".filename-container");
 const threadWizardText = document.querySelector("#toolbar p");
 const toolbar = document.getElementById("toolbar");
 
-// Check on load and resize (filename now uses flexbox, no overlap check needed)
+// Check if filename overlaps with toolbar elements and reposition if necessary
+function checkFilenameOverlap() {
+  // Temporarily disable transitions for accurate repositioning
+  const originalTransition = filenameContainer.style.transition;
+  filenameContainer.style.transition = "none";
+  
+  // Reset to centered position
+  filenameContainer.style.left = "50%";
+  filenameContainer.style.transform = "translateX(-50%)";
+  
+  // Force layout recalculation
+  filenameContainer.offsetHeight;
+  
+  const filenameRect = filenameContainer.getBoundingClientRect();
+  const threadWizardRect = threadWizardText.getBoundingClientRect();
+  
+  // Add a small buffer (15px) for comfortable spacing
+  const buffer = 15;
+  
+  // Check if filename left edge is too close to ThreadWizard right edge
+  if (filenameRect.left < threadWizardRect.right + buffer) {
+    // Position it just to the right of ThreadWizard instead of centering
+    const newLeft = threadWizardRect.right + buffer;
+    filenameContainer.style.left = newLeft + "px";
+    filenameContainer.style.transform = "translateX(0)";
+  }
+  
+  // Re-enable transitions after a frame
+  requestAnimationFrame(() => {
+    filenameContainer.style.transition = originalTransition;
+  });
+}
+
+// Check on load and resize
+window.addEventListener("resize", checkFilenameOverlap);
+setTimeout(checkFilenameOverlap, 0);
 
 function startFilenameEdit() {
   filenameInput.value = currentFilename;
@@ -3464,6 +3499,8 @@ function finishFilenameEdit() {
   }
   filenameInput.style.display = "none";
   filenameDisplay.style.display = "block";
+  // Re-check overlap after name change (name might be longer/shorter)
+  setTimeout(checkFilenameOverlap, 0);
 }
 
 filenameDisplay.addEventListener("click", startFilenameEdit);
@@ -3519,7 +3556,7 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   
   nodeTooltip.innerHTML = html;
   nodeTooltip.classList.add("visible");
-  
+
   // Inject close button for touch devices
   const closeBtn = document.createElement("button");
   closeBtn.className = "tooltip-close-btn";
@@ -3603,7 +3640,7 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
   
   dnaTooltip.innerHTML = html;
   dnaTooltip.classList.add("visible");
-  
+
   // Inject close button for touch devices
   const closeBtn = document.createElement("button");
   closeBtn.className = "tooltip-close-btn";
