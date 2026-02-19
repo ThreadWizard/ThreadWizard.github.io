@@ -173,38 +173,6 @@ the Free Software Foundation, version 3.
     color: rgba(255,255,255,0.85);
     margin-top: 4px;
   }
-  .tooltip-close-btn {
-    display: none;
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    min-height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255,255,255,0.2);
-    color: white;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    flex-shrink: 0;
-  }
-  .tooltip-close-btn:hover {
-    background: rgba(255,255,255,0.35);
-  }
-  @media (hover: none) {
-    .tooltip-close-btn {
-      display: flex;
-    }
-    .tooltip {
-      padding-right: 38px;
-    }
-  }
   
   /* Keyboard shortcuts modal */
   #shortcuts-overlay {
@@ -1957,6 +1925,7 @@ the Free Software Foundation, version 3.
         <label><input type="checkbox" id="adv-show-death-location" /> Show Location of Death</label>
         <label><input type="checkbox" id="adv-show-gender" /> Show Gender</label>
         <label><input type="checkbox" id="adv-show-notes" /> Show Notes</label>
+        <label><input type="checkbox" id="adv-show-tooltips" checked /> Show Tooltips</label>
       </div>
     </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
@@ -2288,6 +2257,7 @@ let showTerminalLines = true;
 
 // Show percentile on McGuire line labels
 let showPercentileOnLabels = false;
+let tooltipsEnabled = true;
 
 // Shading tool
 let shadeToolActive = false;
@@ -2444,6 +2414,7 @@ function autoSave() {
       alternateLineColors: alternateLineColors,
       showTerminalLines: showTerminalLines,
       showPercentileOnLabels: showPercentileOnLabels,
+      tooltipsEnabled: tooltipsEnabled,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -2495,6 +2466,7 @@ function autoLoad() {
         alternateLineColors = loadedData.alternateLineColors || false;
         showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
         showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
+        tooltipsEnabled = loadedData.tooltipsEnabled !== undefined ? loadedData.tooltipsEnabled : true;
         shadedRegion = loadedData.shadedRegion || null;
         crossLinks = loadedData.crossLinks || [];
         currentFilename = loadedData.filename || "New Tree";
@@ -3480,7 +3452,6 @@ function checkFilenameOverlap() {
 
 // Check on load and resize
 window.addEventListener("resize", checkFilenameOverlap);
-window.addEventListener("orientationchange", () => setTimeout(checkFilenameOverlap, 100));
 setTimeout(checkFilenameOverlap, 0);
 
 function startFilenameEdit() {
@@ -3523,6 +3494,7 @@ filenameInput.addEventListener("keydown", (e) => {
 const nodeTooltip = document.getElementById("node-tooltip");
 
 function showNodeTooltip(event, nodeData, isSpouse = false) {
+  if (!tooltipsEnabled) return;
   const name = nodeData.name || "Unnamed";
   const genderSymbol = (nodeData.showGender && nodeData.gender) ? (nodeData.gender === "male" ? " ♂" : " ♀") : "";
   
@@ -3557,13 +3529,6 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
   
   nodeTooltip.innerHTML = html;
   nodeTooltip.classList.add("visible");
-
-  // Inject close button for touch devices
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "tooltip-close-btn";
-  closeBtn.innerHTML = "×";
-  closeBtn.addEventListener("touchstart", (e) => { e.stopPropagation(); hideAllTooltips(); }, { passive: true });
-  nodeTooltip.appendChild(closeBtn);
   
   // Position tooltip near cursor
   const tooltipRect = nodeTooltip.getBoundingClientRect();
@@ -3584,6 +3549,7 @@ function showNodeTooltip(event, nodeData, isSpouse = false) {
 
 function hideNodeTooltip() {
   nodeTooltip.classList.remove("visible");
+  if (_mobileTooltipFadeTimer) { clearTimeout(_mobileTooltipFadeTimer); _mobileTooltipFadeTimer = null; }
 }
 
 // DNA Comparison Tooltip functionality
@@ -3608,6 +3574,7 @@ function clearNodeHighlights() {
 }
 
 function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
+  if (!tooltipsEnabled) return;
   let html = `<span style="font-weight: bold;">${person1Name} ⟷ ${person2Name}</span>`;
   
   // Look up DNA comparison data
@@ -3641,13 +3608,6 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
   
   dnaTooltip.innerHTML = html;
   dnaTooltip.classList.add("visible");
-
-  // Inject close button for touch devices
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "tooltip-close-btn";
-  closeBtn.innerHTML = "×";
-  closeBtn.addEventListener("touchstart", (e) => { e.stopPropagation(); hideAllTooltips(); }, { passive: true });
-  dnaTooltip.appendChild(closeBtn);
   
   // Highlight the compared nodes using IDs
   highlightComparedNodes(person1Id, person2Id);
@@ -3672,11 +3632,31 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
 function hideDnaTooltip() {
   dnaTooltip.classList.remove("visible");
   clearNodeHighlights();
+  if (_mobileTooltipFadeTimer) { clearTimeout(_mobileTooltipFadeTimer); _mobileTooltipFadeTimer = null; }
 }
 
-function hideAllTooltips() {
-  hideNodeTooltip();
-  hideDnaTooltip();
+// Touch dismiss: after showing a tooltip on touch, hide it on the very next touch anywhere
+let _touchDismissTimer = null;
+let _mobileTooltipFadeTimer = null;
+function scheduleTouchDismiss() {
+  // Clear any pending dismiss registration
+  if (_touchDismissTimer) clearTimeout(_touchDismissTimer);
+  _touchDismissTimer = setTimeout(() => {
+    document.addEventListener("touchstart", function _dismissTooltips() {
+      hideNodeTooltip();
+      hideDnaTooltip();
+      document.removeEventListener("touchstart", _dismissTooltips);
+    }, { once: true, passive: true });
+    _touchDismissTimer = null;
+  }, 50); // 50ms so the originating touch doesn't self-dismiss
+
+  // Auto-fade tooltips after 5 seconds on mobile
+  if (_mobileTooltipFadeTimer) clearTimeout(_mobileTooltipFadeTimer);
+  _mobileTooltipFadeTimer = setTimeout(() => {
+    hideNodeTooltip();
+    hideDnaTooltip();
+    _mobileTooltipFadeTimer = null;
+  }, 5000);
 }
 
 // History system for undo/redo
@@ -7008,14 +6988,7 @@ function drawTree(savedTransform = null) {
       .on("mouseenter", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name, d.person1Id, d.person2Id))
       .on("mousemove", (event, d) => showDnaTooltip(event, d.person1Name, d.person2Name, d.person1Id, d.person2Id))
       .on("mouseleave", hideDnaTooltip)
-      .each(function(d) {
-        const el = this;
-        el.addEventListener("touchstart", (event) => {
-          const touch = event.touches[0];
-          hideAllTooltips();
-          showDnaTooltip(touch, d.person1Name, d.person2Name, d.person1Id, d.person2Id);
-        }, { passive: true });
-      });
+      .on("touchstart", (event, d) => { showDnaTooltip(event.touches[0], d.person1Name, d.person2Name, d.person1Id, d.person2Id); scheduleTouchDismiss(); }, {passive: true});
 
     intersections.forEach(intersection => {
       const key = getDnaKey(intersection.person1Id, intersection.person2Id);
@@ -7032,14 +7005,7 @@ function drawTree(savedTransform = null) {
           .on("mouseenter", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id))
           .on("mousemove", (event) => showDnaTooltip(event, intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id))
           .on("mouseleave", hideDnaTooltip)
-          .each(function() {
-            const el = this;
-            el.addEventListener("touchstart", (event) => {
-              const touch = event.touches[0];
-              hideAllTooltips();
-              showDnaTooltip(touch, intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id);
-            }, { passive: true });
-          });
+          .on("touchstart", (event) => { showDnaTooltip(event.touches[0], intersection.person1Name, intersection.person2Name, intersection.person1Id, intersection.person2Id); scheduleTouchDismiss(); }, {passive: true});
         
         labelGroup.append("rect")
           .attr("x", intersection.x - 30)
@@ -7166,15 +7132,7 @@ function drawTree(savedTransform = null) {
     .on("mouseenter", (event, d) => showNodeTooltip(event, d.data, false))
     .on("mousemove", (event, d) => showNodeTooltip(event, d.data, false))
     .on("mouseleave", hideNodeTooltip)
-    .each(function(d) {
-      const el = this;
-      el.addEventListener("touchstart", (event) => {
-        const touch = event.touches[0];
-        hideAllTooltips();
-        showNodeTooltip(touch, d.data, false);
-        showSidebar(d.data, d, false);
-      }, { passive: true });
-    });
+    .on("touchstart", (event, d) => { showNodeTooltip(event.touches[0], d.data, false); scheduleTouchDismiss(); }, {passive: true});
 
   const halfWidth = nodeWidth / 2;
   
@@ -7512,16 +7470,7 @@ function drawTree(savedTransform = null) {
     .on("mouseenter", (event, d) => showNodeTooltip(event, d.spouse, true))
     .on("mousemove", (event, d) => showNodeTooltip(event, d.spouse, true))
     .on("mouseleave", hideNodeTooltip)
-    .each(function(d) {
-      const el = this;
-      el.addEventListener("touchstart", (event) => {
-        event.stopPropagation();
-        const touch = event.touches[0];
-        hideAllTooltips();
-        showNodeTooltip(touch, d.spouse, true);
-        showSidebar(d.spouse, d.parentNode, true, d.index);
-      }, { passive: true });
-    });
+    .on("touchstart", (event, d) => { showNodeTooltip(event.touches[0], d.spouse, true); scheduleTouchDismiss(); }, {passive: true});
 
   spouseNodes.append("rect")
       .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
@@ -10737,6 +10686,7 @@ function syncAdvancedToolsToState() {
   document.getElementById("adv-show-death-year").checked = defaultNodeTextStyle.showDeathYear || false;
   document.getElementById("adv-show-death-location").checked = defaultNodeTextStyle.showDeathLocation || false;
   document.getElementById("adv-show-notes").checked = defaultNodeTextStyle.showNotes || false;
+  document.getElementById("adv-show-tooltips").checked = tooltipsEnabled;
 }
 
 let advDirty = false;
@@ -10782,6 +10732,11 @@ function applyAdvancedNodeStyling() {
 });
 ["adv-bold", "adv-italic", "adv-show-gender", "adv-show-birth-year", "adv-show-birth-location", "adv-show-death-year", "adv-show-death-location", "adv-show-notes"].forEach(id => {
   document.getElementById(id).addEventListener("change", applyAdvancedNodeStyling);
+});
+document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
+  tooltipsEnabled = e.target.checked;
+  if (!tooltipsEnabled) { hideNodeTooltip(); hideDnaTooltip(); }
+  autoSave();
 });
 
 // Fit to screen button
