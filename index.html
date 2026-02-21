@@ -424,8 +424,9 @@ the Free Software Foundation, version 3.
     position: fixed;
     top: 40px;
     right: -100%;
-    width: 320px;
+    width: 362px;
     height: calc(100vh - 40px);
+    box-sizing: border-box;
     background-color: #e8f5e9;
     border-left: 2px solid #43a047;
     box-shadow: -2px 0 5px rgba(0,0,0,0.2);
@@ -608,8 +609,9 @@ the Free Software Foundation, version 3.
     position: fixed;
     top: 40px;
     right: -100%;
-    width: 320px;
+    width: 360px;
     height: calc(100vh - 40px);
+    box-sizing: border-box;
     background-color: #e8f4fd;
     border-left: 2px solid #1976d2;
     box-shadow: -2px 0 5px rgba(0,0,0,0.2);
@@ -1552,6 +1554,8 @@ the Free Software Foundation, version 3.
   body.theme-dark #advanced-tools-panel .adv-divider { border-top-color: #333; }
   body.theme-dark #advanced-tools-panel select { background: #1a1a1a; color: #e0e0e0; border-color: #444 !important; }
   body.theme-dark #advanced-tools-panel .back-btn { background: linear-gradient(135deg, #2a3a7a 0%, #111a40 100%); }
+  body.theme-dark #adv-fullscreen-btn { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+  body.theme-dark #adv-fullscreen-btn:hover { background: #333; }
   body.theme-dark .tooltip { background: #333333; }
   body.theme-dark #calculated-relationship { background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%); border-color: #333333 !important; }
   body.theme-dark #calculated-relationship .calc-label { color: #aaaaaa; }
@@ -1967,6 +1971,12 @@ the Free Software Foundation, version 3.
       <div class="adv-checkboxes">
         <label><input type="checkbox" id="adv-tree-model" /> <span title="Routes data mutations through a centralized facade with cached indexes. Improves undo/redo reliability and lookup performance.">TreeModel Facade</span></label>
       </div>
+    </div>
+    <div class="tools-section">
+      <div class="tools-section-title">Display</div>
+      <button id="adv-fullscreen-btn" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease;">
+        <span id="adv-fullscreen-icon">⛶</span> <span id="adv-fullscreen-label">Enter Fullscreen</span>
+      </button>
     </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
   </div>
@@ -11164,6 +11174,27 @@ function advancedBackToTools() {
 document.getElementById("advanced-tools-btn").addEventListener("click", openAdvancedToolsPanel);
 document.getElementById("advanced-tools-close").addEventListener("click", closeAdvancedToolsPanel);
 document.getElementById("advanced-tools-back").addEventListener("click", advancedBackToTools);
+
+// Fullscreen toggle
+document.getElementById("adv-fullscreen-btn").addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+function updateFullscreenBtn() {
+  const label = document.getElementById("adv-fullscreen-label");
+  const icon = document.getElementById("adv-fullscreen-icon");
+  if (document.fullscreenElement) {
+    label.textContent = "Exit Fullscreen";
+    icon.textContent = "⛶";
+  } else {
+    label.textContent = "Enter Fullscreen";
+    icon.textContent = "⛶";
+  }
+}
+document.addEventListener("fullscreenchange", updateFullscreenBtn);
 
 // Make Advanced Tools panel draggable by its header
 let advDragging = false;
