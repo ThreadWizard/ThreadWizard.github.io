@@ -1452,6 +1452,7 @@ the Free Software Foundation, version 3.
   body.theme-dark .link { stroke: #888888; }
   body.theme-dark .spouse-link { stroke: #888888; }
   body.theme-dark .cross-link-bezier { stroke: #888888; }
+  body.theme-dark .cross-link { stroke: #888888; }
   /* Sidebar */
   body.theme-dark #sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
   body.theme-dark #sidebar h2 { color: #e0e0e0; }
@@ -1474,7 +1475,11 @@ the Free Software Foundation, version 3.
   body.theme-dark #sidebar button.blue:hover { background: #444444 !important; }
   body.theme-dark #sidebar button.danger { background: #5a2a2a !important; color: #e0e0e0; }
   body.theme-dark #sidebar button.danger:hover { background: #6b3333 !important; }
+  .existing-links-box { margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; }
+  body.theme-dark #sidebar .existing-links-box { background: #2a2a2a !important; color: #ccc; }
   body.theme-dark #sidebar .gender-box { background: #2a2a2a; border-color: #404040; }
+  body.theme-dark #sidebar .gender-box label { color: #ccc; }
+  body.theme-dark #existing-links { color: #ccc; }
   /* DNA Sidebar */
   body.theme-dark #dna-sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
   body.theme-dark #dna-sidebar h2 { color: #aaaaaa; }
@@ -1533,6 +1538,20 @@ the Free Software Foundation, version 3.
   body.theme-dark #tools-panel .btn-outline { background: #1a1a1a; color: #ccc; border-color: #555555; }
   body.theme-dark #tools-panel .btn-outline:hover { background: #222222; }
   body.theme-dark #tools-panel #tools-home-person { background: #222222; color: #ccc; border-color: #333333; }
+  /* Advanced Tools Panel dark mode */
+  body.theme-dark #advanced-tools-panel { background: #1a1a1a; box-shadow: 0 10px 40px rgba(0,0,0,0.6); scrollbar-color: #444 transparent; }
+  body.theme-dark #advanced-tools-panel::-webkit-scrollbar-thumb { background: #444; }
+  body.theme-dark #advanced-tools-panel::-webkit-scrollbar-thumb:hover { background: #555; }
+  body.theme-dark #advanced-tools-panel .tools-section { background: #222222; }
+  body.theme-dark #advanced-tools-panel .tools-section-title { color: #bb86fc; }
+  body.theme-dark #advanced-tools-panel .advanced-placeholder { color: #777; }
+  body.theme-dark #advanced-tools-panel .style-row label.style-label { color: #ccc; }
+  body.theme-dark #advanced-tools-panel .style-row input[type="color"] { border-color: #444; }
+  body.theme-dark #advanced-tools-panel .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #444; }
+  body.theme-dark #advanced-tools-panel .adv-checkboxes label { color: #ccc; }
+  body.theme-dark #advanced-tools-panel .adv-divider { border-top-color: #333; }
+  body.theme-dark #advanced-tools-panel select { background: #1a1a1a; color: #e0e0e0; border-color: #444 !important; }
+  body.theme-dark #advanced-tools-panel .back-btn { background: linear-gradient(135deg, #2a3a7a 0%, #111a40 100%); }
   body.theme-dark .tooltip { background: #333333; }
   body.theme-dark #calculated-relationship { background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%); border-color: #333333 !important; }
   body.theme-dark #calculated-relationship .calc-label { color: #aaaaaa; }
@@ -1934,6 +1953,21 @@ the Free Software Foundation, version 3.
         <label id="adv-show-toolbar-label"><input type="checkbox" id="adv-show-toolbar" checked /> Show Toolbar</label>
       </div>
     </div>
+    <div class="tools-section">
+      <div class="tools-section-title">Node Shape</div>
+      <div class="adv-checkboxes">
+        <label><input type="checkbox" id="adv-shape-rounded" /> Rounded</label>
+        <label><input type="checkbox" id="adv-shape-sharp" /> Sharp</label>
+        <label><input type="checkbox" id="adv-shape-squircle" /> Squircle</label>
+        <label><input type="checkbox" id="adv-gender-shapes" /> <span title="Square = Male, Circle = Female, Diamond = Unassigned">M/F</span></label>
+      </div>
+    </div>
+    <div class="tools-section">
+      <div class="tools-section-title">Beta Features</div>
+      <div class="adv-checkboxes">
+        <label><input type="checkbox" id="adv-tree-model" /> <span title="Routes data mutations through a centralized facade with cached indexes. Improves undo/redo reliability and lookup performance.">TreeModel Facade</span></label>
+      </div>
+    </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
   </div>
 </div>
@@ -2063,7 +2097,7 @@ the Free Software Foundation, version 3.
       <label for="enable-bezier-connection" style="margin: 0; cursor: pointer; font-size: 13px;">Enable Bézier-Manhattan Connections</label>
     </div>
     <button id="create-link" class="primary full-width">Create Link</button>
-    <div id="existing-links" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+    <div id="existing-links" style="margin-top: 10px; font-size: 12px;"></div>
   </div>
 
   <!-- Collapse Section -->
@@ -2265,6 +2299,43 @@ let showTerminalLines = true;
 let showPercentileOnLabels = false;
 let tooltipsEnabled = true;
 let toolbarEnabled = true;
+let squircleNodes = false;
+let nodeShape = 'rounded'; // 'rounded' | 'sharp' | 'squircle'
+let genderShapes = false;
+
+// Returns the effective node width for layout purposes.
+// When gender shapes are enabled, shapes are sized to nodeHeight (not nodeWidth),
+// so layout spacing should use the actual rendered shape width instead.
+// Diamond is the widest gender shape at nodeHeight * 1.2.
+function effectiveNodeWidth() {
+  if (genderShapes) {
+    return nodeHeight * 1.2; // diamond half-width is nodeHeight*0.6, so full width = nodeHeight*1.2
+  }
+  return nodeWidth;
+}
+
+// Returns the correct horizontal edge half-width for a node given its gender,
+// matching the actual rendered shape so spouse connector lines attach correctly.
+// Male (square): nodeHeight/2, Female (circle): nodeHeight/2, No gender (diamond): nodeHeight*0.6
+// Normal (no gender shapes): halfWidth = nodeWidth/2
+function shapeEdgeHalfWidth(gender) {
+  if (genderShapes) {
+    if (gender === 'male') return nodeHeight / 2;   // square
+    if (gender === 'female') return nodeHeight / 2;  // circle
+    return nodeHeight * 0.6;                          // diamond (widest)
+  }
+  return nodeWidth / 2;
+}
+
+// Returns the effective spouse gap for layout purposes.
+// When gender shapes are enabled, the gap should be derived from effectiveNodeWidth
+// so that changing nodeWidth doesn't affect spacing.
+function effectiveSpouseGap() {
+  if (genderShapes) {
+    return Math.max(20, horizontalSpacing - effectiveNodeWidth());
+  }
+  return spouseGap;
+}
 
 // Shading tool
 let shadeToolActive = false;
@@ -2302,6 +2373,287 @@ let homePersonName = null;
 
 // Cross-links for relationships spanning across branches
 let crossLinks = [];
+
+// TreeModel facade toggle (Beta)
+let useTreeModel = false;
+
+// ============================================================================
+// TreeModel Facade
+// ============================================================================
+// Wraps all core mutable state behind a single object so that:
+//   (a) all mutations can flow through one gate
+//   (b) undo/redo uses a single snapshot function
+//   (c) cached indexes eliminate redundant tree traversals
+//   (d) an observer pattern enables automatic redraws (Phase 2)
+//
+// During Phase 1, the facade holds live references to the same objects the
+// globals point to, so old code that directly mutates data still works.
+// Call tree.reindex() at the top of drawTree as a safety net.
+// ============================================================================
+const tree = (function() {
+  let _data = null, _dnaComparisons = null, _crossLinks = null;
+  let _defaultStyle = null, _dnaLabelStyles = null;
+
+  // Cached indexes
+  let _nodeIndex   = new Map();
+  let _spouseIndex = new Map();
+  let _parentIndex = new Map();
+
+  let _listeners = [];
+
+  function _reindex() {
+    _nodeIndex.clear();
+    _spouseIndex.clear();
+    _parentIndex.clear();
+    if (!_data) return;
+    (function walk(node, parent) {
+      if (!node) return;
+      if (node.id) _nodeIndex.set(node.id, node);
+      if (parent && node.id) _parentIndex.set(node.id, parent);
+      if (node.spouses) {
+        for (const sp of node.spouses) {
+          if (sp.id) _spouseIndex.set(sp.id, { spouse: sp, parentNode: node });
+        }
+      }
+      if (node.children) {
+        for (const child of node.children) walk(child, node);
+      }
+    })(_data, null);
+  }
+
+  function _notify(reason) {
+    for (const fn of _listeners) {
+      try { fn(reason); } catch (e) { console.error('TreeModel listener error:', e); }
+    }
+  }
+
+  const api = {
+    init(dataRef, dnaRef, crossLinksRef, defaultStyleRef, dnaLabelStylesRef) {
+      _data = dataRef;
+      _dnaComparisons = dnaRef;
+      _crossLinks = crossLinksRef;
+      _defaultStyle = defaultStyleRef;
+      _dnaLabelStyles = dnaLabelStylesRef;
+      _reindex();
+    },
+
+    onChange(fn) { _listeners.push(fn); },
+    offChange(fn) { _listeners = _listeners.filter(f => f !== fn); },
+
+    // Read-only accessors
+    get data()           { return _data; },
+    get dnaComparisons() { return _dnaComparisons; },
+    get crossLinks()     { return _crossLinks; },
+    get defaultStyle()   { return _defaultStyle; },
+    get dnaLabelStyles() { return _dnaLabelStyles; },
+
+    getNode(id)          { return _nodeIndex.get(id) || null; },
+    getSpouse(id)        { const r = _spouseIndex.get(id); return r || null; },
+    getParentOf(id)      { return _parentIndex.get(id) || null; },
+    getAllNodeIds()       { return [..._nodeIndex.keys()]; },
+    getAllSpouseIds()     { return [..._spouseIndex.keys()]; },
+
+    getPersonById(id) {
+      const node = _nodeIndex.get(id);
+      if (node) return { person: node, type: 'node', parentNode: _parentIndex.get(id) || null };
+      const sp = _spouseIndex.get(id);
+      if (sp) return { person: sp.spouse, type: 'spouse', parentNode: sp.parentNode };
+      return null;
+    },
+
+    reindex() { _reindex(); },
+
+    // Snapshots (undo/redo)
+    buildSnapshot() {
+      return {
+        data:              JSON.parse(JSON.stringify(_data)),
+        dnaComparisons:    JSON.parse(JSON.stringify(_dnaComparisons)),
+        crossLinks:        JSON.parse(JSON.stringify(_crossLinks)),
+        defaultNodeTextStyle: JSON.parse(JSON.stringify(_defaultStyle)),
+      };
+    },
+
+    restoreSnapshot(snap) {
+      _data = snap.data;
+      for (const k of Object.keys(_dnaComparisons)) delete _dnaComparisons[k];
+      Object.assign(_dnaComparisons, snap.dnaComparisons);
+      _crossLinks.length = 0;
+      if (snap.crossLinks) _crossLinks.push(...snap.crossLinks);
+      for (const k of Object.keys(_defaultStyle)) delete _defaultStyle[k];
+      Object.assign(_defaultStyle, snap.defaultNodeTextStyle);
+      _reindex();
+    },
+
+    // Tree mutations
+    setPersonProp(id, prop, value) {
+      const person = _nodeIndex.get(id) || _spouseIndex.get(id)?.spouse;
+      if (!person) return false;
+      if (value === undefined) { delete person[prop]; } else { person[prop] = value; }
+      _notify('setPersonProp');
+      return true;
+    },
+
+    addChild(parentId, childData) {
+      const parent = _nodeIndex.get(parentId);
+      if (!parent) return null;
+      if (!parent.children) parent.children = [];
+      if (!childData.id) childData.id = generateNodeId();
+      parent.children.push(childData);
+      _reindex();
+      _notify('addChild');
+      return childData;
+    },
+
+    removeNode(id) {
+      const parent = _parentIndex.get(id);
+      if (!parent || !parent.children) return false;
+      const idx = parent.children.findIndex(c => c.id === id);
+      if (idx === -1) return false;
+      parent.children.splice(idx, 1);
+      if (parent.children.length === 0) delete parent.children;
+      _reindex();
+      _notify('removeNode');
+      return true;
+    },
+
+    addSpouse(nodeId, spouseData) {
+      const node = _nodeIndex.get(nodeId);
+      if (!node) return null;
+      if (!node.spouses) node.spouses = [];
+      if (!spouseData.id) spouseData.id = generateSpouseId();
+      node.spouses.push(spouseData);
+      _reindex();
+      _notify('addSpouse');
+      return spouseData;
+    },
+
+    removeSpouse(spouseId) {
+      const entry = _spouseIndex.get(spouseId);
+      if (!entry) return false;
+      const { parentNode } = entry;
+      const idx = parentNode.spouses.findIndex(s => s.id === spouseId);
+      if (idx === -1) return false;
+      parentNode.spouses.splice(idx, 1);
+      _reindex();
+      _notify('removeSpouse');
+      return true;
+    },
+
+    // DNA mutations
+    setDna(id1, id2, dnaData) {
+      const key = [id1, id2].sort().join('|');
+      if (dnaData && (dnaData.cm || dnaData.relationship)) {
+        _dnaComparisons[key] = dnaData;
+      } else {
+        delete _dnaComparisons[key];
+      }
+      _notify('setDna');
+    },
+
+    clearDna(id1, id2) {
+      const key = [id1, id2].sort().join('|');
+      delete _dnaComparisons[key];
+      _notify('clearDna');
+    },
+
+    purgeDnaForPerson(personId) {
+      for (const key of Object.keys(_dnaComparisons)) {
+        if (key.includes(personId)) {
+          delete _dnaComparisons[key];
+        }
+      }
+    },
+
+    // Cross-link mutations
+    addCrossLink(link) {
+      const exists = _crossLinks.some(l =>
+        l.type === link.type &&
+        ((l.person1Id === link.person1Id && l.person2Id === link.person2Id) ||
+         (l.person1Id === link.person2Id && l.person2Id === link.person1Id))
+      );
+      if (!exists) {
+        _crossLinks.push(link);
+        _notify('addCrossLink');
+      }
+    },
+
+    removeCrossLink(type, person1Id, person2Id) {
+      const before = _crossLinks.length;
+      const keep = _crossLinks.filter(l =>
+        !(l.type === type &&
+          ((l.person1Id === person1Id && l.person2Id === person2Id) ||
+           (l.person1Id === person2Id && l.person2Id === person1Id)))
+      );
+      _crossLinks.length = 0;
+      _crossLinks.push(...keep);
+      if (_crossLinks.length !== before) _notify('removeCrossLink');
+    },
+
+    getCrossLinksForPerson(personId) {
+      return _crossLinks.filter(l => l.person1Id === personId || l.person2Id === personId);
+    },
+
+    // Whole-tree replacement
+    replaceTree(newData) {
+      _data = newData;
+      _reindex();
+      _notify('replaceTree');
+      return _data;
+    },
+
+    replaceDna(newDna) {
+      for (const k of Object.keys(_dnaComparisons)) delete _dnaComparisons[k];
+      Object.assign(_dnaComparisons, newDna);
+      _notify('replaceDna');
+    },
+
+    replaceCrossLinks(newLinks) {
+      _crossLinks.length = 0;
+      _crossLinks.push(...newLinks);
+      _notify('replaceCrossLinks');
+    },
+
+    // Bulk operations
+    walkAll(fn) {
+      (function walk(node, parent) {
+        fn(node, parent);
+        if (node.spouses) {
+          for (const sp of node.spouses) fn(sp, node);
+        }
+        if (node.children) {
+          for (const child of node.children) walk(child, node);
+        }
+      })(_data, null);
+    },
+
+    clearHomePerson() {
+      this.walkAll((person) => { delete person.isHomePerson; });
+    },
+
+    expandAll() {
+      this.walkAll((person) => {
+        delete person.collapsed;
+        delete person.ancestorsCollapsed;
+      });
+      _notify('expandAll');
+    },
+
+    applyStyleToAll(fontSize, bold, italic) {
+      this.walkAll((person) => {
+        person.fontSize = fontSize;
+        person.bold = bold;
+        person.italic = italic;
+        delete person.hasCustomStyle;
+      });
+      _notify('applyStyleToAll');
+    },
+  };
+
+  return api;
+})();
+
+// Initialize TreeModel with live references to existing globals
+tree.init(data, dnaComparisons, crossLinks, defaultNodeTextStyle, dnaLabelStyles);
 
 // Current filename
 let currentFilename = "New Tree";
@@ -2400,10 +2752,15 @@ function getEffectiveLabelColor(color) {
   try {
     const saved = localStorage.getItem('threadwizard-theme');
     if (saved && THEMES.includes(saved)) {
+      // User has explicitly chosen a theme — honour it
       currentTheme = saved;
       document.body.classList.remove('theme-light', 'theme-dark');
       if (saved === 'light') document.body.classList.add('theme-light');
       else if (saved === 'dark') document.body.classList.add('theme-dark');
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      // No saved preference — follow the browser/OS dark mode setting
+      currentTheme = 'dark';
+      document.body.classList.add('theme-dark');
     }
   } catch(e) {}
 })();
@@ -2423,6 +2780,10 @@ function autoSave() {
       showPercentileOnLabels: showPercentileOnLabels,
       tooltipsEnabled: tooltipsEnabled,
       toolbarEnabled: toolbarEnabled,
+      squircleNodes: squircleNodes,
+      nodeShape: nodeShape,
+      genderShapes: genderShapes,
+      useTreeModel: useTreeModel,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -2446,8 +2807,8 @@ function autoLoad() {
     if (saved) {
       const loadedData = JSON.parse(saved);
       if (loadedData.tree) {
-        data = loadedData.tree;
-        dnaComparisons = loadedData.dnaComparisons || {};
+        data = tree.replaceTree(loadedData.tree);
+        tree.replaceDna(loadedData.dnaComparisons || {});
         dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
         
         // Clean up any stale _origColor from saved data
@@ -2455,7 +2816,8 @@ function autoLoad() {
         delete dnaLabelStyles.relationship._origColor;
         
         const loadedStyle = loadedData.defaultNodeTextStyle || {};
-        defaultNodeTextStyle = {
+        Object.keys(defaultNodeTextStyle).forEach(k => delete defaultNodeTextStyle[k]);
+        Object.assign(defaultNodeTextStyle, {
           fontSize: loadedStyle.fontSize || 12,
           bold: loadedStyle.bold || false,
           italic: loadedStyle.italic || false,
@@ -2468,7 +2830,7 @@ function autoLoad() {
           showDeathYear: loadedStyle.showDeathYear || false,
           showDeathLocation: loadedStyle.showDeathLocation || false,
           showNotes: loadedStyle.showNotes || false
-        };
+        });
         autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
         autoStrokeWidth = loadedData.autoStrokeWidth || 1;
         alternateLineColors = loadedData.alternateLineColors || false;
@@ -2476,8 +2838,12 @@ function autoLoad() {
         showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
         tooltipsEnabled = loadedData.tooltipsEnabled !== undefined ? loadedData.tooltipsEnabled : true;
         toolbarEnabled = loadedData.toolbarEnabled !== undefined ? loadedData.toolbarEnabled : true;
+        squircleNodes = loadedData.squircleNodes || false;
+        nodeShape = loadedData.nodeShape || (squircleNodes ? 'squircle' : 'rounded');
+        genderShapes = loadedData.genderShapes || false;
+        useTreeModel = loadedData.useTreeModel || false;
         shadedRegion = loadedData.shadedRegion || null;
-        crossLinks = loadedData.crossLinks || [];
+        tree.replaceCrossLinks(loadedData.crossLinks || []);
         currentFilename = loadedData.filename || "New Tree";
         
         if (loadedData.settings) {
@@ -2518,6 +2884,10 @@ function autoLoad() {
         document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
         document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
         document.getElementById("show-percentile-toggle").checked = showPercentileOnLabels;
+        document.getElementById("adv-tree-model").checked = useTreeModel;
+        if (useTreeModel) {
+          tree.init(data, dnaComparisons, crossLinks, defaultNodeTextStyle, dnaLabelStyles);
+        }
         return true;
       }
     }
@@ -2611,7 +2981,7 @@ function getSpouseOffset(node, spouseIndex) {
   });
   const positionOnSide = sameSideSpouses.length;
   
-  const offset = (nodeWidth + spouseGap) * (positionOnSide + 1);
+  const offset = (effectiveNodeWidth() + effectiveSpouseGap()) * (positionOnSide + 1);
   return side === 'left' ? -offset : offset;
 }
 
@@ -2633,7 +3003,7 @@ function getSpousesWithOffsets(node) {
       positionOnSide = rightCount++;
     }
     
-    const offset = (nodeWidth + spouseGap) * (positionOnSide + 1);
+    const offset = (effectiveNodeWidth() + effectiveSpouseGap()) * (positionOnSide + 1);
     result.push({
       spouse: spouse,
       index: index,
@@ -2723,29 +3093,22 @@ function getAllPeopleFlat(excludeId = null) {
 
 // Find a person (node or spouse) by ID
 function getPersonById(id) {
+  if (useTreeModel) return tree.getPersonById(id);
   function search(node) {
-    if (node.id === id) {
-      return { person: node, type: 'node', parentNode: null };
-    }
-    
+    if (node.id === id) return { person: node, type: 'node', parentNode: null };
     if (node.spouses) {
       for (const spouse of node.spouses) {
-        if (spouse.id === id) {
-          return { person: spouse, type: 'spouse', parentNode: node };
-        }
+        if (spouse.id === id) return { person: spouse, type: 'spouse', parentNode: node };
       }
     }
-    
     if (node.children) {
       for (const child of node.children) {
         const result = search(child);
         if (result) return result;
       }
     }
-    
     return null;
   }
-  
   return search(data);
 }
 
@@ -2761,12 +3124,12 @@ function applyColorToDescendants(node, color) {
 
 // Find the parent node of a given node
 function findParentNode(targetNode) {
+  if (!targetNode || !targetNode.id) return null;
+  if (useTreeModel) return tree.getParentOf(targetNode.id) || null;
   function search(node) {
     if (node.children) {
       for (const child of node.children) {
-        if (child === targetNode || child.id === targetNode.id) {
-          return node;
-        }
+        if (child === targetNode || child.id === targetNode.id) return node;
         const result = search(child);
         if (result) return result;
       }
@@ -2778,40 +3141,44 @@ function findParentNode(targetNode) {
 
 // Add a cross-link between two people
 function addCrossLink(type, person1Id, person2Id, options = {}) {
-  // Check if link already exists
-  const exists = crossLinks.some(link => 
-    link.type === type && 
-    ((link.person1Id === person1Id && link.person2Id === person2Id) ||
-     (link.person1Id === person2Id && link.person2Id === person1Id))
-  );
-  
-  if (!exists) {
-    const link = { type, person1Id, person2Id };
-    // Add any additional options (e.g., sharedChildren, useBezier, keepTerminalLine)
-    if (options.sharedChildren) {
-      link.sharedChildren = options.sharedChildren; // 'person1', 'person2', 'both', or 'none'
-    }
-    if (options.useBezier) {
-      link.useBezier = true;
-    }
-    if (options.keepTerminalLine) {
-      link.keepTerminalLineFor = person1Id; // Store which person keeps their terminal line
-    }
-    crossLinks.push(link);
+  const link = { type, person1Id, person2Id };
+  if (options.sharedChildren) {
+    link.sharedChildren = options.sharedChildren;
+  }
+  if (options.useBezier) {
+    link.useBezier = true;
+  }
+  if (options.keepTerminalLine) {
+    link.keepTerminalLineFor = person1Id;
+  }
+  if (useTreeModel) {
+    tree.addCrossLink(link);
+  } else {
+    const exists = crossLinks.some(l => 
+      l.type === type && 
+      ((l.person1Id === person1Id && l.person2Id === person2Id) ||
+       (l.person1Id === person2Id && l.person2Id === person1Id))
+    );
+    if (!exists) crossLinks.push(link);
   }
 }
 
 // Remove a cross-link
 function removeCrossLink(type, person1Id, person2Id) {
-  crossLinks = crossLinks.filter(link => 
-    !(link.type === type && 
-      ((link.person1Id === person1Id && link.person2Id === person2Id) ||
-       (link.person1Id === person2Id && link.person2Id === person1Id)))
-  );
+  if (useTreeModel) {
+    tree.removeCrossLink(type, person1Id, person2Id);
+  } else {
+    crossLinks = crossLinks.filter(link => 
+      !(link.type === type && 
+        ((link.person1Id === person1Id && link.person2Id === person2Id) ||
+         (link.person1Id === person2Id && link.person2Id === person1Id)))
+    );
+  }
 }
 
 // Get cross-links for a specific person
 function getCrossLinksForPerson(personId) {
+  if (useTreeModel) return tree.getCrossLinksForPerson(personId);
   return crossLinks.filter(link => 
     link.person1Id === personId || link.person2Id === personId
   );
@@ -2850,7 +3217,7 @@ function displayExistingLinks(personId) {
     return;
   }
   
-  let html = '<div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;"><strong>Existing Links:</strong><br>';
+  let html = '<div class="existing-links-box"><strong>Existing Links:</strong><br>';
   
   links.forEach(link => {
     const otherId = link.person1Id === personId ? link.person2Id : link.person1Id;
@@ -2973,7 +3340,7 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
           const nodeY = yAdjustments[node.data.id] !== undefined ? yAdjustments[node.data.id] : node.y;
           
           // Check if this node is in the horizontal range AND vertical range
-          if (nodeX > minX - nodeWidth && nodeX < maxX + nodeWidth) {
+          if (nodeX > minX - effectiveNodeWidth() && nodeX < maxX + effectiveNodeWidth()) {
             if (nodeY > minY && nodeY < maxY) {
               obstacleBottomY = Math.max(obstacleBottomY, nodeY + nodeHeight/2);
             }
@@ -2984,7 +3351,7 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
             const spousesWithOffsets = getSpousesWithOffsets(node.data);
             for (const sp of spousesWithOffsets) {
               const spouseX = nodeX + sp.offset;
-              if (spouseX > minX - nodeWidth && spouseX < maxX + nodeWidth) {
+              if (spouseX > minX - effectiveNodeWidth() && spouseX < maxX + effectiveNodeWidth()) {
                 if (nodeY > minY && nodeY < maxY) {
                   obstacleBottomY = Math.max(obstacleBottomY, nodeY + nodeHeight/2);
                 }
@@ -3025,8 +3392,10 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
             
             spousesWithOffsets.forEach(sp => {
               const spouseX = nodeX + sp.offset;
-              const mainEdgeX = sp.side === 'left' ? nodeX - nodeWidth/2 : nodeX + nodeWidth/2;
-              const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+              const mainHW = shapeEdgeHalfWidth(node.data.gender);
+              const spouseHW = shapeEdgeHalfWidth(sp.spouse.gender);
+              const mainEdgeX = sp.side === 'left' ? nodeX - mainHW : nodeX + mainHW;
+              const spouseEdgeX = sp.side === 'left' ? spouseX + spouseHW : spouseX - spouseHW;
               const xStart = Math.min(mainEdgeX, spouseEdgeX);
               const xEnd = Math.max(mainEdgeX, spouseEdgeX);
               
@@ -3164,9 +3533,9 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
     } else if (link.type === "spouse") {
       if (link.useBezier) {
         // MANHATTAN ROUTING: Find a clear path around obstacles
-        const x1 = pos1.x + (pos1.x < pos2.x ? nodeWidth/2 : -nodeWidth/2);
+        const x1 = pos1.x + (pos1.x < pos2.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2);
         const y1 = pos1.y;
-        const x2 = pos2.x + (pos2.x < pos1.x ? nodeWidth/2 : -nodeWidth/2);
+        const x2 = pos2.x + (pos2.x < pos1.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2);
         const y2 = pos2.y;
         
         const spouseY = Math.max(y1, y2);
@@ -3185,13 +3554,13 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
           if (node.data.id === link.person1Id || node.data.id === link.person2Id) continue;
           
           // Add this node as obstacle if it's in the relevant region
-          if (nodeX > leftX - nodeWidth && nodeX < rightX + nodeWidth) {
+          if (nodeX > leftX - effectiveNodeWidth() && nodeX < rightX + effectiveNodeWidth()) {
             if (Math.abs(nodeY - spouseY) < yTolerance) {
               obstacles.push({
                 x: nodeX,
                 y: nodeY,
-                left: nodeX - nodeWidth/2,
-                right: nodeX + nodeWidth/2,
+                left: nodeX - effectiveNodeWidth()/2,
+                right: nodeX + effectiveNodeWidth()/2,
                 top: nodeY - nodeHeight/2,
                 bottom: nodeY + nodeHeight/2
               });
@@ -3204,13 +3573,13 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
             for (const sp of spousesWithOffsets) {
               if (sp.id === link.person1Id || sp.id === link.person2Id) continue;
               const spouseX = nodeX + sp.offset;
-              if (spouseX > leftX - nodeWidth && spouseX < rightX + nodeWidth) {
+              if (spouseX > leftX - effectiveNodeWidth() && spouseX < rightX + effectiveNodeWidth()) {
                 if (Math.abs(nodeY - spouseY) < yTolerance) {
                   obstacles.push({
                     x: spouseX,
                     y: nodeY,
-                    left: spouseX - nodeWidth/2,
-                    right: spouseX + nodeWidth/2,
+                    left: spouseX - effectiveNodeWidth()/2,
+                    right: spouseX + effectiveNodeWidth()/2,
                     top: nodeY - nodeHeight/2,
                     bottom: nodeY + nodeHeight/2
                   });
@@ -3232,7 +3601,7 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
         
         // Define variables needed for both paths and shared children logic
         const gutterPadding = nodeHeight * 0.8;
-        const serifLength = spouseGap / 2;
+        const serifLength = effectiveSpouseGap() / 2;
         const serifX1 = x1 + (x1 < x2 ? serifLength : -serifLength);
         const serifX2 = x2 + (x2 < x1 ? serifLength : -serifLength);
         
@@ -3334,7 +3703,7 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
             
             // Nudge drop point away from terminal lines to avoid visual collision
             const terminalPositions = getAllTerminalPositions(root, xAdjustments);
-            const nudgeThreshold = nodeWidth / 4;
+            const nudgeThreshold = effectiveNodeWidth() / 4;
             for (const termPos of terminalPositions) {
               const distance = Math.abs(dropStartX - termPos.x);
               if (distance < nudgeThreshold) {
@@ -3408,9 +3777,9 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
         // Horizontal line at the same Y level (they should now be at the same Y after adjustments)
         crossLinkGroup.append("line")
           .attr("class", "cross-link")
-          .attr("x1", pos1.x + (pos1.x < pos2.x ? nodeWidth/2 : -nodeWidth/2))
+          .attr("x1", pos1.x + (pos1.x < pos2.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2))
           .attr("y1", pos1.y)
-          .attr("x2", pos2.x + (pos2.x < pos1.x ? nodeWidth/2 : -nodeWidth/2))
+          .attr("x2", pos2.x + (pos2.x < pos1.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2))
           .attr("y2", pos2.y);
       }
     }
@@ -3678,8 +4047,7 @@ function deepClone(obj) {
 }
 
 function saveState() {
-  // Build snapshot
-  const snapshot = {
+  const snapshot = useTreeModel ? tree.buildSnapshot() : {
     data: deepClone(data),
     dnaComparisons: deepClone(dnaComparisons),
     crossLinks: deepClone(crossLinks),
@@ -3691,38 +4059,36 @@ function saveState() {
     if (JSON.stringify(top) === JSON.stringify(snapshot)) return;
   }
   historyStack.push(snapshot);
-  // Limit history size
-  if (historyStack.length > MAX_HISTORY) {
-    historyStack.shift();
-  }
-  // Clear redo stack when new action is performed
+  if (historyStack.length > MAX_HISTORY) historyStack.shift();
   redoStack = [];
   updateUndoRedoButtons();
-  // Persist to localStorage so changes survive page refresh
   autoSave();
 }
 
 function undo() {
   if (historyStack.length === 0) return;
   
-  // Save current state to redo stack
-  redoStack.push({
-    data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks),
-    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
-  });
-  
-  // Restore previous state
-  const previousState = historyStack.pop();
-  data = previousState.data;
-  dnaComparisons = previousState.dnaComparisons;
-  crossLinks = previousState.crossLinks || [];
-  if (previousState.defaultNodeTextStyle) {
-    defaultNodeTextStyle = previousState.defaultNodeTextStyle;
+  if (useTreeModel) {
+    redoStack.push(tree.buildSnapshot());
+    const previousState = historyStack.pop();
+    tree.restoreSnapshot(previousState);
+    data = tree.data;
+  } else {
+    redoStack.push({
+      data: deepClone(data),
+      dnaComparisons: deepClone(dnaComparisons),
+      crossLinks: deepClone(crossLinks),
+      defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
+    });
+    const previousState = historyStack.pop();
+    data = previousState.data;
+    dnaComparisons = previousState.dnaComparisons;
+    crossLinks = previousState.crossLinks || [];
+    if (previousState.defaultNodeTextStyle) {
+      defaultNodeTextStyle = previousState.defaultNodeTextStyle;
+    }
   }
   
-  // Close sidebar and redraw
   closeSidebar();
   closeDnaSidebar();
   selectedNode = null;
@@ -3733,24 +4099,27 @@ function undo() {
 function redo() {
   if (redoStack.length === 0) return;
   
-  // Save current state to history stack
-  historyStack.push({
-    data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks),
-    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
-  });
-  
-  // Restore redo state
-  const redoState = redoStack.pop();
-  data = redoState.data;
-  dnaComparisons = redoState.dnaComparisons;
-  crossLinks = redoState.crossLinks || [];
-  if (redoState.defaultNodeTextStyle) {
-    defaultNodeTextStyle = redoState.defaultNodeTextStyle;
+  if (useTreeModel) {
+    historyStack.push(tree.buildSnapshot());
+    const redoState = redoStack.pop();
+    tree.restoreSnapshot(redoState);
+    data = tree.data;
+  } else {
+    historyStack.push({
+      data: deepClone(data),
+      dnaComparisons: deepClone(dnaComparisons),
+      crossLinks: deepClone(crossLinks),
+      defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
+    });
+    const redoState = redoStack.pop();
+    data = redoState.data;
+    dnaComparisons = redoState.dnaComparisons;
+    crossLinks = redoState.crossLinks || [];
+    if (redoState.defaultNodeTextStyle) {
+      defaultNodeTextStyle = redoState.defaultNodeTextStyle;
+    }
   }
   
-  // Close sidebar and redraw
   closeSidebar();
   closeDnaSidebar();
   selectedNode = null;
@@ -4439,7 +4808,7 @@ function migrateDnaComparisonsToIds() {
     console.log(`Skipped ${skippedCount} DNA comparisons (people not found)`);
   }
   
-  dnaComparisons = migrated;
+  tree.replaceDna(migrated);
 }
 
 function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
@@ -4651,14 +5020,19 @@ document.getElementById("dna-sidebar-close-btn").addEventListener("click", close
 document.getElementById("save-dna").addEventListener("click", () => {
   if (selectedIntersection) {
     saveState();
-    const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
     const cm = document.getElementById("cm-input").value.trim();
     const relationship = document.getElementById("relationship-input").value.trim();
     
-    if (cm || relationship) {
-      dnaComparisons[key] = { cm, relationship };
+    if (useTreeModel) {
+      tree.setDna(selectedIntersection.person1Id, selectedIntersection.person2Id, 
+        (cm || relationship) ? { cm, relationship } : null);
     } else {
-      delete dnaComparisons[key];
+      const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
+      if (cm || relationship) {
+        dnaComparisons[key] = { cm, relationship };
+      } else {
+        delete dnaComparisons[key];
+      }
     }
     
     drawTree(d3.zoomTransform(svg.node()));
@@ -4669,8 +5043,12 @@ document.getElementById("save-dna").addEventListener("click", () => {
 document.getElementById("clear-dna").addEventListener("click", () => {
   if (selectedIntersection) {
     saveState();
-    const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
-    delete dnaComparisons[key];
+    if (useTreeModel) {
+      tree.clearDna(selectedIntersection.person1Id, selectedIntersection.person2Id);
+    } else {
+      const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
+      delete dnaComparisons[key];
+    }
     document.getElementById("cm-input").value = "";
     document.getElementById("relationship-input").value = "";
     drawTree(d3.zoomTransform(svg.node()));
@@ -5312,18 +5690,18 @@ function computeLayout(root) {
         const spousesWithOffsets = getSpousesWithOffsets(node.data);
         const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
         const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
-        leftSpaceNeeded = leftSpouses.length * (nodeWidth + spouseGap);
-        rightSpaceNeeded = rightSpouses.length * (nodeWidth + spouseGap);
+        leftSpaceNeeded = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
+        rightSpaceNeeded = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
       }
       
       // Position main node: account for left spouses first
       currentX += leftSpaceNeeded;
       node.x = currentX;
       
-      // Advance currentX: use nodeWidth + spouseGap as the base unit for consistent spacing
+      // Advance currentX: use effectiveNodeWidth() + spouseGap as the base unit for consistent spacing
       // This ensures the gap between this node's rightmost element and the next node's
       // leftmost element is always spouseGap (same as between spouse and main node)
-      currentX += nodeWidth + spouseGap;
+      currentX += effectiveNodeWidth() + effectiveSpouseGap();
       currentX += rightSpaceNeeded;
     } else {
       // Node with children
@@ -5418,8 +5796,8 @@ function computeLayout(root) {
           // Update currentX to account for this node's rightmost extent (including right spouses)
           const spousesWithOffsetsForExtent = getSpousesWithOffsets(node.data);
           const rightSpousesForExtent = spousesWithOffsetsForExtent.filter(s => s.side === 'right');
-          const totalRightWidthForExtent = rightSpousesForExtent.length * (nodeWidth + spouseGap);
-          const rightmostExtent = node.x + totalRightWidthForExtent + nodeWidth / 2 + spouseGap;
+          const totalRightWidthForExtent = rightSpousesForExtent.length * (effectiveNodeWidth() + effectiveSpouseGap());
+          const rightmostExtent = node.x + totalRightWidthForExtent + effectiveNodeWidth() / 2 + effectiveSpouseGap();
           if (rightmostExtent > currentX) {
             currentX = rightmostExtent;
           }
@@ -5428,10 +5806,10 @@ function computeLayout(root) {
           const spousesWithOffsets2 = getSpousesWithOffsets(node.data);
           const leftSp = spousesWithOffsets2.filter(s => s.side === 'left');
           const rightSp = spousesWithOffsets2.filter(s => s.side === 'right');
-          // Use consistent spacing: nodeWidth + spouseGap per unit
-          currentX += leftSp.length * (nodeWidth + spouseGap);
+          // Use consistent spacing: effectiveNodeWidth() + spouseGap per unit
+          currentX += leftSp.length * (effectiveNodeWidth() + effectiveSpouseGap());
           node.x = currentX;
-          currentX += nodeWidth + spouseGap + rightSp.length * (nodeWidth + spouseGap);
+          currentX += effectiveNodeWidth() + effectiveSpouseGap() + rightSp.length * (effectiveNodeWidth() + effectiveSpouseGap());
         }
         
       } else {
@@ -5449,13 +5827,13 @@ function computeLayout(root) {
           const spousesWithOffsets = getSpousesWithOffsets(node.data);
           const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
-          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
-          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
+          const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
           
           // Update currentX to account for this node's rightmost extent (including right spouses)
           // This ensures the next sibling subtree starts far enough to the right
-          const rightmostExtent = node.x + totalRightWidth + nodeWidth / 2 + spouseGap;
+          const rightmostExtent = node.x + totalRightWidth + effectiveNodeWidth() / 2 + effectiveSpouseGap();
           if (rightmostExtent > currentX) {
             currentX = rightmostExtent;
           }
@@ -5478,20 +5856,20 @@ function computeLayout(root) {
   // ============================================
   
   const allNodes = root.descendants();
-  const minGap = spouseGap; // Minimum gap between node bounds - matches spouse spacing for visual consistency
-  const scootUnit = nodeWidth + spouseGap; // One "unit" of scooting
+  const minGap = effectiveSpouseGap(); // Minimum gap between node bounds - matches spouse spacing for visual consistency
+  const scootUnit = effectiveNodeWidth() + effectiveSpouseGap(); // One "unit" of scooting
   
   // Get the bounding box of a node (including its spouses)
   function getNodeBounds(node) {
-    let left = node.x - nodeWidth / 2;
-    let right = node.x + nodeWidth / 2;
+    let left = node.x - effectiveNodeWidth() / 2;
+    let right = node.x + effectiveNodeWidth() / 2;
     
     if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
       const spousesWithOffsets = getSpousesWithOffsets(node.data);
       for (const sp of spousesWithOffsets) {
         const spouseX = node.x + sp.offset;
-        left = Math.min(left, spouseX - nodeWidth / 2);
-        right = Math.max(right, spouseX + nodeWidth / 2);
+        left = Math.min(left, spouseX - effectiveNodeWidth() / 2);
+        right = Math.max(right, spouseX + effectiveNodeWidth() / 2);
       }
     }
     
@@ -5663,8 +6041,8 @@ function computeLayout(root) {
           const spousesWithOffsets = getSpousesWithOffsets(node.data);
           const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
-          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
-          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
+          const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
         } else {
           node.x = childrenCenter;
@@ -5733,8 +6111,8 @@ function computeLayout(root) {
             const spousesWithOffsets = getSpousesWithOffsets(node.data);
             const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
             const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
-            const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
-            const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+            const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
+            const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
             node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
           } else {
             node.x = childrenCenter;
@@ -5904,8 +6282,8 @@ function autoLayout() {
   let minY = Infinity, maxY = -Infinity;
   
   newNodes.forEach(node => {
-    minX = Math.min(minX, node.x - nodeWidth / 2);
-    maxX = Math.max(maxX, node.x + nodeWidth / 2);
+    minX = Math.min(minX, node.x - effectiveNodeWidth() / 2);
+    maxX = Math.max(maxX, node.x + effectiveNodeWidth() / 2);
     minY = Math.min(minY, node.y - 15);
     maxY = Math.max(maxY, node.y + 15);
     
@@ -5913,8 +6291,8 @@ function autoLayout() {
       const spousesWithOffsets = getSpousesWithOffsets(node.data);
       spousesWithOffsets.forEach(sp => {
         const spouseX = node.x + sp.offset;
-        minX = Math.min(minX, spouseX - nodeWidth / 2);
-        maxX = Math.max(maxX, spouseX + nodeWidth / 2);
+        minX = Math.min(minX, spouseX - effectiveNodeWidth() / 2);
+        maxX = Math.max(maxX, spouseX + effectiveNodeWidth() / 2);
       });
     }
   });
@@ -5974,6 +6352,7 @@ function recalcRelationshipLabels() {
 }
 
 function drawTree(savedTransform = null) {
+  if (useTreeModel) tree.reindex(); // Rebuild indexes in case external code mutated data directly
   recalcRelationshipLabels();
   svg.selectAll("*").remove();
   const g = svg.append("g").attr("transform", "translate(50,80)");
@@ -6295,15 +6674,15 @@ function drawTree(savedTransform = null) {
   
   function getAdjustedNodeBounds(node) {
     const adjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
-    let left = adjustedX - nodeWidth / 2;
-    let right = adjustedX + nodeWidth / 2;
+    let left = adjustedX - effectiveNodeWidth() / 2;
+    let right = adjustedX + effectiveNodeWidth() / 2;
     
     if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
       const spousesWithOffsets = getSpousesWithOffsets(node.data);
       for (const sp of spousesWithOffsets) {
         const spouseX = adjustedX + sp.offset;
-        left = Math.min(left, spouseX - nodeWidth / 2);
-        right = Math.max(right, spouseX + nodeWidth / 2);
+        left = Math.min(left, spouseX - effectiveNodeWidth() / 2);
+        right = Math.max(right, spouseX + effectiveNodeWidth() / 2);
       }
     }
     
@@ -6322,7 +6701,7 @@ function drawTree(savedTransform = null) {
     }
     
     const collisions = [];
-    const minGap = spouseGap;
+    const minGap = effectiveSpouseGap();
     
     // Standard same-depth collision detection
     for (const [depth, nodes] of nodesByDepth) {
@@ -6524,8 +6903,8 @@ function drawTree(savedTransform = null) {
           const spousesWithOffsets = getSpousesWithOffsets(node.data);
           const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
-          const totalLeftWidth = leftSpouses.length * (nodeWidth + spouseGap);
-          const totalRightWidth = rightSpouses.length * (nodeWidth + spouseGap);
+          const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
+          const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           targetX = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
         } else {
           targetX = childrenCenter;
@@ -6564,8 +6943,8 @@ function drawTree(savedTransform = null) {
     
     spousesWithOffsets.forEach(sp => {
       const spouseX = mainNodeAdjustedX + sp.offset;
-      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - nodeWidth/2 : mainNodeAdjustedX + nodeWidth/2;
-      const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - effectiveNodeWidth()/2 : mainNodeAdjustedX + effectiveNodeWidth()/2;
+      const spouseEdgeX = sp.side === 'left' ? spouseX + effectiveNodeWidth()/2 : spouseX - effectiveNodeWidth()/2;
       
       horizontalLines.push({
         y: spouseLineY,
@@ -6576,6 +6955,18 @@ function drawTree(savedTransform = null) {
     });
   });
   
+  // Build dropXMap: vertical drop X per (parentId::spouseId) group = midpoint of children's X range.
+  // Must be built before horizontal lines collection so hop detection uses the same X as drawn lines.
+  const dropXMap = new Map(); // key: `${parentId}::${spouseId|''}`
+  nodesForLinks.forEach(d => {
+    const key = `${d.parent.data.id}::${d.data.spouseId || ''}`;
+    if (!dropXMap.has(key)) dropXMap.set(key, []);
+    dropXMap.get(key).push(d.x + (crossLinkChildXAdjustments[d.data.id] || 0));
+  });
+  dropXMap.forEach((xs, key) => {
+    dropXMap.set(key, (Math.min(...xs) + Math.max(...xs)) / 2);
+  });
+
   // Collect sibling-to-sibling horizontal lines (gutter segments)
   // These are the horizontal portions of parent-child links at each gutter level
   // Group children by parent to find sibling groups
@@ -6594,23 +6985,28 @@ function drawTree(savedTransform = null) {
       const parent = children[0].parent;
       const gutterY = parent.y + verticalSpacing / 2;
       
-      // Get all X positions involved (parent connection point and all children)
+      // Get all X positions involved (all children)
       const xPositions = children.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
       
-      // Also include the parent's connection point
-      let parentAdjustedX = parent.x + (crossLinkChildXAdjustments[parent.data.id] || 0);
-      let px = parentAdjustedX;
-      
-      // Check for spouse adjustments to parent connection point
+      // Also include each spouse-group's drop X (midpoint of that group's children),
+      // which is what the vertical drop line actually uses
+      const parentAdjustedX = parent.x + (crossLinkChildXAdjustments[parent.data.id] || 0);
       if (parent.data.spouses && parent.data.spouses.length > 0) {
-        // The parent connection point may vary per child based on spouseId
-        // For simplicity, we'll consider the full range
         const spousesWithOffsets = getSpousesWithOffsets(parent.data);
         spousesWithOffsets.forEach(sp => {
-          xPositions.push(parentAdjustedX + sp.offset / 2);
+          const groupKey = `${parent.data.id}::${sp.spouse.id}`;
+          if (dropXMap.has(groupKey)) {
+            xPositions.push(dropXMap.get(groupKey));
+          }
         });
+        // Also include drop X for children with no spouseId
+        const noSpouseKey = `${parent.data.id}::`;
+        if (dropXMap.has(noSpouseKey)) {
+          xPositions.push(dropXMap.get(noSpouseKey));
+        }
+      } else {
+        xPositions.push(parentAdjustedX);
       }
-      xPositions.push(px);
       
       const minX = Math.min(...xPositions);
       const maxX = Math.max(...xPositions);
@@ -6689,6 +7085,7 @@ function drawTree(savedTransform = null) {
   // ============================================
   // DRAW PARENT-CHILD LINKS WITH HOPS
   // ============================================
+
   g.selectAll(".link")
     .data(nodesForLinks)
     .join("path")
@@ -6696,26 +7093,27 @@ function drawTree(savedTransform = null) {
     .attr("d", d => {
       // Use adjusted X for parent if available
       let parentAdjustedX = d.parent.x + (crossLinkChildXAdjustments[d.parent.data.id] || 0);
-      let px = parentAdjustedX;
       // Use adjusted Y for parent if available
       let parentAdjustedY = crossLinkYAdjustments[d.parent.data.id] !== undefined ? crossLinkYAdjustments[d.parent.data.id] : d.parent.y;
       let py = parentAdjustedY + nodeHeight/2;
-      
+
+      // px = the X where the vertical drop from the parent meets the gutter
+      // For spouse-assigned children: midpoint of (parent, spouse) centres
+      // For cross-link spouses: midpoint of the two cross-linked nodes
+      // Default: parent's own centre
+      let px = parentAdjustedX;
+
       // Check if parent is involved in a spouse cross-link with shared children
       let crossLinkSpouseX = null;
       if (crossLinks) {
         for (const link of crossLinks) {
           if (link.type === "spouse" && link.sharedChildren) {
-            // Check if parent is person1 and children are shared from person1
             if (link.person1Id === d.parent.data.id && (link.sharedChildren === 'person1' || link.sharedChildren === 'both')) {
-              // Find person2's X position
               const pos2 = findRenderedPosition(root, link.person2Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
               if (pos2) crossLinkSpouseX = pos2.x;
               break;
             }
-            // Check if parent is person2 and children are shared from person2
             if (link.person2Id === d.parent.data.id && (link.sharedChildren === 'person2' || link.sharedChildren === 'both')) {
-              // Find person1's X position
               const pos1 = findRenderedPosition(root, link.person1Id, crossLinkYAdjustments, crossLinkChildXAdjustments);
               if (pos1) crossLinkSpouseX = pos1.x;
               break;
@@ -6723,30 +7121,21 @@ function drawTree(savedTransform = null) {
           }
         }
       }
-      
-      // If parent has spouses, find the correct center point for the child connection
+
       if (d.parent.data.spouses && d.parent.data.spouses.length > 0) {
         const childSpouseId = d.data.spouseId;
         const spousesWithOffsets = getSpousesWithOffsets(d.parent.data);
-        
         if (childSpouseId) {
-          // Child is assigned to a specific spouse - find that spouse
           const spouseData = spousesWithOffsets.find(s => s.spouse.id === childSpouseId);
           if (spouseData) {
-            // Midpoint between parent node and that specific spouse (using adjusted X)
-            px = parentAdjustedX + spouseData.offset / 2;
-          } else {
-            // spouseId doesn't match any current spouse - connect directly to parent
-            // (the spouse was likely deleted)
-            px = parentAdjustedX;
+            // Use the dropXMap midpoint of this spouse-group's children
+            const dropKey = `${d.parent.data.id}::${childSpouseId}`;
+            const spouseX = parentAdjustedX + spouseData.offset;
+            px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
           }
-        } else {
-          // No spouseId assigned - connect directly to parent node
-          // These are children of the main person only, not from any spouse relationship
-          px = parentAdjustedX;
         }
+        // No spouseId: connect directly to parent (px stays as parentAdjustedX)
       } else if (crossLinkSpouseX !== null) {
-        // Parent has a cross-link spouse with shared children - use midpoint
         px = (parentAdjustedX + crossLinkSpouseX) / 2;
       }
       
@@ -6781,8 +7170,11 @@ function drawTree(savedTransform = null) {
       const spouseX = mainNodeAdjustedX + spouseOffset;
       
       // Draw horizontal line between main node and spouse
-      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - nodeWidth/2 : mainNodeAdjustedX + nodeWidth/2;
-      const spouseEdgeX = sp.side === 'left' ? spouseX + nodeWidth/2 : spouseX - nodeWidth/2;
+      // Use actual shape edge half-widths so lines attach to the visible shape boundary
+      const mainHW = shapeEdgeHalfWidth(d.data.gender);
+      const spouseHW = shapeEdgeHalfWidth(sp.spouse.gender);
+      const mainEdgeX = sp.side === 'left' ? mainNodeAdjustedX - mainHW : mainNodeAdjustedX + mainHW;
+      const spouseEdgeX = sp.side === 'left' ? spouseX + spouseHW : spouseX - spouseHW;
       
       g.append("line")
         .attr("class", "spouse-link")
@@ -6824,12 +7216,16 @@ function drawTree(savedTransform = null) {
         const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
         const childY = d.children[0].y - nodeHeight/2;
         const branchY = (d.y + nodeHeight/2 + childY) / 2;
+        // Use midpoint of children's X range (from dropXMap) so the vertical drop
+        // bisects the sibling group regardless of node shape (fixes M/F shape misalignment)
+        const dropKey = `${d.data.id}::`;
+        const dropX = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : mainNodeAdjustedX;
         
         g.append("line")
           .attr("class", "link")
-          .attr("x1", mainNodeAdjustedX)
+          .attr("x1", dropX)
           .attr("y1", d.y + nodeHeight/2)
-          .attr("x2", mainNodeAdjustedX)
+          .attr("x2", dropX)
           .attr("y2", branchY);
       }
     }
@@ -6888,7 +7284,7 @@ function drawTree(savedTransform = null) {
   const rightmostPosition = terminalPositions.length > 0 ? terminalPositions[terminalPositions.length - 1] : null;
   const maxX = rightmostPosition ? rightmostPosition.x : 0;
   // End lines flush with right edge of rightmost node
-  const lineEndX = maxX + nodeWidth / 2;
+  const lineEndX = maxX + effectiveNodeWidth() / 2;
   // Use the deepest (maximum Y) terminal node to start lines below all nodes
   const maxY = terminalPositions.length > 0 
     ? Math.max(...terminalPositions.map(p => p.y)) : 0;
@@ -7143,17 +7539,18 @@ function drawTree(savedTransform = null) {
     .on("mouseleave", hideNodeTooltip)
     .on("touchstart", (event, d) => { showNodeTooltip(event.touches[0], d.data, false); scheduleTouchDismiss(); }, {passive: true});
 
-  const halfWidth = nodeWidth / 2;
+  const halfWidth = effectiveNodeWidth() / 2;
   
   // Helper function to fit name within node width
   // Estimate whether a string fits within the node width
-  function textFits(text, fontSize, isBold) {
+  function textFits(text, fontSize, isBold, effectiveWidth) {
+    const w = effectiveWidth !== undefined ? effectiveWidth : nodeWidth;
     const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
-    const availableWidth = nodeWidth - 10; // padding
+    const availableWidth = w - 10; // padding
     return text.length <= Math.floor(availableWidth / avgCharWidth);
   }
 
-  function fitName(name, fontSize, isBold) {
+  function fitName(name, fontSize, isBold, effectiveWidth) {
     if (!name || name.trim().length === 0) return "Unnamed";
     const words = name.split(' ').filter(w => w.length > 0);
 
@@ -7194,7 +7591,7 @@ function drawTree(savedTransform = null) {
 
     // Return the first (longest) candidate that fits
     for (const candidate of candidates) {
-      if (textFits(candidate, fontSize, isBold)) {
+      if (textFits(candidate, fontSize, isBold, effectiveWidth)) {
         return candidate;
       }
     }
@@ -7204,9 +7601,10 @@ function drawTree(savedTransform = null) {
   }
 
   // Truncate a single line to fit within node width, adding ellipsis if needed
-  function truncateLine(text, fontSize, isBold) {
+  function truncateLine(text, fontSize, isBold, effectiveWidth) {
+    const w = effectiveWidth !== undefined ? effectiveWidth : nodeWidth;
     const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
-    const availableWidth = nodeWidth - 10;
+    const availableWidth = w - 10;
     const maxChars = Math.floor(availableWidth / avgCharWidth);
     if (text.length <= maxChars) return text;
     return text.substring(0, maxChars - 1) + "…";
@@ -7261,12 +7659,12 @@ function drawTree(savedTransform = null) {
   }
 
   // Build an array of display lines for a node
-  function buildNodeDisplayLines(nodeData, fontSize, isBold) {
+  function buildNodeDisplayLines(nodeData, fontSize, isBold, effectiveWidth) {
     const style = defaultNodeTextStyle;
     const lines = [];
 
     // Line 1: Name + optional gender symbol
-    let nameLine = fitName(nodeData.name, fontSize, isBold);
+    let nameLine = fitName(nodeData.name, fontSize, isBold, effectiveWidth);
     if ((style.showGender || nodeData.showGender) && nodeData.gender) {
       nameLine += nodeData.gender === "male" ? " ♂" : " ♀";
     }
@@ -7288,11 +7686,11 @@ function drawTree(savedTransform = null) {
 
     if (compactMode) {
       if (hasBirthYear && hasDeathYear) {
-        lines.push(truncateLine(nodeData.birth + "-" + nodeData.death, fontSize, isBold));
+        lines.push(truncateLine(nodeData.birth + "-" + nodeData.death, fontSize, isBold, effectiveWidth));
       } else if (hasBirthYear) {
-        lines.push(truncateLine(nodeData.birth + "-", fontSize, isBold));
+        lines.push(truncateLine(nodeData.birth + "-", fontSize, isBold, effectiveWidth));
       } else if (hasDeathYear) {
-        lines.push(truncateLine("-" + nodeData.death, fontSize, isBold));
+        lines.push(truncateLine("-" + nodeData.death, fontSize, isBold, effectiveWidth));
       }
     } else {
       // Birth line: combine date + location on one line with b. prefix
@@ -7301,7 +7699,7 @@ function drawTree(savedTransform = null) {
         if (hasBirthYear) birthLine += nodeData.birth;
         if (hasBirthYear && hasBirthLoc) birthLine += ", ";
         if (hasBirthLoc) birthLine += formatLocationForNode(nodeData.birthLocation);
-        lines.push(truncateLine(birthLine, fontSize, isBold));
+        lines.push(truncateLine(birthLine, fontSize, isBold, effectiveWidth));
       }
 
       // Death line: combine date + location on one line with d. prefix
@@ -7310,19 +7708,20 @@ function drawTree(savedTransform = null) {
         if (hasDeathYear) deathLine += nodeData.death;
         if (hasDeathYear && hasDeathLoc) deathLine += ", ";
         if (hasDeathLoc) deathLine += formatLocationForNode(nodeData.deathLocation);
-        lines.push(truncateLine(deathLine, fontSize, isBold));
+        lines.push(truncateLine(deathLine, fontSize, isBold, effectiveWidth));
       }
     }
 
-    if (style.showNotes && nodeData.notes) lines.push(truncateLine(nodeData.notes, fontSize, isBold));
+    if (style.showNotes && nodeData.notes) lines.push(truncateLine(nodeData.notes, fontSize, isBold, effectiveWidth));
 
     return lines;
   }
 
   // Calculate how many lines fit in the node, and apply ellipsis to the last visible line if truncated
-  function getVisibleLines(lines, fontSize) {
+  function getVisibleLines(lines, fontSize, effectiveHeight) {
+    const h = effectiveHeight !== undefined ? effectiveHeight : nodeHeight;
     const lineHeight = fontSize * 1.3;
-    const availableHeight = nodeHeight - 8; // vertical padding
+    const availableHeight = h - 8;
     const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
 
     if (lines.length <= maxLines) return lines;
@@ -7339,6 +7738,22 @@ function drawTree(savedTransform = null) {
     return visible;
   }
 
+  // Returns the effective [width, height] for text layout given a node's gender.
+  // For gender shapes, we use the shape diameter as the text width so text remains
+  // readable (it may overflow the shape slightly, which is preferable to being crushed).
+  function getEffectiveNodeDimensions(gender) {
+    if (genderShapes && gender === 'female') {
+      return [nodeHeight, nodeHeight]; // circle diameter; text overflows slightly
+    }
+    if (genderShapes && gender === 'male') {
+      return [nodeHeight, nodeHeight]; // square side
+    }
+    if (genderShapes && !gender) {
+      return [nodeHeight, nodeHeight]; // diamond full width; text overflows slightly
+    }
+    return [nodeWidth, nodeHeight];
+  }
+
   // Append multiline text (tspans) to a node selection
   function appendNodeText(selection, getNodeData, getCustomStyle) {
     selection.each(function(d) {
@@ -7348,8 +7763,9 @@ function drawTree(savedTransform = null) {
       const isBold = custom.hasCustomStyle ? (custom.bold !== undefined ? custom.bold : defaultNodeTextStyle.bold) : defaultNodeTextStyle.bold;
       const isItalic = custom.hasCustomStyle ? (custom.italic !== undefined ? custom.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic;
 
-      const allLines = buildNodeDisplayLines(nodeData, fontSize, isBold);
-      const lines = getVisibleLines(allLines, fontSize);
+      const [effW, effH] = getEffectiveNodeDimensions(nodeData.gender);
+      const allLines = buildNodeDisplayLines(nodeData, fontSize, isBold, effW);
+      const lines = getVisibleLines(allLines, fontSize, effH);
       const lineHeight = fontSize * 1.3;
 
       const textEl = d3.select(this).append("text")
@@ -7359,7 +7775,7 @@ function drawTree(savedTransform = null) {
         .style("font-family", getEffectiveFontFamily())
         .style("fill", getEffectiveTextColor());
 
-      const maxTextWidth = nodeWidth - 16; // 8px padding on each side
+      const maxTextWidth = effW - 16; // 8px padding on each side
 
       // Lay out tspans with simple relative spacing (no vertical offset yet)
       lines.forEach((line, i) => {
@@ -7368,14 +7784,18 @@ function drawTree(savedTransform = null) {
           .attr("dy", i === 0 ? 0 : `${lineHeight}px`)
           .text(line);
 
-        // After rendering, constrain any tspan that exceeds the padded width
-        try {
-          const actualWidth = tspan.node().getComputedTextLength();
-          if (actualWidth > maxTextWidth) {
-            tspan.attr("textLength", maxTextWidth)
-                 .attr("lengthAdjust", "spacingAndGlyphs");
-          }
-        } catch(e) {}
+        // After rendering, constrain any tspan that exceeds the padded width.
+        // Skip compression for gender shapes — text is allowed to overflow
+        // the small shapes rather than being crushed into unreadable glyphs.
+        if (!genderShapes) {
+          try {
+            const actualWidth = tspan.node().getComputedTextLength();
+            if (actualWidth > maxTextWidth) {
+              tspan.attr("textLength", maxTextWidth)
+                   .attr("lengthAdjust", "spacingAndGlyphs");
+            }
+          } catch(e) {}
+        }
       });
 
       // Post-render: measure actual bounding box and shift to center in node
@@ -7402,19 +7822,65 @@ function drawTree(savedTransform = null) {
     return '#000000'; // fullcolor default
   }
   
-  node.append("rect")
-      .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
-      .attr("rx", 5).attr("ry", 5)
-      .attr("fill", d => {
-        if (d.data.color && d.data.color !== "#ffffff") return d.data.color;
-        if (currentTheme === 'dark') return '#2a2a2a';
-        return '#ffffff';
-      })
-      .attr("stroke", currentTheme === 'dark' ? '#888888' : currentTheme === 'light' ? 'black' : 'black')
-      .attr("stroke-width", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2)
-      .style("filter", d => selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none");
+  // Helper: generate a true squircle SVG path (superellipse via cubic Béziers)
+  // Corners curve gradually — unlike rx/ry which creates a stadium/pill shape.
+  // Control point handle = ~57.7% of the corner radius gives a good superellipse approximation.
+  function squirclePath(x, y, w, h) {
+    const r = Math.min(w, h) * 0.25; // corner radius — 25% of shorter side
+    const c = r * 0.577; // cubic Bézier handle length
+    const l = x, r_ = x + w, t = y, b = y + h;
+    return [
+      `M ${l + r} ${t}`,
+      `C ${l + r - c} ${t}, ${l} ${t + r - c}, ${l} ${t + r}`,
+      `L ${l} ${b - r}`,
+      `C ${l} ${b - r + c}, ${l + r - c} ${b}, ${l + r} ${b}`,
+      `L ${r_ - r} ${b}`,
+      `C ${r_ - r + c} ${b}, ${r_} ${b - r + c}, ${r_} ${b - r}`,
+      `L ${r_} ${t + r}`,
+      `C ${r_} ${t + r - c}, ${r_ - r + c} ${t}, ${r_ - r} ${t}`,
+      `Z`
+    ].join(' ');
+  }
 
-  // Append multiline text to regular nodes
+  // Helper: determine shape element & attributes for a node given its gender
+  // Male = square, Female = circle, No gender = diamond, all sized to nodeHeight
+  const genderSize = nodeHeight;
+  const diamondHW = nodeHeight * 0.6; // half-width of diamond
+  function getNodeShapeAttrs(gender) {
+    if (genderShapes && gender === 'female') {
+      return { tag: 'circle', r: genderSize / 2 };
+    }
+    if (genderShapes && gender === 'male') {
+      return { tag: 'rect', x: -genderSize/2, y: -genderSize/2, w: genderSize, h: genderSize, rx: 0 };
+    }
+    if (genderShapes && !gender) {
+      // Diamond: 4 points — top, right, bottom, left
+      return { tag: 'polygon', points: `0,${-genderSize/2} ${diamondHW},0 0,${genderSize/2} ${-diamondHW},0` };
+    }
+    // No gender shapes mode — use normal node shape
+    if (nodeShape === 'squircle') return { tag: 'path' };
+    return { tag: 'rect', x: -halfWidth, y: -nodeHeight/2, w: nodeWidth, h: nodeHeight, rx: nodeShape === 'sharp' ? 0 : 5 };
+  }
+
+  node.each(function(d) {
+    const gender = d.data.gender;
+    const attrs = getNodeShapeAttrs(gender);
+    const fill = (d.data.color && d.data.color !== "#ffffff") ? d.data.color : currentTheme === 'dark' ? '#2a2a2a' : '#ffffff';
+    const stroke = currentTheme === 'dark' ? '#888888' : 'black';
+    const strokeWidth = selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2;
+    const filter = selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none";
+    const el = d3.select(this).append(attrs.tag);
+    if (attrs.tag === 'circle') {
+      el.attr("cx", 0).attr("cy", 0).attr("r", attrs.r);
+    } else if (attrs.tag === 'polygon') {
+      el.attr("points", attrs.points);
+    } else if (attrs.tag === 'path') {
+      el.attr("d", squirclePath(-halfWidth, -nodeHeight/2, nodeWidth, nodeHeight));
+    } else {
+      el.attr("x", attrs.x).attr("y", attrs.y).attr("width", attrs.w).attr("height", attrs.h).attr("rx", attrs.rx).attr("ry", attrs.rx);
+    }
+    el.attr("fill", fill).attr("stroke", stroke).attr("stroke-width", strokeWidth).style("filter", filter);
+  });
   appendNodeText(node,
     d => d.data,
     d => ({ hasCustomStyle: d.data.hasCustomStyle, fontSize: d.data.fontSize, bold: d.data.bold, italic: d.data.italic })
@@ -7481,17 +7947,25 @@ function drawTree(savedTransform = null) {
     .on("mouseleave", hideNodeTooltip)
     .on("touchstart", (event, d) => { showNodeTooltip(event.touches[0], d.spouse, true); scheduleTouchDismiss(); }, {passive: true});
 
-  spouseNodes.append("rect")
-      .attr("x", -halfWidth).attr("y", -nodeHeight/2).attr("width", nodeWidth).attr("height", nodeHeight)
-      .attr("rx", 5).attr("ry", 5)
-      .attr("fill", d => {
-        if (d.spouse.color && d.spouse.color !== "#ffffff") return d.spouse.color;
-        if (currentTheme === 'dark') return '#2a2a2a';
-        return '#ffffff';
-      })
-      .attr("stroke", currentTheme === 'dark' ? '#888888' : currentTheme === 'light' ? 'black' : 'black')
-      .attr("stroke-width", d => selectedSpouse && selectedSpouse === d.spouse ? 4 : 2)
-      .style("filter", d => selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none");
+  spouseNodes.each(function(d) {
+    const gender = d.spouse.gender;
+    const attrs = getNodeShapeAttrs(gender);
+    const fill = (d.spouse.color && d.spouse.color !== "#ffffff") ? d.spouse.color : currentTheme === 'dark' ? '#2a2a2a' : '#ffffff';
+    const stroke = currentTheme === 'dark' ? '#888888' : 'black';
+    const strokeWidth = selectedSpouse && selectedSpouse === d.spouse ? 4 : 2;
+    const filter = selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none";
+    const el = d3.select(this).append(attrs.tag);
+    if (attrs.tag === 'circle') {
+      el.attr("cx", 0).attr("cy", 0).attr("r", attrs.r);
+    } else if (attrs.tag === 'polygon') {
+      el.attr("points", attrs.points);
+    } else if (attrs.tag === 'path') {
+      el.attr("d", squirclePath(-halfWidth, -nodeHeight/2, nodeWidth, nodeHeight));
+    } else {
+      el.attr("x", attrs.x).attr("y", attrs.y).attr("width", attrs.w).attr("height", attrs.h).attr("rx", attrs.rx).attr("ry", attrs.rx);
+    }
+    el.attr("fill", fill).attr("stroke", stroke).attr("stroke-width", strokeWidth).style("filter", filter);
+  });
 
   // Append multiline text to spouse nodes
   appendNodeText(spouseNodes,
@@ -7831,7 +8305,7 @@ document.getElementById("add-parent").addEventListener("click", () => {
         const index = siblings.findIndex(c => c === selectedNode.data);
         siblings[index] = newParent;
       } else {
-        data = newParent;
+        data = tree.replaceTree(newParent);
       }
 
       drawTree(d3.zoomTransform(svg.node()));
@@ -8350,14 +8824,15 @@ document.getElementById("set-home-person").addEventListener("click", () => {
   const targetData = selectedSpouse || selectedNode.data;
   
   // Clear previous home person flag from all nodes
-  function clearHomePerson(node) {
-    delete node.isHomePerson;
-    if (node.spouses) {
-      node.spouses.forEach(spouse => delete spouse.isHomePerson);
-    }
-    if (node.children) node.children.forEach(clearHomePerson);
+  if (useTreeModel) {
+    tree.clearHomePerson();
+  } else {
+    (function clearHP(node) {
+      delete node.isHomePerson;
+      if (node.spouses) node.spouses.forEach(sp => delete sp.isHomePerson);
+      if (node.children) node.children.forEach(clearHP);
+    })(data);
   }
-  clearHomePerson(data);
   
   // Set new home person
   targetData.isHomePerson = true;
@@ -8769,25 +9244,20 @@ document.getElementById("update-style-all").addEventListener("click", () => {
   document.getElementById("tools-font-italic").checked = italic;
   document.getElementById("tools-font-family").value = defaultNodeTextStyle.fontFamily || "sans-serif";
   
-  function applyStyleToAll(node) {
-    node.fontSize = fontSize;
-    node.bold = bold;
-    node.italic = italic;
-    delete node.hasCustomStyle; // Clear individual override flag
-    if (node.spouses) {
-      node.spouses.forEach(spouse => {
-        spouse.fontSize = fontSize;
-        spouse.bold = bold;
-        spouse.italic = italic;
-        delete spouse.hasCustomStyle; // Clear individual override flag
-      });
-    }
-    if (node.children) {
-      node.children.forEach(child => applyStyleToAll(child));
-    }
+  if (useTreeModel) {
+    tree.applyStyleToAll(fontSize, bold, italic);
+  } else {
+    (function applyAll(node) {
+      node.fontSize = fontSize;
+      node.bold = bold;
+      node.italic = italic;
+      delete node.hasCustomStyle;
+      if (node.spouses) {
+        node.spouses.forEach(sp => { sp.fontSize = fontSize; sp.bold = bold; sp.italic = italic; delete sp.hasCustomStyle; });
+      }
+      if (node.children) node.children.forEach(applyAll);
+    })(data);
   }
-  
-  applyStyleToAll(data);
   autoSave();
   drawTree(d3.zoomTransform(svg.node()));
   if (selectedNode) {
@@ -9057,7 +9527,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
         }
       }
       
-      data = newRoot;
+      data = tree.replaceTree(newRoot);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
     }
@@ -9172,7 +9642,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
         }
       }
       
-      data = newRoot;
+      data = tree.replaceTree(newRoot);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
     }
@@ -9549,12 +10019,27 @@ document.getElementById("terminal-line-spacing").addEventListener("input", (e) =
 });
 document.getElementById("node-width").addEventListener("input", (e) => {
   nodeWidth = parseFloat(e.target.value);
+  if (genderShapes) {
+    // Map width range (60-200) → height range (20-60)
+    const widthPct = (nodeWidth - 60) / (200 - 60);
+    nodeHeight = Math.round(20 + widthPct * (60 - 20));
+    document.getElementById("node-height").value = nodeHeight;
+    document.getElementById("tools-node-height").value = nodeHeight;
+  }
   syncLayoutSetting("nodeWidth", nodeWidth, () => {
     spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
   });
 });
 document.getElementById("node-height").addEventListener("input", (e) => {
   nodeHeight = parseFloat(e.target.value);
+  if (genderShapes) {
+    // Map height range (20-60) → width range (60-200)
+    const heightPct = (nodeHeight - 20) / (60 - 20);
+    nodeWidth = Math.round(60 + heightPct * (200 - 60));
+    document.getElementById("node-width").value = nodeWidth;
+    document.getElementById("tools-node-width").value = nodeWidth;
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  }
   syncLayoutSetting("nodeHeight", nodeHeight);
 });
 
@@ -9572,10 +10057,20 @@ document.getElementById("reset-horizontal").addEventListener("click", () => {
 document.getElementById("reset-node-width").addEventListener("click", () => {
   nodeWidth = 100;
   syncLayoutSetting("nodeWidth", 100);
+  if (genderShapes) {
+    const widthPct = (100 - 60) / (200 - 60);
+    nodeHeight = Math.round(20 + widthPct * (60 - 20));
+    syncLayoutSetting("nodeHeight", nodeHeight);
+  }
 });
 document.getElementById("reset-node-height").addEventListener("click", () => {
   nodeHeight = 30;
   syncLayoutSetting("nodeHeight", 30);
+  if (genderShapes) {
+    const heightPct = (30 - 20) / (60 - 20);
+    nodeWidth = Math.round(60 + heightPct * (200 - 60));
+    syncLayoutSetting("nodeWidth", nodeWidth);
+  }
 });
 document.getElementById("reset-line-spacing").addEventListener("click", () => {
   terminalLineSpacing = 40;
@@ -9618,7 +10113,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
 document.getElementById("new-btn").addEventListener("click", () => {
   if (confirm("Are you sure you want to start a new tree? Any unsaved changes will be lost.")) {
     // Reset to default data
-    data = {
+    const newData = {
       name: "Grandparents",
       color: "#ffffff",
       fontSize: 12,
@@ -9637,8 +10132,11 @@ document.getElementById("new-btn").addEventListener("click", () => {
       ]
     };
     
-    // Reset all state
-    dnaComparisons = {};
+    // Reset core state via facade
+    data = tree.replaceTree(newData);
+    tree.replaceDna({});
+    tree.replaceCrossLinks([]);
+    
     dnaLabelStyles = {
       cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false },
       relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
@@ -9650,8 +10148,12 @@ document.getElementById("new-btn").addEventListener("click", () => {
     showPercentileOnLabels = false;
     shadedRegion = null;
     homePersonName = null;
-    crossLinks = [];
     currentFilename = "New Tree";
+    tooltipsEnabled = true;
+    toolbarEnabled = true;
+    squircleNodes = false;
+    nodeShape = 'rounded';
+    genderShapes = false;
     
     // Reset settings to defaults
     verticalSpacing = 100;
@@ -9679,6 +10181,15 @@ document.getElementById("new-btn").addEventListener("click", () => {
     document.getElementById("tools-alternate-lines-toggle").checked = false;
     document.getElementById("tools-show-terminal-lines-toggle").checked = true;
     document.getElementById("dna-show-terminal-lines-toggle").checked = true;
+    document.getElementById("adv-show-tooltips").checked = true;
+    document.getElementById("adv-show-toolbar").checked = true;
+    document.getElementById("adv-squircle") && (document.getElementById("adv-squircle").checked = false);
+    document.getElementById("adv-shape-rounded").checked = true;
+    document.getElementById("adv-shape-sharp").checked = false;
+    document.getElementById("adv-shape-squircle").checked = false;
+    document.getElementById("adv-gender-shapes").checked = false;
+    document.getElementById("adv-tree-model").checked = useTreeModel;
+    applyToolbarVisibility();
     
     // Clear undo/redo history
     undoStack = [];
@@ -9774,7 +10285,7 @@ function jumpToHomePerson() {
     const nodeTransform = homeNode.attr("transform");
     const match = nodeTransform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
     if (match) {
-      const nodeX = parseFloat(match[1]) + nodeWidth / 2;
+      const nodeX = parseFloat(match[1]) + effectiveNodeWidth() / 2;
       const nodeY = parseFloat(match[2]) + nodeHeight / 2;
       
       const viewportWidth = window.innerWidth;
@@ -9890,16 +10401,16 @@ function resetZoom() {
 
 // Helper: expand all nodes
 function expandAllNodes() {
-  function expandAll(node) {
-    delete node.collapsed;
-    delete node.ancestorsCollapsed;
-    if (node.children) {
-      node.children.forEach(child => expandAll(child));
-    }
-  }
-  
   saveState();
-  expandAll(data);
+  if (useTreeModel) {
+    tree.expandAll();
+  } else {
+    (function expandAll(node) {
+      delete node.collapsed;
+      delete node.ancestorsCollapsed;
+      if (node.children) node.children.forEach(child => expandAll(child));
+    })(data);
+  }
   drawTree(d3.zoomTransform(svg.node()));
 }
 
@@ -10143,7 +10654,7 @@ function normalizeDnaKeys() {
       if (newKey !== key) fixedCount++;
     }
   }
-  dnaComparisons = normalized;
+  tree.replaceDna(normalized);
   return fixedCount;
 }
 
@@ -10156,8 +10667,8 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         const imported = JSON.parse(evt.target.result);
         
         if (imported.tree) {
-          data = imported.tree;
-          dnaComparisons = imported.dnaComparisons || {};
+          data = tree.replaceTree(imported.tree);
+          tree.replaceDna(imported.dnaComparisons || {});
           
           // Migrate to multi-spouse format
           migrateToMultiSpouse(data);
@@ -10169,7 +10680,7 @@ document.getElementById("import-input").addEventListener("change", (e) => {
           migrateDnaComparisonsToIds();
           
           // Load cross-links
-          crossLinks = imported.crossLinks || [];
+          tree.replaceCrossLinks(imported.crossLinks || []);
           
           if (imported.dnaLabelStyles) {
             dnaLabelStyles = imported.dnaLabelStyles;
@@ -10237,9 +10748,9 @@ document.getElementById("import-input").addEventListener("change", (e) => {
           filenameDisplay.textContent = currentFilename;
           setTimeout(checkFilenameOverlap, 0);
         } else {
-          data = imported;
-          dnaComparisons = {};
-          crossLinks = [];
+          data = tree.replaceTree(imported);
+          tree.replaceDna({});
+          tree.replaceCrossLinks([]);
           // Always default to showing terminal lines on import
           showTerminalLines = true;
           // Migrate to multi-spouse format
@@ -10714,6 +11225,11 @@ function syncAdvancedToolsToState() {
   document.getElementById("adv-show-notes").checked = defaultNodeTextStyle.showNotes || false;
   document.getElementById("adv-show-tooltips").checked = tooltipsEnabled;
   document.getElementById("adv-show-toolbar").checked = toolbarEnabled;
+  // Restore node shape checkboxes (mutually exclusive)
+  document.getElementById("adv-shape-rounded").checked = !genderShapes && nodeShape === 'rounded';
+  document.getElementById("adv-shape-sharp").checked = !genderShapes && nodeShape === 'sharp';
+  document.getElementById("adv-shape-squircle").checked = !genderShapes && nodeShape === 'squircle';
+  document.getElementById("adv-gender-shapes").checked = genderShapes;
 }
 
 let advDirty = false;
@@ -10760,6 +11276,36 @@ function applyAdvancedNodeStyling() {
 ["adv-bold", "adv-italic", "adv-show-gender", "adv-show-birth-year", "adv-show-birth-location", "adv-show-death-year", "adv-show-death-location", "adv-show-notes"].forEach(id => {
   document.getElementById(id).addEventListener("change", applyAdvancedNodeStyling);
 });
+// Node shape checkboxes — mutually exclusive (behave like radio buttons)
+const nodeShapeCheckboxes = [
+  { id: 'adv-shape-rounded',  value: 'rounded' },
+  { id: 'adv-shape-sharp',    value: 'sharp' },
+  { id: 'adv-shape-squircle', value: 'squircle' },
+  { id: 'adv-gender-shapes',  value: 'gender' },
+];
+nodeShapeCheckboxes.forEach(({ id, value }) => {
+  document.getElementById(id).addEventListener("change", (e) => {
+    if (!e.target.checked) {
+      // Don't allow unchecking — re-check and bail (like a radio)
+      e.target.checked = true;
+      return;
+    }
+    // Uncheck all others
+    nodeShapeCheckboxes.forEach(item => {
+      if (item.id !== id) document.getElementById(item.id).checked = false;
+    });
+    // Apply state
+    if (value === 'gender') {
+      genderShapes = true;
+    } else {
+      genderShapes = false;
+      nodeShape = value;
+      squircleNodes = (value === 'squircle');
+    }
+    drawTree(d3.zoomTransform(svg.node()));
+    autoSave();
+  });
+});
 document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
   tooltipsEnabled = e.target.checked;
   if (!tooltipsEnabled) { hideNodeTooltip(); hideDnaTooltip(); }
@@ -10768,6 +11314,16 @@ document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
 document.getElementById("adv-show-toolbar").addEventListener("change", (e) => {
   toolbarEnabled = e.target.checked;
   applyToolbarVisibility();
+  autoSave();
+});
+
+// TreeModel Facade toggle (Beta)
+document.getElementById("adv-tree-model").addEventListener("change", (e) => {
+  useTreeModel = e.target.checked;
+  if (useTreeModel) {
+    // Re-init facade with current globals in case they've drifted
+    tree.init(data, dnaComparisons, crossLinks, defaultNodeTextStyle, dnaLabelStyles);
+  }
   autoSave();
 });
 
@@ -10930,12 +11486,25 @@ document.getElementById("tools-horizontal-spacing").addEventListener("input", (e
 });
 document.getElementById("tools-node-width").addEventListener("input", (e) => {
   nodeWidth = parseFloat(e.target.value);
+  if (genderShapes) {
+    const widthPct = (nodeWidth - 60) / (200 - 60);
+    nodeHeight = Math.round(20 + widthPct * (60 - 20));
+    document.getElementById("node-height").value = nodeHeight;
+    document.getElementById("tools-node-height").value = nodeHeight;
+  }
   syncLayoutSetting("nodeWidth", nodeWidth, () => {
     spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
   });
 });
 document.getElementById("tools-node-height").addEventListener("input", (e) => {
   nodeHeight = parseFloat(e.target.value);
+  if (genderShapes) {
+    const heightPct = (nodeHeight - 20) / (60 - 20);
+    nodeWidth = Math.round(60 + heightPct * (200 - 60));
+    document.getElementById("node-width").value = nodeWidth;
+    document.getElementById("tools-node-width").value = nodeWidth;
+    spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+  }
   syncLayoutSetting("nodeHeight", nodeHeight);
 });
 document.getElementById("tools-terminal-line-spacing").addEventListener("input", (e) => {
@@ -10957,10 +11526,20 @@ document.getElementById("tools-reset-horizontal").addEventListener("click", () =
 document.getElementById("tools-reset-node-width").addEventListener("click", () => {
   nodeWidth = 100;
   syncLayoutSetting("nodeWidth", 100);
+  if (genderShapes) {
+    const widthPct = (100 - 60) / (200 - 60);
+    nodeHeight = Math.round(20 + widthPct * (60 - 20));
+    syncLayoutSetting("nodeHeight", nodeHeight);
+  }
 });
 document.getElementById("tools-reset-node-height").addEventListener("click", () => {
   nodeHeight = 30;
   syncLayoutSetting("nodeHeight", 30);
+  if (genderShapes) {
+    const heightPct = (30 - 20) / (60 - 20);
+    nodeWidth = Math.round(60 + heightPct * (200 - 60));
+    syncLayoutSetting("nodeWidth", nodeWidth);
+  }
 });
 document.getElementById("tools-reset-line-spacing").addEventListener("click", () => {
   terminalLineSpacing = 40;
