@@ -3294,19 +3294,11 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
       }
         
     } else if (link.type === "spouse") {
-      // Look up gender for each person so shapeEdgeHalfWidth can compute correct edge offsets
-      const info1 = findNodeById(root, link.person1Id);
-      const info2 = findNodeById(root, link.person2Id);
-      const gender1 = info1 ? (info1.isSpouse ? info1.spouse.gender : info1.node.data.gender) : undefined;
-      const gender2 = info2 ? (info2.isSpouse ? info2.spouse.gender : info2.node.data.gender) : undefined;
-      const hw1 = shapeEdgeHalfWidth(gender1);
-      const hw2 = shapeEdgeHalfWidth(gender2);
-
       if (link.useBezier) {
         // MANHATTAN ROUTING: Find a clear path around obstacles
-        const x1 = pos1.x + (pos1.x < pos2.x ? hw1 : -hw1);
+        const x1 = pos1.x + (pos1.x < pos2.x ? S.halfW : -S.halfW);
         const y1 = pos1.y;
-        const x2 = pos2.x + (pos2.x < pos1.x ? hw2 : -hw2);
+        const x2 = pos2.x + (pos2.x < pos1.x ? S.halfW : -S.halfW);
         const y2 = pos2.y;
         
         const spouseY = Math.max(y1, y2);
@@ -3495,87 +3487,15 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
               const childAdjustedY = yAdjustments[child.data.id] !== undefined ? yAdjustments[child.data.id] : child.y;
               const childY = childAdjustedY - S.halfH;
               
-              // Check for obstacles between drop point and child
-              const curveObstacles = [];
-              const scanLeft = Math.min(dropStartX, childX) - S.effW;
-              const scanRight = Math.max(dropStartX, childX) + S.effW;
-              const scanTop = dropStartY;
-              const scanBottom = childY;
+              // Smooth Bézier curve to single child
+              const curveMidY = (dropStartY + childY) / 2;
+              const childPathData = `M ${dropStartX} ${dropStartY}
+                                     C ${dropStartX} ${curveMidY}, ${childX} ${curveMidY}, ${childX} ${childY}`;
               
-              for (const node of root.descendants()) {
-                if (node === parentWithChildren) continue;
-                if (node === child) continue;
-                
-                const nodeX = node.x + (xAdjustments[node.data.id] || 0);
-                const nodeAdjY = yAdjustments[node.data.id] !== undefined ? yAdjustments[node.data.id] : node.y;
-                
-                const nodeTop = nodeAdjY - S.halfH;
-                const nodeBottom = nodeAdjY + S.halfH;
-                const nodeLeft = nodeX - S.halfW;
-                const nodeRight = nodeX + S.halfW;
-                
-                if (nodeBottom > scanTop && nodeTop < scanBottom &&
-                    nodeRight > scanLeft && nodeLeft < scanRight) {
-                  curveObstacles.push({
-                    x: nodeX, y: nodeAdjY,
-                    left: nodeLeft, right: nodeRight,
-                    top: nodeTop, bottom: nodeBottom
-                  });
-                }
-                
-                // Also check spouses of this node
-                if (node.data.spouses) {
-                  const swo = getSpousesWithOffsets(node.data);
-                  for (const sp of swo) {
-                    if (sp.spouse.id === link.person1Id || sp.spouse.id === link.person2Id) continue;
-                    const spX = nodeX + sp.offset;
-                    const spLeft = spX - S.halfW;
-                    const spRight = spX + S.halfW;
-                    
-                    if (nodeBottom > scanTop && nodeTop < scanBottom &&
-                        spRight > scanLeft && spLeft < scanRight) {
-                      curveObstacles.push({
-                        x: spX, y: nodeAdjY,
-                        left: spLeft, right: spRight,
-                        top: nodeTop, bottom: nodeBottom
-                      });
-                    }
-                  }
-                }
-              }
-              
-              if (curveObstacles.length === 0) {
-                // No obstacles — use original smooth Bézier curve
-                const curveMidY = (dropStartY + childY) / 2;
-                const childPathData = `M ${dropStartX} ${dropStartY}
-                                       C ${dropStartX} ${curveMidY}, ${childX} ${curveMidY}, ${childX} ${childY}`;
-                
-                crossLinkGroup.append("path")
-                  .attr("class", "cross-link-bezier")
-                  .attr("d", childPathData)
-                  .attr("fill", "none");
-              } else {
-                // Obstacles detected — nudge control points so the curve
-                // passes below the obstacle before curving in to the child
-                
-                // Find the lowest obstacle bottom edge
-                const obsBottom = Math.max(...curveObstacles.map(o => o.bottom));
-                
-                // The control point Y should be below the obstacle so the curve
-                // doesn't clip through the obstacle's corner
-                const safeY = obsBottom + S.effGap / 2;
-                
-                // Use safeY (below obstacle) for control points instead of the
-                // naive midpoint. The curve will go down from drop point, pass
-                // below the obstacle, then curve up/over to the child.
-                const childPathData = `M ${dropStartX} ${dropStartY}
-                                       C ${dropStartX} ${safeY}, ${childX} ${safeY}, ${childX} ${childY}`;
-                
-                crossLinkGroup.append("path")
-                  .attr("class", "cross-link-bezier")
-                  .attr("d", childPathData)
-                  .attr("fill", "none");
-              }
+              crossLinkGroup.append("path")
+                .attr("class", "cross-link-bezier")
+                .attr("d", childPathData)
+                .attr("fill", "none");
             } else {
               // Multiple children: draw Bézier curve to gutter, then to each child
               const childXPositions = children.map(c => c.x + (xAdjustments[c.data.id] || 0));
@@ -3620,9 +3540,9 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
         // Horizontal line at the same Y level (they should now be at the same Y after adjustments)
         crossLinkGroup.append("line")
           .attr("class", "cross-link")
-          .attr("x1", pos1.x + (pos1.x < pos2.x ? hw1 : -hw1))
+          .attr("x1", pos1.x + (pos1.x < pos2.x ? S.halfW : -S.halfW))
           .attr("y1", pos1.y)
-          .attr("x2", pos2.x + (pos2.x < pos1.x ? hw2 : -hw2))
+          .attr("x2", pos2.x + (pos2.x < pos1.x ? S.halfW : -S.halfW))
           .attr("y2", pos2.y);
       }
     }
@@ -5394,12 +5314,8 @@ function getAllTerminalPositions(root, xAdjustments = {}) {
       }
       
       if (link.type === "spouse") {
-        // Only exclude from terminal lines if they actually have shared children
-        // People linked as spouses with no shared children should keep their terminal lines
-        if (link.sharedChildren && link.sharedChildren !== 'none') {
-          spouseCrossLinkIds.add(link.person1Id);
-          spouseCrossLinkIds.add(link.person2Id);
-        }
+        spouseCrossLinkIds.add(link.person1Id);
+        spouseCrossLinkIds.add(link.person2Id);
       } else if (link.type === "parent") {
         // Both parent and child in a parent cross-link - exclude from terminal lines
         spouseCrossLinkIds.add(link.person1Id);
@@ -5693,17 +5609,15 @@ function computeLayout(root) {
   
   // Get the bounding box of a node (including its spouses)
   function getNodeBounds(node) {
-    const hw = genderShapes ? shapeEdgeHalfWidth(node.data.gender) : S.halfW;
-    let left = node.x - hw;
-    let right = node.x + hw;
+    let left = node.x - S.halfW;
+    let right = node.x + S.halfW;
     
     if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
       const spousesWithOffsets = getSpousesWithOffsets(node.data);
       for (const sp of spousesWithOffsets) {
         const spouseX = node.x + sp.offset;
-        const spHw = genderShapes ? shapeEdgeHalfWidth(sp.spouse.gender) : S.halfW;
-        left = Math.min(left, spouseX - spHw);
-        right = Math.max(right, spouseX + spHw);
+        left = Math.min(left, spouseX - S.halfW);
+        right = Math.max(right, spouseX + S.halfW);
       }
     }
     
@@ -6180,7 +6094,7 @@ function recalcRelationshipLabels() {
     const node2 = nodeMap.get(id2);
     if (!node1 || !node2) continue;
     const result = findLCA(nodeMap, id1, id2);
-    if (result && !dnaComparisons[key].relationship) {
+    if (result) {
       dnaComparisons[key].relationship = getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship);
     }
   }
@@ -6318,13 +6232,36 @@ function drawTree(savedTransform = null) {
             }
           }
           
-          // X adjustment for shared children: NOT applied.
-          // Non-Bézier spouse cross-links draw a simple horizontal connector
-          // and a vertical drop line from the midpoint — neither requires
-          // repositioning children.  The previous centering logic shifted
-          // children toward the midpoint of the two spouses, which could
-          // cascade into collision-resolution shifts and open up large
-          // unwanted gaps in the layout.
+          // X adjustment for shared children: center them under the midpoint
+          // Skip this for Bézier connections - they don't re-center children
+          if (!link.useBezier && link.sharedChildren && link.sharedChildren !== 'none') {
+            const midpointX = (pos1.x + pos2.x) / 2;
+            
+            // Find the parent node whose children are shared
+            let parentNode = null;
+            if ((link.sharedChildren === 'person1' || link.sharedChildren === 'both') && pos1.node) {
+              parentNode = pos1.node;
+            } else if ((link.sharedChildren === 'person2' || link.sharedChildren === 'both') && pos2.node) {
+              parentNode = pos2.node;
+            }
+            
+            if (parentNode && parentNode.children) {
+              // Calculate the offset needed to center children under midpoint
+              // The children's current center is relative to parentNode.x
+              // We want them centered at midpointX instead
+              const xOffset = midpointX - parentNode.x;
+              
+              // Apply offset to all children and their descendants
+              function applyXOffset(node) {
+                crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + xOffset;
+                if (node.children) {
+                  node.children.forEach(child => applyXOffset(child));
+                }
+              }
+              
+              parentNode.children.forEach(child => applyXOffset(child));
+            }
+          }
         }
       }
     });
@@ -6486,17 +6423,15 @@ function drawTree(savedTransform = null) {
   
   function getAdjustedNodeBounds(node) {
     const adjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
-    const hw = genderShapes ? shapeEdgeHalfWidth(node.data.gender) : S.halfW;
-    let left = adjustedX - hw;
-    let right = adjustedX + hw;
+    let left = adjustedX - S.halfW;
+    let right = adjustedX + S.halfW;
     
     if (node.data.spouses && node.data.spouses.length > 0 && !node.data.collapsed) {
       const spousesWithOffsets = getSpousesWithOffsets(node.data);
       for (const sp of spousesWithOffsets) {
         const spouseX = adjustedX + sp.offset;
-        const spHw = genderShapes ? shapeEdgeHalfWidth(sp.spouse.gender) : S.halfW;
-        left = Math.min(left, spouseX - spHw);
-        right = Math.max(right, spouseX + spHw);
+        left = Math.min(left, spouseX - S.halfW);
+        right = Math.max(right, spouseX + S.halfW);
       }
     }
     
@@ -6946,20 +6881,9 @@ function drawTree(savedTransform = null) {
             const dropKey = `${d.parent.data.id}::${childSpouseId}`;
             const spouseX = parentAdjustedX + spouseData.offset;
             px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
-            // Start from the spouse connector line (node center), not the bottom of the node
-            py = parentAdjustedY;
           }
-        } else if (d.parent.data.spouses.length === 1) {
-          // No spouseId but parent has exactly one spouse — treat as belonging to that spouse pair
-          const onlySpouse = spousesWithOffsets[0];
-          const spouseX = parentAdjustedX + onlySpouse.offset;
-          // Use the midpoint between parent and spouse as drop X
-          const dropKey = `${d.parent.data.id}::`;
-          px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
-          // Start from the spouse connector line (node center), not the bottom of the node
-          py = parentAdjustedY;
         }
-        // No spouseId with multiple spouses: connect directly to parent (px stays as parentAdjustedX)
+        // No spouseId: connect directly to parent (px stays as parentAdjustedX)
       } else if (crossLinkSpouseX !== null) {
         px = (parentAdjustedX + crossLinkSpouseX) / 2;
       }
@@ -7009,8 +6933,27 @@ function drawTree(savedTransform = null) {
         .attr("y2", spouseLineY);
       
       // Draw vertical line down to children (only if this spouse pair has children)
-      // NOTE: The main parent-child link path now starts from the spouse connector line,
-      // so no separate stub line is needed for spouse-assigned children.
+      if (d.children && d.children.length > 0) {
+        // Check if any children belong to this spouse
+        const childrenOfThisSpouse = d.children.filter(c => c.data.spouseId === sp.spouse.id);
+        
+        // Draw vertical line only if there are children explicitly assigned to this spouse
+        // Children without spouseId connect directly to the main node, not via spouse pairs
+        const shouldDrawVertical = childrenOfThisSpouse.length > 0;
+        
+        if (shouldDrawVertical) {
+          const childY = d.children[0].y - S.halfH;
+          const branchY = (spouseLineY + S.halfH + childY) / 2;
+          const midX = mainNodeAdjustedX + spouseOffset / 2;
+          
+          g.append("line")
+            .attr("class", "spouse-link")
+            .attr("x1", midX)
+            .attr("y1", spouseLineY)
+            .attr("x2", midX)
+            .attr("y2", branchY);
+        }
+      }
     });
   });
   
@@ -7021,30 +6964,18 @@ function drawTree(savedTransform = null) {
       if (childrenWithNoSpouse.length > 0) {
         const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
         const childY = d.children[0].y - S.halfH;
+        const branchY = (d.y + S.halfH + childY) / 2;
         // Use midpoint of children's X range (from dropXMap) so the vertical drop
         // bisects the sibling group regardless of node shape (fixes M/F shape misalignment)
         const dropKey = `${d.data.id}::`;
         const dropX = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : mainNodeAdjustedX;
         
-        if (d.data.spouses.length === 1) {
-          // Single spouse: drop from spouse connector line (node center), not node bottom
-          const branchY = (d.y + S.halfH + childY) / 2;
-          g.append("line")
-            .attr("class", "link")
-            .attr("x1", dropX)
-            .attr("y1", d.y)
-            .attr("x2", dropX)
-            .attr("y2", branchY);
-        } else {
-          // Multiple spouses: drop from node bottom as before
-          const branchY = (d.y + S.halfH + childY) / 2;
-          g.append("line")
-            .attr("class", "link")
-            .attr("x1", dropX)
-            .attr("y1", d.y + S.halfH)
-            .attr("x2", dropX)
-            .attr("y2", branchY);
-        }
+        g.append("line")
+          .attr("class", "link")
+          .attr("x1", dropX)
+          .attr("y1", d.y + S.halfH)
+          .attr("x2", dropX)
+          .attr("y2", branchY);
       }
     }
   });
@@ -8158,27 +8089,13 @@ document.getElementById("add-spouse").addEventListener("click", () => {
       };
       
       // If this is the FIRST spouse being added and there are existing children,
-      // ask whether to assign those children to this spouse
+      // assign those children to this spouse
       if (existingSpouses === 0 && selectedNode.data.children && selectedNode.data.children.length > 0) {
-        const childCount = selectedNode.data.children.filter(c => !c.spouseId).length;
-        if (childCount > 0) {
-          const nodeName = selectedNode.data.name;
-          const capturedNode = selectedNode;
-          showAssignChildrenDialog(nodeName, newName, childCount).then(assign => {
-            if (assign) {
-              capturedNode.data.children.forEach(child => {
-                if (!child.spouseId) {
-                  child.spouseId = newSpouse.id;
-                }
-              });
-            }
-            capturedNode.data.spouses.push(newSpouse);
-            document.getElementById("spouse-name").value = "";
-            redraw();
-            showSidebar(capturedNode.data, capturedNode, false);
-          });
-          return; // async path handles the rest
-        }
+        selectedNode.data.children.forEach(child => {
+          if (!child.spouseId) {
+            child.spouseId = newSpouse.id;
+          }
+        });
       }
       
       selectedNode.data.spouses.push(newSpouse);
@@ -10618,60 +10535,6 @@ document.getElementById("import-input").addEventListener("change", (e) => {
     e.target.value = '';
   }
 });
-
-function showAssignChildrenDialog(nodeName, spouseName, childCount) {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
-    
-    const isDark = currentTheme === 'dark';
-    const bgColor = isDark ? '#222' : '#fff';
-    const textColor = isDark ? '#e0e0e0' : '#333';
-    const borderColor = isDark ? '#444' : '#ddd';
-    const btnBg = isDark ? '#333' : '#f0f0f0';
-    const btnHover = isDark ? '#444' : '#e0e0e0';
-    const primaryBg = isDark ? '#4a4a4a' : '#43a047';
-    const primaryHover = isDark ? '#5a5a5a' : '#2e7d32';
-    
-    const childWord = childCount > 1 ? 'children' : 'child';
-    
-    const dialog = document.createElement('div');
-    dialog.style.cssText = `background: ${bgColor}; color: ${textColor}; padding: 25px; border-radius: 10px; max-width: 420px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3);`;
-    dialog.innerHTML = `
-      <h3 style="margin: 0 0 15px 0; font-size: 18px;">Assign Existing Children?</h3>
-      <p style="margin: 0 0 10px 0; font-size: 14px; color: ${isDark ? '#ccc' : '#444'};">
-        <strong>${nodeName}</strong> already has ${childCount} ${childWord}. Should they be assigned to <strong>${spouseName}</strong>?
-      </p>
-      <p style="margin: 0 0 20px 0; font-size: 13px; color: ${isDark ? '#888' : '#888'};">
-        This affects how connecting lines are drawn — assigned children connect from the spouse line.
-      </p>
-      <div style="display: flex; gap: 10px;">
-        <button id="assign-yes" style="flex: 1; padding: 10px; border: none; border-radius: 6px; background: ${primaryBg}; color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Yes</button>
-        <button id="assign-no" style="flex: 1; padding: 10px; border: 1px solid ${borderColor}; border-radius: 6px; background: ${btnBg}; color: ${textColor}; cursor: pointer; font-size: 14px;">No</button>
-      </div>
-    `;
-    
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
-    
-    const yesBtn = dialog.querySelector('#assign-yes');
-    const noBtn = dialog.querySelector('#assign-no');
-    
-    yesBtn.addEventListener('mouseenter', () => yesBtn.style.background = primaryHover);
-    yesBtn.addEventListener('mouseleave', () => yesBtn.style.background = primaryBg);
-    noBtn.addEventListener('mouseenter', () => noBtn.style.background = btnHover);
-    noBtn.addEventListener('mouseleave', () => noBtn.style.background = btnBg);
-    
-    function cleanup(result) {
-      document.body.removeChild(overlay);
-      resolve(result);
-    }
-    
-    yesBtn.addEventListener('click', () => cleanup(true));
-    noBtn.addEventListener('click', () => cleanup(false));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
-  });
-}
 
 function showExportDialog(exportType) {
   return new Promise((resolve) => {
