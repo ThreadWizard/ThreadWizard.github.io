@@ -7142,6 +7142,8 @@ function drawTree(savedTransform = null) {
             const dropKey = `${d.parent.data.id}::${childSpouseId}`;
             const spouseX = parentAdjustedX + spouseData.offset;
             px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
+            // Start vertical drop from the spouse link (node center), not node bottom
+            py = parentAdjustedY;
           }
         }
         // No spouseId: connect directly to parent (px stays as parentAdjustedX)
@@ -7203,16 +7205,12 @@ function drawTree(savedTransform = null) {
         const shouldDrawVertical = childrenOfThisSpouse.length > 0;
         
         if (shouldDrawVertical) {
-          const childY = d.children[0].y - nodeHeight/2;
-          const branchY = (spouseLineY + nodeHeight/2 + childY) / 2;
-          const midX = mainNodeAdjustedX + spouseOffset / 2;
-          
-          g.append("line")
-            .attr("class", "spouse-link")
-            .attr("x1", midX)
-            .attr("y1", spouseLineY)
-            .attr("x2", midX)
-            .attr("y2", branchY);
+          // The parent-child link paths already draw a vertical segment from
+          // parent bottom (py) through the gutter at this same X coordinate.
+          // Drawing an additional spouse-link line here would cause two strokes
+          // to overlap, appearing visually thicker at certain zoom levels.
+          // So we intentionally skip the spouse vertical drop line — the
+          // parent-child link path handles the vertical connection.
         }
       }
     });
