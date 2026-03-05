@@ -7203,7 +7203,17 @@ function drawTree(savedTransform = null) {
             py = parentAdjustedY;
           }
         }
-        // No spouseId: connect directly to parent (px stays as parentAdjustedX)
+        // No spouseId but parent has exactly one spouse: originate from spouse connector
+        if (!d.data.spouseId && d.parent.data.spouses && d.parent.data.spouses.length === 1) {
+          const spousesWithOffsets2 = getSpousesWithOffsets(d.parent.data);
+          if (spousesWithOffsets2.length === 1) {
+            const singleSpouse = spousesWithOffsets2[0];
+            const spouseX = parentAdjustedX + singleSpouse.offset;
+            const dropKey = `${d.parent.data.id}::`;
+            px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
+            py = parentAdjustedY;
+          }
+        }
       } else if (crossLinkSpouseX !== null) {
         px = (parentAdjustedX + crossLinkSpouseX) / 2;
       }
@@ -8439,6 +8449,44 @@ document.getElementById("add-parent").addEventListener("click", () => {
   }
 });
 
+// Custom "Assign Existing Children?" dialog (theme-aware, no browser confirm())
+function showAssignChildrenDialog(nodeRef, spouseRef) {
+  const isDark = document.body.classList.contains('dark-mode');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `background:${isDark ? '#2a2a2a' : '#fff'};color:${isDark ? '#e0e0e0' : '#333'};border-radius:8px;padding:24px;max-width:400px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-family:sans-serif;`;
+  const childCount = nodeRef.data.children.filter(c => !c.spouseId).length;
+  dialog.innerHTML = `
+    <div style="font-size:16px;font-weight:600;margin-bottom:12px;">Assign Existing Children?</div>
+    <div style="font-size:14px;margin-bottom:20px;line-height:1.5;">
+      ${nodeRef.data.name} has ${childCount} child${childCount !== 1 ? 'ren' : ''} without a spouse assignment. 
+      Assign them to <strong>${spouseRef.name}</strong>?
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="assign-children-no" style="padding:8px 20px;border-radius:5px;border:1px solid ${isDark ? '#555' : '#ccc'};background:${isDark ? '#3a3a3a' : '#f0f0f0'};color:${isDark ? '#e0e0e0' : '#333'};cursor:pointer;font-size:14px;">No</button>
+      <button id="assign-children-yes" style="padding:8px 20px;border-radius:5px;border:none;background:#4a90d9;color:#fff;cursor:pointer;font-size:14px;">Yes</button>
+    </div>
+  `;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  document.getElementById('assign-children-yes').addEventListener('click', () => {
+    nodeRef.data.children.forEach(child => {
+      if (!child.spouseId) {
+        child.spouseId = spouseRef.id;
+      }
+    });
+    document.body.removeChild(overlay);
+    drawTree(d3.zoomTransform(svg.node()));
+  });
+
+  document.getElementById('assign-children-no').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    drawTree(d3.zoomTransform(svg.node()));
+  });
+}
+
 document.getElementById("add-spouse").addEventListener("click", () => {
   if (selectedNode && !selectedSpouse) {
     const newName = document.getElementById("spouse-name").value.trim();
@@ -8465,13 +8513,11 @@ document.getElementById("add-spouse").addEventListener("click", () => {
       };
       
       // If this is the FIRST spouse being added and there are existing children,
-      // assign those children to this spouse
+      // ask the user whether to assign those children to this spouse
       if (existingSpouses === 0 && selectedNode.data.children && selectedNode.data.children.length > 0) {
-        selectedNode.data.children.forEach(child => {
-          if (!child.spouseId) {
-            child.spouseId = newSpouse.id;
-          }
-        });
+        const nodeRef = selectedNode;
+        const spouseRef = newSpouse;
+        showAssignChildrenDialog(nodeRef, spouseRef);
       }
       
       selectedNode.data.spouses.push(newSpouse);
