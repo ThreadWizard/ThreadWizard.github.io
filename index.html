@@ -6389,7 +6389,7 @@ function recalcRelationshipLabels() {
     const node2 = nodeMap.get(id2);
     if (!node1 || !node2) continue;
     const result = findLCA(nodeMap, id1, id2);
-    if (result) {
+    if (result && !dnaComparisons[key].relationship) {
       dnaComparisons[key].relationship = getRelationshipLabel(result.gen1, result.gen2, result.isHalfRelationship);
     }
   }
