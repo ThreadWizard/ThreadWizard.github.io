@@ -977,6 +977,27 @@ the Free Software Foundation, version 3.
     text-align: center;
     padding: 30px 10px;
   }
+  #adv-fullscreen-btn {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ccc;
+  }
+  .adv-offset-btn {
+    padding: 2px 7px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f5f5f5;
+    color: #333;
+    transition: background 0.15s ease;
+  }
+  .adv-offset-btn:hover { background: #e0e0e0; }
+  .adv-offset-val {
+    min-width: 40px;
+    text-align: center;
+    font-size: 12px;
+  }
   #advanced-tools-panel .back-btn {
     display: block;
     width: 100%;
@@ -1556,6 +1577,9 @@ the Free Software Foundation, version 3.
   body.theme-dark #advanced-tools-panel .back-btn { background: linear-gradient(135deg, #2a3a7a 0%, #111a40 100%); }
   body.theme-dark #adv-fullscreen-btn { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
   body.theme-dark #adv-fullscreen-btn:hover { background: #333; }
+  body.theme-dark .adv-offset-btn { background: #2a2a2a !important; color: #e0e0e0 !important; border-color: #444 !important; }
+  body.theme-dark .adv-offset-btn:hover { background: #333 !important; }
+  body.theme-dark .adv-offset-val { color: #e0e0e0 !important; }
   body.theme-dark .tooltip { background: #333333; }
   body.theme-dark #calculated-relationship { background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%); border-color: #333333 !important; }
   body.theme-dark #calculated-relationship .calc-label { color: #aaaaaa; }
@@ -1974,9 +1998,26 @@ the Free Software Foundation, version 3.
     </div>
     <div class="tools-section">
       <div class="tools-section-title">Display</div>
-      <button id="adv-fullscreen-btn" style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease;">
+      <button id="adv-fullscreen-btn" style="width: 100%; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s ease;">
         <span id="adv-fullscreen-icon">⛶</span> <span id="adv-fullscreen-label">Enter Fullscreen</span>
       </button>
+    </div>
+    <div class="tools-section">
+      <div class="tools-section-title">Label Vertical Offset</div>
+      <div class="style-row" style="align-items: center;">
+        <label class="style-label">cM:</label>
+        <button id="adv-cm-offset-up" class="adv-offset-btn" title="Move cM up">&#9650;</button>
+        <span id="adv-cm-offset-val" class="adv-offset-val">0</span>
+        <button id="adv-cm-offset-down" class="adv-offset-btn" title="Move cM down">&#9660;</button>
+        <button id="adv-cm-offset-reset" class="adv-offset-btn" title="Reset">Reset</button>
+      </div>
+      <div class="style-row" style="align-items: center;">
+        <label class="style-label">Rel.:</label>
+        <button id="adv-rel-offset-up" class="adv-offset-btn" title="Move relationship up">&#9650;</button>
+        <span id="adv-rel-offset-val" class="adv-offset-val">0</span>
+        <button id="adv-rel-offset-down" class="adv-offset-btn" title="Move relationship down">&#9660;</button>
+        <button id="adv-rel-offset-reset" class="adv-offset-btn" title="Reset">Reset</button>
+      </div>
     </div>
     <button class="back-btn" id="advanced-tools-back">← Back to Tools</button>
   </div>
@@ -2275,8 +2316,8 @@ let dnaComparisons = {};
 
 // DNA label styling
 let dnaLabelStyles = {
-  cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false, fontFamily: "sans-serif" },
-  relationship: { fontSize: 11, color: "#000000", bold: false, italic: false, fontFamily: "sans-serif" }
+  cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false, fontFamily: "sans-serif", verticalOffset: 0 },
+  relationship: { fontSize: 11, color: "#000000", bold: false, italic: false, fontFamily: "sans-serif", verticalOffset: 0 }
 };
 
 // Global default node text styling (used for nodes without individual overrides)
@@ -6412,7 +6453,7 @@ function drawTree(savedTransform = null) {
   }
 
   zoom = d3.zoom()
-      .scaleExtent([0.3, 3])
+      .scaleExtent([0.05, 20])
       .on("zoom", (event) => g.attr("transform", event.transform));
 
   // Conditionally apply zoom based on shade tool state
@@ -7500,10 +7541,11 @@ function drawTree(savedTransform = null) {
           const relFontSize = dnaLabelStyles.relationship.fontSize;
           // Smaller base offset to keep cM values close to the line
           const cmOffset = 2 + (cmFontSize - 11) * 0.15;
+          const cmVertOffset = dnaLabelStyles.cm.verticalOffset || 0;
           const cmText = labelGroup.append("text")
             .attr("class", "intersection-label cm-value")
             .attr("x", intersection.x)
-            .attr("y", intersection.y - cmOffset)
+            .attr("y", intersection.y - cmOffset + cmVertOffset)
             .style("font-size", `${cmFontSize}px`)
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.cm.color))
             .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
@@ -7528,6 +7570,7 @@ function drawTree(savedTransform = null) {
           // Base offset plus scaling based on both font sizes to prevent overlap
           // Increased base offset to match the visual gap of the cM label above the line
           const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+          const relVertOffset = dnaLabelStyles.relationship.verticalOffset || 0;
           
           // Build label text: relationship, optionally with percentile
           let relLabelText = dnaData.relationship;
@@ -7550,7 +7593,7 @@ function drawTree(savedTransform = null) {
           labelGroup.append("text")
             .attr("class", "intersection-label relationship")
             .attr("x", intersection.x)
-            .attr("y", intersection.y + relOffset)
+            .attr("y", intersection.y + relOffset + relVertOffset)
             .style("font-size", `${relFontSize}px`)
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
             .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
@@ -7573,10 +7616,11 @@ function drawTree(savedTransform = null) {
                   const cmFontSize = dnaLabelStyles.cm.fontSize;
                   const relFontSize = dnaLabelStyles.relationship.fontSize;
                   const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
+                  const relVertOffset2 = dnaLabelStyles.relationship.verticalOffset || 0;
                   labelGroup.append("text")
                     .attr("class", "intersection-label relationship")
                     .attr("x", intersection.x)
-                    .attr("y", intersection.y + relOffset)
+                    .attr("y", intersection.y + relOffset + relVertOffset2)
                     .style("font-size", `${relFontSize}px`)
                     .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
                     .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
@@ -11258,6 +11302,9 @@ function openToolsPanel(skipPositionReset) {
   document.getElementById("tools-rel-font-italic").checked = dnaLabelStyles.relationship.italic;
   document.getElementById("tools-rel-font-family").value = dnaLabelStyles.relationship.fontFamily || "sans-serif";
   
+  document.getElementById("adv-cm-offset-val").textContent = dnaLabelStyles.cm.verticalOffset || 0;
+  document.getElementById("adv-rel-offset-val").textContent = dnaLabelStyles.relationship.verticalOffset || 0;
+  
   document.getElementById("tools-auto-stroke-toggle").checked = autoStrokeEnabled;
   document.getElementById("tools-stroke-width-slider").value = autoStrokeWidth;
   document.getElementById("tools-stroke-width-value").textContent = autoStrokeWidth + "px";
@@ -11759,6 +11806,25 @@ function syncToolsDnaLabels() {
 ["tools-cm-font-family", "tools-rel-font-family"].forEach(id => {
   document.getElementById(id).addEventListener("change", syncToolsDnaLabels);
 });
+
+// Vertical offset controls for cM and Relationship labels
+function updateOffsetDisplay() {
+  document.getElementById("adv-cm-offset-val").textContent = dnaLabelStyles.cm.verticalOffset || 0;
+  document.getElementById("adv-rel-offset-val").textContent = dnaLabelStyles.relationship.verticalOffset || 0;
+}
+function adjustOffset(which, delta) {
+  dnaLabelStyles[which].verticalOffset = (dnaLabelStyles[which].verticalOffset || 0) + delta;
+  updateOffsetDisplay();
+  autoSave();
+  drawTree(d3.zoomTransform(svg.node()));
+}
+document.getElementById("adv-cm-offset-up").addEventListener("click", () => adjustOffset("cm", -1));
+document.getElementById("adv-cm-offset-down").addEventListener("click", () => adjustOffset("cm", 1));
+document.getElementById("adv-cm-offset-reset").addEventListener("click", () => { dnaLabelStyles.cm.verticalOffset = 0; updateOffsetDisplay(); autoSave(); drawTree(d3.zoomTransform(svg.node())); });
+document.getElementById("adv-rel-offset-up").addEventListener("click", () => adjustOffset("relationship", -1));
+document.getElementById("adv-rel-offset-down").addEventListener("click", () => adjustOffset("relationship", 1));
+document.getElementById("adv-rel-offset-reset").addEventListener("click", () => { dnaLabelStyles.relationship.verticalOffset = 0; updateOffsetDisplay(); autoSave(); drawTree(d3.zoomTransform(svg.node())); });
+updateOffsetDisplay();
 
 // Auto cM Stroke Colors (use shared syncAutoStroke)
 document.getElementById("tools-auto-stroke-toggle").addEventListener("change", (e) => {
