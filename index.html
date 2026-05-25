@@ -16,9 +16,10 @@ the Free Software Foundation, version 3.
 <!-- Google tag (gtag.js) --> <script async src="https://www.googletagmanager.com/gtag/js?id=G-6KMQC2ZW88"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-6KMQC2ZW88'); </script>
 <style>
   body { font-family: sans-serif; margin: 0; overflow: hidden; }
-  svg { width: 100vw; height: 100vh; display: block; }
+  svg { width: 100vw; height: 100vh; display: block; background: var(--svg-bg); }
 
   .node rect {
+    stroke: var(--node-rect-stroke);
     stroke-width: 2px;
     cursor: pointer;
   }
@@ -26,16 +27,17 @@ the Free Software Foundation, version 3.
     font-size: 12px;
     text-anchor: middle;
     pointer-events: none;
+    fill: var(--node-text-fill);
   }
   .node text tspan {
   }
   .link {
-    stroke: black;
+    stroke: var(--link-stroke);
     stroke-width: 2px;
     fill: none;
   }
   .spouse-link {
-    stroke: black;
+    stroke: var(--link-stroke);
     stroke-width: 2px;
     fill: none;
   }
@@ -44,14 +46,14 @@ the Free Software Foundation, version 3.
     fill: none;
   }
   .intersection-point {
-    fill: #ddd;
-    stroke: #999;
+    fill: var(--intersection-point-fill);
+    stroke: var(--intersection-point-stroke);
     stroke-width: 1px;
     cursor: pointer;
   }
   .intersection-point:hover {
-    fill: #ffeb3b;
-    stroke: #f57c00;
+    fill: var(--intersection-point-hover-fill);
+    stroke: var(--intersection-point-hover-stroke);
     stroke-width: 2px;
   }
   .intersection-label-group:hover text {
@@ -64,10 +66,10 @@ the Free Software Foundation, version 3.
   }
   .intersection-label.cm-value {
     font-weight: bold;
-    fill: #0d47a1;
+    fill: var(--intersection-cm-fill);
   }
   .intersection-label.relationship {
-    fill: #000;
+    fill: var(--intersection-rel-fill);
   }
   .highlight {
     stroke: orange !important;
@@ -82,7 +84,7 @@ the Free Software Foundation, version 3.
   
   /* Cross-link spouse lines (connecting people across branches) */
   .cross-link {
-    stroke: black;
+    stroke: var(--link-stroke);
     stroke-width: 2px;
     fill: none;
   }
@@ -93,7 +95,7 @@ the Free Software Foundation, version 3.
   }
   /* Bézier curved dotted cross-links */
   .cross-link-bezier {
-    stroke: black;
+    stroke: var(--link-stroke);
     stroke-width: 2px;
     fill: none;
     stroke-dasharray: 4 6;
@@ -110,8 +112,8 @@ the Free Software Foundation, version 3.
     opacity: 1;
   }
   .collapse-indicator circle {
-    fill: #ff9800;
-    stroke: #e65100;
+    fill: var(--collapse-fill);
+    stroke: var(--collapse-stroke);
     stroke-width: 1.5px;
   }
   .collapse-indicator text {
@@ -133,8 +135,8 @@ the Free Software Foundation, version 3.
     opacity: 1;
   }
   .ancestor-collapse-indicator circle {
-    fill: #2196F3;
-    stroke: #0d47a1;
+    fill: var(--ancestor-collapse-fill);
+    stroke: var(--ancestor-collapse-stroke);
     stroke-width: 1.5px;
   }
   .ancestor-collapse-indicator text {
@@ -149,7 +151,7 @@ the Free Software Foundation, version 3.
   /* Tooltip styles for nodes */
   .tooltip {
     position: fixed;
-    background: #4169E1;
+    background: var(--tooltip-bg);
     color: white;
     padding: 10px 14px;
     border-radius: 6px;
@@ -196,7 +198,7 @@ the Free Software Foundation, version 3.
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.95);
-    background: #fff;
+    background: var(--modal-bg);
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     z-index: 9999;
@@ -218,7 +220,7 @@ the Free Software Foundation, version 3.
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    background: var(--modal-header-bg);
     color: white;
   }
   #shortcuts-modal .modal-header h2 {
@@ -247,6 +249,7 @@ the Free Software Foundation, version 3.
     padding: 20px;
     overflow-y: auto;
     max-height: calc(85vh - 60px);
+    color: var(--modal-body-color);
   }
   #shortcuts-modal .shortcuts-grid {
     display: grid;
@@ -264,19 +267,19 @@ the Free Software Foundation, version 3.
     }
   }
   #shortcuts-modal .shortcut-section {
-    background: #f8f9fa;
+    background: var(--shortcut-section-bg);
     border-radius: 8px;
     padding: 14px;
   }
   #shortcuts-modal .shortcut-section-title {
     font-size: 12px;
     font-weight: 700;
-    color: #2e7d32;
+    color: var(--shortcut-section-title-color);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
     padding-bottom: 6px;
-    border-bottom: 2px solid #e9ecef;
+    border-bottom: 2px solid var(--shortcut-section-title-border);
   }
   #shortcuts-modal .shortcut-item {
     display: flex;
@@ -285,11 +288,11 @@ the Free Software Foundation, version 3.
     padding: 6px 0;
   }
   #shortcuts-modal .shortcut-item:not(:last-child) {
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--shortcut-item-border);
   }
   #shortcuts-modal .shortcut-desc {
     font-size: 13px;
-    color: #495057;
+    color: var(--shortcut-desc-color);
   }
   #shortcuts-modal .shortcut-keys {
     display: flex;
@@ -302,23 +305,23 @@ the Free Software Foundation, version 3.
     font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: #495057;
-    background: #fff;
-    border: 1px solid #d1d5db;
+    color: var(--shortcut-kbd-color);
+    background: var(--shortcut-kbd-bg);
+    border: 1px solid var(--shortcut-kbd-border);
     border-radius: 5px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   }
   #shortcuts-modal .key-plus {
     font-size: 10px;
-    color: #9ca3af;
+    color: var(--key-plus-color);
   }
   #shortcuts-modal .modal-footer {
     padding: 12px 20px;
-    background: #f8f9fa;
-    border-top: 1px solid #e9ecef;
+    background: var(--modal-footer-bg);
+    border-top: 1px solid var(--modal-footer-border);
     text-align: center;
     font-size: 12px;
-    color: #6c757d;
+    color: var(--modal-footer-color);
   }
   
   /* Toolbar styling */
@@ -327,7 +330,7 @@ the Free Software Foundation, version 3.
     top: 0;
     left: 0;
     width: 100%;
-    background: #333;
+    background: var(--toolbar-bg);
     color: white;
     height: 40px;
     line-height: 40px;
@@ -336,6 +339,8 @@ the Free Software Foundation, version 3.
     align-items: center;
     z-index: 2000;
     box-sizing: border-box;
+    border-bottom: var(--toolbar-border-bottom);
+    box-shadow: var(--toolbar-box-shadow);
   }
   #toolbar button {
     margin-right: 10px;
@@ -344,15 +349,15 @@ the Free Software Foundation, version 3.
     font-weight: 500;
     letter-spacing: 0.3px;
     border: none;
-    border-left: 3px solid #3F51B5;
-    background: #f5f5f5;
-    color: #333;
+    border-left: 3px solid var(--toolbar-btn-border-left);
+    background: var(--toolbar-btn-bg);
+    color: var(--toolbar-btn-color);
     border-radius: 3px;
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   #toolbar button:hover {
-    background: #e8e8e8;
-    border-left-color: #1A237E;
+    background: var(--toolbar-btn-hover-bg);
+    border-left-color: var(--toolbar-btn-hover-border);
   }
   #toolbar button:disabled {
     opacity: 0.5;
@@ -371,7 +376,7 @@ the Free Software Foundation, version 3.
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 18px;
     font-weight: 600;
-    color: #fff;
+    color: var(--toolbar-filename-color);
     letter-spacing: 0.3px;
     cursor: pointer;
     padding: 4px 12px;
@@ -380,7 +385,7 @@ the Free Software Foundation, version 3.
     white-space: nowrap;
   }
   #toolbar .filename-display:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--toolbar-filename-hover-bg);
   }
   #toolbar .filename-input {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -404,10 +409,11 @@ the Free Software Foundation, version 3.
     margin: 0;
     margin-right: 10px;
     font-size: 13px;
+    color: var(--toolbar-p-color);
   }
   #toolbar .user-guide-link {
     margin-left: auto;
-    color: white;
+    color: var(--toolbar-guide-color);
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
@@ -416,7 +422,7 @@ the Free Software Foundation, version 3.
     transition: background-color 0.15s ease;
   }
   #toolbar .user-guide-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--toolbar-guide-hover-bg);
   }
 
   /* Sidebar styling - Node Edit */
@@ -427,8 +433,8 @@ the Free Software Foundation, version 3.
     width: 362px;
     height: calc(100vh - 40px);
     box-sizing: border-box;
-    background-color: #e8f5e9;
-    border-left: 2px solid #43a047;
+    background-color: var(--sidebar-bg);
+    border-left: 2px solid var(--sidebar-border-color);
     box-shadow: -2px 0 5px rgba(0,0,0,0.2);
     transition: right 0.3s ease;
     padding: 20px;
@@ -438,26 +444,26 @@ the Free Software Foundation, version 3.
   }
   #sidebar.visible { right: 0; }
 
-  #sidebar h2 { 
-    margin-top: 0; 
-    color: #2e7d32;
+  #sidebar h2 {
+    margin-top: 0;
+    color: var(--sidebar-h2-color);
     margin-bottom: 15px;
   }
-  #sidebar h3 { 
+  #sidebar h3 {
     margin: 0;
-    color: #333;
+    color: var(--sidebar-h3-color);
     font-size: 14px;
   }
   #sidebar .section {
-    background: #fff;
+    background: var(--sidebar-section-bg);
     padding: 12px;
     border-radius: 5px;
     margin-bottom: 12px;
-    border: 1px solid #a5d6a7;
+    border: 1px solid var(--sidebar-section-border);
   }
   #sidebar .section-title {
     font-weight: bold;
-    color: #2e7d32;
+    color: var(--sidebar-section-title-color);
     margin-bottom: 10px;
     font-size: 13px;
   }
@@ -465,18 +471,30 @@ the Free Software Foundation, version 3.
   #sidebar input[type="number"] {
     width: 100%;
     padding: 8px;
-    border: 1px solid #a5d6a7;
+    border: 1px solid var(--sidebar-input-border);
     border-radius: 4px;
     box-sizing: border-box;
     margin-bottom: 8px;
+    background: var(--sidebar-input-bg);
+    color: var(--sidebar-input-color);
   }
   #sidebar input[type="color"] {
     width: 60px;
     height: 35px;
     padding: 2px;
-    border: 1px solid #a5d6a7;
+    border: 1px solid var(--sidebar-input-border);
     border-radius: 4px;
     cursor: pointer;
+  }
+  #sidebar textarea {
+    border-color: var(--sidebar-input-border);
+    background: var(--sidebar-input-bg);
+    color: var(--sidebar-input-color);
+  }
+  #sidebar select {
+    border-color: var(--sidebar-input-border);
+    background: var(--sidebar-input-bg);
+    color: var(--sidebar-input-color);
   }
   #sidebar input[type="range"] {
     flex: 1;
@@ -487,7 +505,7 @@ the Free Software Foundation, version 3.
   }
   #sidebar label {
     display: block;
-    color: #333;
+    color: var(--sidebar-label-color);
     margin-bottom: 5px;
     font-size: 13px;
   }
@@ -502,8 +520,8 @@ the Free Software Foundation, version 3.
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f0f0f0;
-    border: 1px solid #d4d4d4;
+    background: var(--sidebar-gender-box-bg);
+    border: 1px solid var(--sidebar-gender-box-border);
     border-radius: 5px;
     padding: 5px 8px;
     margin-bottom: 10px;
@@ -526,40 +544,40 @@ the Free Software Foundation, version 3.
     font-size: 12px;
   }
   #sidebar button.primary {
-    background: #43a047;
-    color: white;
+    background: var(--sidebar-btn-primary-bg);
+    color: var(--sidebar-btn-primary-color);
   }
   #sidebar button.primary:hover {
-    background: #2e7d32;
+    background: var(--sidebar-btn-primary-hover);
   }
   #sidebar button.secondary {
-    background: #9e9e9e;
-    color: white;
+    background: var(--sidebar-btn-secondary-bg);
+    color: var(--sidebar-btn-secondary-color);
   }
   #sidebar button.secondary:hover {
-    background: #757575;
+    background: var(--sidebar-btn-secondary-hover);
   }
   #sidebar button.blue {
-    background: #2196F3;
+    background: var(--sidebar-btn-blue-bg);
     color: white;
   }
   #sidebar button.blue:hover {
-    background: #1976D2;
+    background: var(--sidebar-btn-blue-hover);
   }
   #sidebar button.danger {
-    background: #f44336;
+    background: var(--sidebar-btn-danger-bg);
     color: white;
   }
   #sidebar button.danger:hover {
-    background: #d32f2f;
+    background: var(--sidebar-btn-danger-hover);
   }
   #sidebar button.full-width {
     width: 100%;
   }
   #sidebar .close-btn {
-    background: rgba(46, 125, 50, 0.2);
+    background: var(--sidebar-close-btn-bg);
     border: none;
-    color: #2e7d32;
+    color: var(--sidebar-close-btn-color);
     width: 28px;
     height: 28px;
     min-width: 28px;
@@ -575,7 +593,7 @@ the Free Software Foundation, version 3.
     flex-shrink: 0;
   }
   #sidebar .close-btn:hover {
-    background: rgba(46, 125, 50, 0.3);
+    background: var(--sidebar-close-btn-hover);
   }
   #sidebar .header-row {
     display: flex;
@@ -603,6 +621,8 @@ the Free Software Foundation, version 3.
     font-size: 11px;
     margin: 0;
   }
+  .existing-links-box { margin-top: 8px; padding: 8px; background: var(--existing-links-box-bg); color: var(--existing-links-box-color); border-radius: 4px; }
+  #existing-links { color: var(--existing-links-color); }
 
   /* DNA Data Sidebar */
   #dna-sidebar {
@@ -612,8 +632,8 @@ the Free Software Foundation, version 3.
     width: 360px;
     height: calc(100vh - 40px);
     box-sizing: border-box;
-    background-color: #e8f4fd;
-    border-left: 2px solid #1976d2;
+    background-color: var(--dna-sidebar-bg);
+    border-left: 2px solid var(--dna-sidebar-border-color);
     box-shadow: -2px 0 5px rgba(0,0,0,0.2);
     transition: right 0.3s ease;
     padding: 20px;
@@ -621,15 +641,16 @@ the Free Software Foundation, version 3.
     z-index: 1001;
   }
   #dna-sidebar.visible { right: 0; }
-  #dna-sidebar h2 { 
-    margin-top: 0; 
+  #dna-sidebar h2 {
+    margin-top: 0;
     margin-bottom: 0;
-    color: #1565c0; 
+    color: var(--dna-h2-color);
   }
+  #dna-sidebar span { color: var(--dna-span-color); }
   #dna-sidebar .close-btn {
-    background: rgba(25, 118, 210, 0.2) !important;
+    background: var(--dna-close-btn-bg) !important;
     border: none;
-    color: #1565c0 !important;
+    color: var(--dna-close-btn-color) !important;
     width: 28px !important;
     height: 28px !important;
     min-width: 28px !important;
@@ -646,7 +667,7 @@ the Free Software Foundation, version 3.
     flex: none !important;
   }
   #dna-sidebar .close-btn:hover {
-    background: rgba(25, 118, 210, 0.3) !important;
+    background: var(--dna-close-btn-hover) !important;
   }
   #dna-sidebar .header-row {
     display: flex;
@@ -655,29 +676,31 @@ the Free Software Foundation, version 3.
     margin-bottom: 15px;
   }
   #dna-sidebar .comparison-names {
-    background: #fff;
+    background: var(--dna-comparison-names-bg);
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 15px;
-    border: 1px solid #90caf9;
+    border: 1px solid var(--dna-comparison-names-border);
   }
   #dna-sidebar .comparison-names span {
     font-weight: bold;
-    color: #1565c0;
+    color: var(--dna-comparison-names-span-color);
   }
   #dna-sidebar input[type="text"] {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
-    border: 1px solid #90caf9;
+    border: 1px solid var(--dna-input-border);
     border-radius: 4px;
     box-sizing: border-box;
+    background: var(--dna-input-bg);
+    color: var(--dna-input-color);
   }
   #dna-sidebar label {
     font-weight: bold;
     display: block;
     margin-top: 15px;
-    color: #333;
+    color: var(--dna-label-color);
   }
   #dna-sidebar .button-row {
     display: flex;
@@ -693,26 +716,26 @@ the Free Software Foundation, version 3.
     font-weight: bold;
   }
   #dna-sidebar #save-dna {
-    background: #1976d2;
+    background: var(--dna-save-btn-bg);
     color: white;
   }
   #dna-sidebar #save-dna:hover {
-    background: #1565c0;
+    background: var(--dna-save-btn-hover);
   }
   #dna-sidebar #clear-dna {
-    background: #f44336;
+    background: var(--dna-clear-btn-bg);
     color: white;
   }
   #dna-sidebar #clear-dna:hover {
-    background: #d32f2f;
+    background: var(--dna-clear-btn-hover);
   }
   
   /* Relationship auto-calculation styling */
   #calculated-relationship {
     margin-top: 5px;
     padding: 10px 12px;
-    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-    border: 1px solid #81c784;
+    background: var(--calc-rel-bg);
+    border: 1px solid var(--calc-rel-border);
     border-radius: 6px;
     display: none;
   }
@@ -721,7 +744,7 @@ the Free Software Foundation, version 3.
   }
   #calculated-relationship .calc-label {
     font-size: 11px;
-    color: #558b2f;
+    color: var(--calc-label-color);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
@@ -729,24 +752,24 @@ the Free Software Foundation, version 3.
   #calculated-relationship .calc-value {
     font-size: 18px;
     font-weight: bold;
-    color: #2e7d32;
+    color: var(--calc-value-color);
   }
   #calculated-relationship .calc-details {
     font-size: 11px;
-    color: #666;
+    color: var(--calc-details-color);
     margin-top: 4px;
   }
   
   #dna-sidebar .style-section {
-    background: #fff;
+    background: var(--dna-style-section-bg);
     padding: 12px;
     border-radius: 5px;
     margin-top: 15px;
-    border: 1px solid #90caf9;
+    border: 1px solid var(--dna-style-section-border);
   }
   #dna-sidebar .style-section-title {
     font-weight: bold;
-    color: #1565c0;
+    color: var(--dna-style-section-title);
     margin-bottom: 10px;
     font-size: 13px;
   }
@@ -771,9 +794,14 @@ the Free Software Foundation, version 3.
     width: 40px;
     height: 28px;
     padding: 2px;
-    border: 1px solid #90caf9;
+    border: 1px solid var(--dna-style-row-border);
     border-radius: 4px;
     cursor: pointer;
+  }
+  #dna-sidebar .style-row input[type="number"] {
+    border-color: var(--dna-style-row-border);
+    background: var(--dna-input-bg);
+    color: var(--dna-input-color);
   }
   #dna-sidebar .checkbox-label {
     display: flex;
@@ -781,6 +809,7 @@ the Free Software Foundation, version 3.
     font-weight: normal;
     font-size: 12px;
     cursor: pointer;
+    color: var(--dna-checkbox-label-color);
   }
   #dna-sidebar .checkbox-label input {
     margin-right: 6px;
@@ -790,16 +819,16 @@ the Free Software Foundation, version 3.
   .cm-legend {
     margin-top: 10px;
     padding: 10px;
-    background: #f8fafc;
+    background: var(--cm-legend-bg);
     border-radius: 6px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--cm-legend-border);
   }
   .cm-legend-item {
     display: flex;
     align-items: center;
     padding: 5px 0;
     font-size: 12px;
-    color: #444;
+    color: var(--cm-legend-item-color);
   }
   .cm-legend-item:not(:last-child) {
     border-bottom: 1px solid #e8e8e8;
@@ -814,11 +843,11 @@ the Free Software Foundation, version 3.
   .cm-range {
     flex: 1;
     font-weight: 500;
-    color: #333;
+    color: var(--cm-range-color);
   }
   .cm-color-name {
     font-size: 11px;
-    color: #666;
+    color: var(--cm-color-name-color);
     text-align: right;
     min-width: 45px;
   }
@@ -829,7 +858,7 @@ the Free Software Foundation, version 3.
     top: 50px;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    background: #fff;
+    background: var(--tools-panel-bg);
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     padding: 0;
@@ -874,7 +903,7 @@ the Free Software Foundation, version 3.
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.4);
+    background: var(--tools-overlay-bg);
     z-index: 2999;
     opacity: 0;
     visibility: hidden;
@@ -890,9 +919,9 @@ the Free Software Foundation, version 3.
     top: 50px;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
-    background: #fff;
+    background: var(--adv-tools-bg);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    box-shadow: var(--adv-tools-shadow);
     padding: 0;
     z-index: 3000;
     opacity: 0;
@@ -903,12 +932,12 @@ the Free Software Foundation, version 3.
     max-height: calc(100vh - 60px);
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #ccc transparent;
+    scrollbar-color: var(--adv-tools-scrollbar) transparent;
   }
   #advanced-tools-panel::-webkit-scrollbar { width: 8px; }
   #advanced-tools-panel::-webkit-scrollbar-track { background: transparent; }
-  #advanced-tools-panel::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-  #advanced-tools-panel::-webkit-scrollbar-thumb:hover { background: #999; }
+  #advanced-tools-panel::-webkit-scrollbar-thumb { background: var(--adv-tools-scrollbar); border-radius: 4px; }
+  #advanced-tools-panel::-webkit-scrollbar-thumb:hover { background: var(--adv-tools-scrollbar-hover); }
   #advanced-tools-panel.visible {
     opacity: 1;
     visibility: visible;
@@ -955,7 +984,7 @@ the Free Software Foundation, version 3.
     padding: 16px;
   }
   #advanced-tools-panel .tools-section {
-    background: #f8f9fa;
+    background: var(--adv-tools-section-bg);
     border-radius: 8px;
     padding: 14px;
     margin-bottom: 12px;
@@ -966,44 +995,46 @@ the Free Software Foundation, version 3.
   #advanced-tools-panel .tools-section-title {
     font-size: 12px;
     font-weight: 700;
-    color: #6A1B9A;
+    color: var(--adv-tools-section-title);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
   }
   #advanced-tools-panel .advanced-placeholder {
-    color: #888;
+    color: var(--adv-placeholder-color);
     font-size: 13px;
     text-align: center;
     padding: 30px 10px;
   }
   #adv-fullscreen-btn {
-    background: #f5f5f5;
-    color: #333;
-    border: 1px solid #ccc;
+    background: var(--adv-fullscreen-btn-bg);
+    color: var(--adv-fullscreen-btn-color);
+    border: 1px solid var(--adv-fullscreen-btn-border);
   }
   .adv-offset-btn {
     padding: 2px 7px;
     font-size: 14px;
     cursor: pointer;
-    border: 1px solid #ccc;
+    border: 1px solid var(--adv-offset-btn-border);
     border-radius: 4px;
-    background: #f5f5f5;
-    color: #333;
+    background: var(--adv-offset-btn-bg);
+    color: var(--adv-offset-btn-color);
     transition: background 0.15s ease;
   }
-  .adv-offset-btn:hover { background: #e0e0e0; }
+  .adv-offset-btn:hover { background: var(--adv-offset-btn-hover); }
+  #adv-fullscreen-btn:hover { background: var(--adv-fullscreen-btn-hover); }
   .adv-offset-val {
     min-width: 40px;
     text-align: center;
     font-size: 12px;
+    color: var(--adv-offset-val-color);
   }
   #advanced-tools-panel .back-btn {
     display: block;
     width: 100%;
     padding: 10px;
     margin-top: 12px;
-    background: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%);
+    background: var(--adv-back-btn-bg);
     color: white;
     border: none;
     border-radius: 6px;
@@ -1024,22 +1055,24 @@ the Free Software Foundation, version 3.
   #advanced-tools-panel .style-row label.style-label {
     font-size: 12px;
     font-weight: 600;
-    color: #555;
+    color: var(--adv-style-label-color);
     min-width: 80px;
   }
   #advanced-tools-panel .style-row input[type="color"] {
     width: 40px;
     height: 28px;
     padding: 1px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--adv-style-color-border);
     border-radius: 4px;
     cursor: pointer;
   }
   #advanced-tools-panel .style-row input[type="number"] {
     padding: 4px 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--adv-style-num-border);
     border-radius: 4px;
     font-size: 12px;
+    background: var(--adv-style-num-bg);
+    color: var(--adv-style-num-color);
   }
   #advanced-tools-panel .adv-checkboxes {
     display: grid;
@@ -1049,7 +1082,7 @@ the Free Software Foundation, version 3.
   }
   #advanced-tools-panel .adv-checkboxes label {
     font-size: 12px;
-    color: #444;
+    color: var(--adv-checkboxes-label-color);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1060,11 +1093,16 @@ the Free Software Foundation, version 3.
     cursor: pointer;
   }
   #advanced-tools-panel .adv-divider {
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--adv-divider-color);
     margin: 12px 0;
   }
+  #advanced-tools-panel select {
+    background: var(--adv-select-bg);
+    color: var(--adv-select-color);
+    border-color: var(--adv-select-border);
+  }
   #tools-panel .tools-header {
-    background: linear-gradient(135deg, #3F51B5 0%, #1A237E 50%, #0D1B4D 100%);
+    background: var(--tools-header-bg);
     box-shadow: inset 0 -2px 10px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.1);
     color: white;
     padding: 12px 20px;
@@ -1100,7 +1138,7 @@ the Free Software Foundation, version 3.
     padding: 16px;
   }
   #tools-panel .tools-section {
-    background: #f8f9fa;
+    background: var(--tools-section-bg);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 12px;
@@ -1110,7 +1148,7 @@ the Free Software Foundation, version 3.
   }
   #tools-panel .tools-section-title {
     font-weight: 600;
-    color: #333;
+    color: var(--tools-section-title-color);
     margin-bottom: 10px;
     font-size: 13px;
   }
@@ -1126,28 +1164,37 @@ the Free Software Foundation, version 3.
   #tools-panel .tools-row label {
     min-width: 90px;
     font-size: 12px;
-    color: #555;
+    color: var(--tools-row-label-color);
   }
+  #tools-panel .tools-row span { color: var(--tools-row-span-color); }
   #tools-panel .tools-row input[type="range"] {
     flex: 1;
   }
   #tools-panel .tools-row input[type="number"] {
     width: 55px;
     padding: 5px 6px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--tools-row-input-border);
     border-radius: 4px;
     font-size: 12px;
+    background: var(--tools-row-input-bg);
+    color: var(--tools-row-input-color);
+  }
+  #tools-panel .tools-row select {
+    background: var(--tools-row-select-bg);
+    color: var(--tools-row-select-color);
+    border-color: var(--tools-row-select-border);
   }
   #tools-panel .tools-row button {
     padding: 5px 10px;
-    border: 1px solid #ddd;
-    background: #fff;
+    border: 1px solid var(--tools-row-btn-border);
+    background: var(--tools-row-btn-bg);
+    color: var(--tools-row-btn-color);
     border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
   }
   #tools-panel .tools-row button:hover {
-    background: #f0f0f0;
+    background: var(--tools-row-btn-hover);
   }
   #tools-panel .checkbox-row {
     display: flex;
@@ -1163,20 +1210,21 @@ the Free Software Foundation, version 3.
     cursor: crosshair !important;
   }
   .shade-preview {
-    fill: rgba(0, 0, 0, 0.08);
-    stroke: rgba(0, 0, 0, 0.18);
+    fill: var(--shade-preview-fill);
+    stroke: var(--shade-preview-stroke);
     stroke-width: 1;
     stroke-dasharray: 4, 4;
     pointer-events: none;
   }
   .shaded-region {
-    fill: rgba(0, 0, 0, 0.064);
+    fill: var(--shaded-region-fill);
     pointer-events: none;
   }
   #tools-panel .shade-btn {
     padding: 5px 10px;
-    border: 2px solid #6c757d;
-    background: #fff;
+    border: 2px solid var(--tools-shade-btn-border);
+    background: var(--tools-shade-btn-bg);
+    color: var(--tools-shade-btn-color);
     border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
@@ -1184,18 +1232,18 @@ the Free Software Foundation, version 3.
     transition: all 0.15s ease;
   }
   #tools-panel .shade-btn:hover {
-    background: #f0f0f0;
+    background: var(--tools-shade-btn-hover);
   }
   #tools-panel .shade-btn.active {
-    background: #6c757d;
+    background: var(--tools-shade-active-bg);
     color: white;
-    border-color: #6c757d;
+    border-color: var(--tools-shade-active-border);
   }
   #tools-panel .shade-btn-clear {
     padding: 5px 10px;
-    border: 1px solid #dc3545;
-    background: #fff;
-    color: #dc3545;
+    border: 1px solid var(--tools-shade-clear-border);
+    background: var(--tools-shade-clear-bg);
+    color: var(--tools-shade-clear-color);
     border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
@@ -1203,7 +1251,7 @@ the Free Software Foundation, version 3.
     transition: all 0.15s ease;
   }
   #tools-panel .shade-btn-clear:hover {
-    background: #dc3545;
+    background: var(--tools-shade-clear-hover);
     color: white;
   }
   #tools-panel .checkbox-row input[type="checkbox"] {
@@ -1212,7 +1260,7 @@ the Free Software Foundation, version 3.
   }
   #tools-panel .checkbox-row label {
     font-size: 13px;
-    color: #555;
+    color: var(--tools-checkbox-row-label-color);
     cursor: pointer;
     min-width: auto;
   }
@@ -1227,9 +1275,10 @@ the Free Software Foundation, version 3.
     align-items: center;
     font-size: 12px;
     padding: 4px 8px;
-    background: #fff;
+    background: var(--tools-cm-item-bg);
+    color: var(--tools-cm-item-color);
     border-radius: 4px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--tools-cm-item-border);
   }
   #tools-panel .cm-legend-compact .cm-color-dot {
     width: 12px;
@@ -1248,12 +1297,12 @@ the Free Software Foundation, version 3.
   #tools-panel .style-row label.style-label {
     min-width: 55px;
     font-size: 12px;
-    color: #555;
+    color: var(--tools-style-row-label-color);
   }
   #tools-panel .style-row input[type="color"] {
     width: 48px;
     height: 28px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--tools-style-row-input-border);
     border-radius: 4px;
     cursor: pointer;
     padding: 1px;
@@ -1261,23 +1310,26 @@ the Free Software Foundation, version 3.
   #tools-panel .style-row input[type="number"] {
     width: 40px;
     padding: 5px 4px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--tools-style-row-input-border);
     border-radius: 4px;
     font-size: 12px;
+    background: var(--tools-style-row-input-bg);
+    color: var(--tools-style-row-input-color);
   }
   #tools-panel .style-row button {
     padding: 5px 10px;
-    border: 1px solid #ddd;
-    background: #fff;
+    border: 1px solid var(--tools-style-row-btn-border);
+    background: var(--tools-style-row-btn-bg);
+    color: var(--tools-style-row-btn-color);
     border-radius: 4px;
     cursor: pointer;
     font-size: 11px;
   }
   #tools-panel .style-row button:hover {
-    background: #f0f0f0;
+    background: var(--tools-style-row-btn-hover);
   }
   #tools-panel .btn-secondary {
-    background: #6c757d;
+    background: var(--tools-btn-secondary-bg);
     color: white;
     border: none;
     padding: 6px 12px;
@@ -1287,12 +1339,12 @@ the Free Software Foundation, version 3.
     font-size: 12px;
   }
   #tools-panel .btn-secondary:hover {
-    background: #5a6268;
+    background: var(--tools-btn-secondary-hover);
   }
   #tools-panel .btn-outline {
-    background: #fff;
-    color: #333;
-    border: 2px solid #667eea;
+    background: var(--tools-btn-outline-bg);
+    color: var(--tools-btn-outline-color);
+    border: 2px solid var(--tools-btn-outline-border);
     padding: 5px 12px;
     border-radius: 5px;
     cursor: pointer;
@@ -1300,12 +1352,12 @@ the Free Software Foundation, version 3.
     font-size: 12px;
   }
   #tools-panel .btn-outline:hover {
-    background: #f0f0ff;
+    background: var(--tools-btn-outline-hover);
   }
   #tools-panel .apply-btn,
   #tools-panel .tools-row .apply-btn,
   #tools-panel .style-row .apply-btn {
-    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    background: var(--tools-apply-bg);
     color: white;
     border: none;
     padding: 6px 14px;
@@ -1313,13 +1365,13 @@ the Free Software Foundation, version 3.
     cursor: pointer;
     font-weight: 600;
     font-size: 11px;
-    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.4), 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: var(--tools-apply-shadow);
     transition: all 0.15s ease;
   }
   #tools-panel .apply-btn:hover,
   #tools-panel .tools-row .apply-btn:hover,
   #tools-panel .style-row .apply-btn:hover {
-    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    background: var(--tools-apply-hover);
     box-shadow: 0 4px 8px rgba(16, 185, 129, 0.5), 0 2px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25);
     transform: translateY(-1px);
   }
@@ -1338,7 +1390,7 @@ the Free Software Foundation, version 3.
     gap: 10px;
   }
   #tools-panel .action-label {
-    background: #9ca3af;
+    background: var(--tools-action-label-bg);
     color: white;
     padding: 6px 0;
     border-radius: 5px;
@@ -1371,246 +1423,460 @@ the Free Software Foundation, version 3.
     line-height: 1;
   }
 
-  /* --- Light Mode --- */
-  body.theme-light svg { background: #ffffff; }
-  body.theme-light #toolbar { background: #fff; border-bottom: 1px solid #e2e5ea; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  body.theme-light #toolbar button { background: #f0f2f5; color: #333; border-left: 3px solid #b0b8c4; }
-  body.theme-light #toolbar button:hover { background: #e4e7ec; border-left-color: #5b7a9d; }
-  body.theme-light #toolbar .filename-display { color: #2c3e50; }
-  body.theme-light #toolbar .filename-display:hover { background-color: rgba(0,0,0,0.04); }
-  body.theme-light #toolbar p { color: #6b7b8d; }
-  body.theme-light #toolbar .user-guide-link { color: #5b7a9d; }
-  body.theme-light #toolbar .user-guide-link:hover { background-color: rgba(91,122,157,0.08); }
-  body.theme-light .node rect { stroke: black; }
-  body.theme-light .node text { fill: #000000; }
-  body.theme-light .link { stroke: black; }
-  body.theme-light .spouse-link { stroke: black; }
-  body.theme-light .cross-link-bezier { stroke: black; }
-  /* Sidebar */
-  body.theme-light #sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
-  body.theme-light #sidebar h2 { color: #2c3e50; }
-  body.theme-light #sidebar h3 { color: #4a5568; }
-  body.theme-light #sidebar .section { background: #fff; border: 1px solid #e2e5ea !important; }
-  body.theme-light #sidebar .section-title { color: #5b7a9d; }
-  body.theme-light #sidebar label { color: #4a5568; }
-  body.theme-light #sidebar input[type="text"],
-  body.theme-light #sidebar input[type="number"] { border-color: #d1d8e0 !important; }
-  body.theme-light #sidebar input[type="color"] { border-color: #d1d8e0 !important; }
-  body.theme-light #sidebar textarea { border-color: #d1d8e0 !important; }
-  body.theme-light #sidebar select { border-color: #d1d8e0 !important; }
-  body.theme-light #sidebar .close-btn { background: rgba(91,122,157,0.12) !important; color: #5b7a9d !important; }
-  body.theme-light #sidebar .close-btn:hover { background: rgba(91,122,157,0.2) !important; }
-  body.theme-light #sidebar button.primary { background: #5b7a9d !important; color: white; }
-  body.theme-light #sidebar button.primary:hover { background: #4a6a8a !important; }
-  body.theme-light #sidebar button.secondary { background: #e2e5ea; color: #4a5568; }
-  body.theme-light #sidebar button.secondary:hover { background: #d1d8e0; }
-  body.theme-light #sidebar button.blue { background: #5b7a9d !important; color: white; }
-  body.theme-light #sidebar button.blue:hover { background: #4a6a8a !important; }
-  body.theme-light #sidebar button.danger { background: #c0616b !important; color: white; }
-  body.theme-light #sidebar button.danger:hover { background: #a8505a !important; }
-  body.theme-light #sidebar .gender-box { background: #eef1f5; border-color: #d1d8e0; }
-  /* DNA Sidebar */
-  body.theme-light #dna-sidebar { background-color: #f7f8fa; border-left: 2px solid #e2e5ea; }
-  body.theme-light #dna-sidebar h2 { color: #2c3e50; }
-  body.theme-light #dna-sidebar .close-btn { background: rgba(91,122,157,0.12) !important; color: #5b7a9d !important; }
-  body.theme-light #dna-sidebar .close-btn:hover { background: rgba(91,122,157,0.2) !important; }
-  body.theme-light #dna-sidebar .comparison-names { background: #fff; border-color: #e2e5ea !important; }
-  body.theme-light #dna-sidebar .comparison-names span { color: #2c3e50; }
-  body.theme-light #dna-sidebar input[type="text"] { border-color: #d1d8e0 !important; }
-  body.theme-light #dna-sidebar label { color: #4a5568; }
-  body.theme-light #dna-sidebar .style-section { background: #fff; border-color: #e2e5ea !important; }
-  body.theme-light #dna-sidebar .style-section-title { color: #5b7a9d; }
-  body.theme-light #dna-sidebar #save-dna { background: #5b7a9d !important; }
-  body.theme-light #dna-sidebar #save-dna:hover { background: #4a6a8a !important; }
-  body.theme-light #dna-sidebar #clear-dna { background: #c0616b !important; }
-  body.theme-light #dna-sidebar #clear-dna:hover { background: #a8505a !important; }
-  body.theme-light #dna-sidebar .style-row input[type="color"] { border-color: #d1d8e0; }
-  body.theme-light #dna-sidebar .style-row input[type="number"] { border-color: #d1d8e0; }
-  body.theme-light #dna-sidebar .checkbox-label { color: #4a5568; }
-  /* Tools Panel */
-  body.theme-light #tools-panel .tools-header { background: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%); }
-  body.theme-light #tools-panel .tools-section { background: #f3f5f7; }
-  body.theme-light #tools-panel .tools-section-title { color: #2c3e50; }
-  body.theme-light #tools-panel .tools-row label { color: #4a5568; }
-  body.theme-light #tools-panel .apply-btn,
-  body.theme-light #tools-panel .tools-row .apply-btn,
-  body.theme-light #tools-panel .style-row .apply-btn {
-    background: linear-gradient(180deg, #5b9d7a 0%, #4a8a6a 100%) !important;
-    box-shadow: 0 2px 4px rgba(74,138,106,0.3), 0 1px 2px rgba(0,0,0,0.08) !important;
+  :root {
+    --svg-bg: transparent;
+    --link-stroke: black;
+    --node-rect-stroke: black;
+    --node-text-fill: #000000;
+    --intersection-point-fill: #ddd;
+    --intersection-point-stroke: #999;
+    --intersection-point-hover-fill: #ffeb3b;
+    --intersection-point-hover-stroke: #f57c00;
+    --intersection-cm-fill: #0d47a1;
+    --intersection-rel-fill: #000;
+    --collapse-fill: #ff9800;
+    --collapse-stroke: #e65100;
+    --ancestor-collapse-fill: #2196F3;
+    --ancestor-collapse-stroke: #0d47a1;
+    --shade-preview-fill: rgba(0,0,0,0.08);
+    --shade-preview-stroke: rgba(0,0,0,0.18);
+    --shaded-region-fill: rgba(0,0,0,0.064);
+    --tooltip-bg: #4169E1;
+    --toolbar-bg: #333;
+    --toolbar-border-bottom: none;
+    --toolbar-box-shadow: none;
+    --toolbar-btn-bg: #f5f5f5;
+    --toolbar-btn-color: #333;
+    --toolbar-btn-border-left: #3F51B5;
+    --toolbar-btn-hover-bg: #e8e8e8;
+    --toolbar-btn-hover-border: #1A237E;
+    --toolbar-filename-color: #fff;
+    --toolbar-filename-hover-bg: rgba(255,255,255,0.1);
+    --toolbar-p-color: white;
+    --toolbar-guide-color: white;
+    --toolbar-guide-hover-bg: rgba(255,255,255,0.1);
+    --modal-bg: #fff;
+    --modal-header-bg: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    --modal-body-color: inherit;
+    --shortcut-section-bg: #f8f9fa;
+    --shortcut-section-title-color: #2e7d32;
+    --shortcut-section-title-border: #e9ecef;
+    --shortcut-desc-color: #495057;
+    --shortcut-item-border: #e9ecef;
+    --shortcut-kbd-color: #495057;
+    --shortcut-kbd-bg: #fff;
+    --shortcut-kbd-border: #d1d5db;
+    --key-plus-color: #9ca3af;
+    --modal-footer-bg: #f8f9fa;
+    --modal-footer-border: #e9ecef;
+    --modal-footer-color: #6c757d;
+    --sidebar-bg: #e8f5e9;
+    --sidebar-border-color: #43a047;
+    --sidebar-h2-color: #2e7d32;
+    --sidebar-h3-color: #333;
+    --sidebar-section-bg: #fff;
+    --sidebar-section-border: #a5d6a7;
+    --sidebar-section-title-color: #2e7d32;
+    --sidebar-input-border: #a5d6a7;
+    --sidebar-input-bg: #fff;
+    --sidebar-input-color: #333;
+    --sidebar-label-color: #333;
+    --sidebar-gender-box-bg: #f0f0f0;
+    --sidebar-gender-box-border: #d4d4d4;
+    --sidebar-btn-primary-bg: #43a047;
+    --sidebar-btn-primary-color: white;
+    --sidebar-btn-primary-hover: #2e7d32;
+    --sidebar-btn-secondary-bg: #9e9e9e;
+    --sidebar-btn-secondary-color: white;
+    --sidebar-btn-secondary-hover: #757575;
+    --sidebar-btn-blue-bg: #2196F3;
+    --sidebar-btn-blue-hover: #1976D2;
+    --sidebar-btn-danger-bg: #f44336;
+    --sidebar-btn-danger-hover: #d32f2f;
+    --sidebar-close-btn-bg: rgba(46,125,50,0.2);
+    --sidebar-close-btn-color: #2e7d32;
+    --sidebar-close-btn-hover: rgba(46,125,50,0.3);
+    --existing-links-box-bg: #f5f5f5;
+    --existing-links-box-color: inherit;
+    --existing-links-color: inherit;
+    --dna-sidebar-bg: #e8f4fd;
+    --dna-sidebar-border-color: #1976d2;
+    --dna-h2-color: #1565c0;
+    --dna-close-btn-bg: rgba(25,118,210,0.2);
+    --dna-close-btn-color: #1565c0;
+    --dna-close-btn-hover: rgba(25,118,210,0.3);
+    --dna-comparison-names-bg: #fff;
+    --dna-comparison-names-border: #90caf9;
+    --dna-comparison-names-span-color: #1565c0;
+    --dna-input-border: #90caf9;
+    --dna-input-bg: #fff;
+    --dna-input-color: #333;
+    --dna-label-color: #333;
+    --dna-save-btn-bg: #1976d2;
+    --dna-save-btn-hover: #1565c0;
+    --dna-clear-btn-bg: #f44336;
+    --dna-clear-btn-hover: #d32f2f;
+    --dna-style-section-bg: #fff;
+    --dna-style-section-border: #90caf9;
+    --dna-style-section-title: #1565c0;
+    --dna-style-row-border: #90caf9;
+    --dna-checkbox-label-color: #333;
+    --dna-span-color: inherit;
+    --calc-rel-bg: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    --calc-rel-border: #81c784;
+    --calc-label-color: #558b2f;
+    --calc-value-color: #2e7d32;
+    --calc-details-color: #666;
+    --cm-legend-bg: #f8fafc;
+    --cm-legend-border: #e2e8f0;
+    --cm-legend-item-color: #444;
+    --cm-range-color: #333;
+    --cm-color-name-color: #666;
+    --tools-panel-bg: #fff;
+    --tools-overlay-bg: rgba(0,0,0,0.4);
+    --tools-header-bg: linear-gradient(135deg, #3F51B5 0%, #1A237E 50%, #0D1B4D 100%);
+    --tools-section-bg: #f8f9fa;
+    --tools-section-title-color: #333;
+    --tools-row-label-color: #555;
+    --tools-row-span-color: inherit;
+    --tools-row-input-border: #ddd;
+    --tools-row-input-bg: #fff;
+    --tools-row-input-color: #333;
+    --tools-row-select-bg: #fff;
+    --tools-row-select-color: #333;
+    --tools-row-select-border: #ddd;
+    --tools-row-btn-bg: #fff;
+    --tools-row-btn-color: inherit;
+    --tools-row-btn-border: #ddd;
+    --tools-row-btn-hover: #f0f0f0;
+    --tools-checkbox-row-label-color: #555;
+    --tools-action-label-bg: #9ca3af;
+    --tools-apply-bg: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    --tools-apply-hover: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    --tools-apply-shadow: 0 2px 4px rgba(16,185,129,0.4), 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+    --tools-shade-btn-bg: #fff;
+    --tools-shade-btn-color: inherit;
+    --tools-shade-btn-border: #6c757d;
+    --tools-shade-btn-hover: #f0f0f0;
+    --tools-shade-active-bg: #6c757d;
+    --tools-shade-active-border: #6c757d;
+    --tools-shade-clear-bg: #fff;
+    --tools-shade-clear-color: #dc3545;
+    --tools-shade-clear-border: #dc3545;
+    --tools-shade-clear-hover: #dc3545;
+    --tools-cm-item-bg: #fff;
+    --tools-cm-item-border: #e0e0e0;
+    --tools-cm-item-color: inherit;
+    --tools-style-row-label-color: #555;
+    --tools-style-row-input-border: #ddd;
+    --tools-style-row-input-bg: #fff;
+    --tools-style-row-input-color: #333;
+    --tools-style-row-btn-bg: #fff;
+    --tools-style-row-btn-color: inherit;
+    --tools-style-row-btn-border: #ddd;
+    --tools-style-row-btn-hover: #f0f0f0;
+    --tools-btn-secondary-bg: #6c757d;
+    --tools-btn-secondary-hover: #5a6268;
+    --tools-btn-outline-bg: #fff;
+    --tools-btn-outline-color: #333;
+    --tools-btn-outline-border: #667eea;
+    --tools-btn-outline-hover: #f0f0ff;
+    --adv-tools-bg: #fff;
+    --adv-tools-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    --adv-tools-scrollbar: #ccc;
+    --adv-tools-scrollbar-hover: #999;
+    --adv-tools-section-bg: #f8f9fa;
+    --adv-tools-section-title: #6A1B9A;
+    --adv-placeholder-color: #888;
+    --adv-style-label-color: #555;
+    --adv-style-color-border: #ccc;
+    --adv-style-num-bg: #fff;
+    --adv-style-num-color: #333;
+    --adv-style-num-border: #ccc;
+    --adv-checkboxes-label-color: #444;
+    --adv-divider-color: #ddd;
+    --adv-select-bg: #fff;
+    --adv-select-color: #333;
+    --adv-select-border: #ccc;
+    --adv-back-btn-bg: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%);
+    --adv-fullscreen-btn-bg: #f5f5f5;
+    --adv-fullscreen-btn-color: #333;
+    --adv-fullscreen-btn-border: #ccc;
+    --adv-offset-btn-bg: #f5f5f5;
+    --adv-offset-btn-color: #333;
+    --adv-offset-btn-border: #ccc;
+    --adv-offset-btn-hover: #e0e0e0;
+    --adv-fullscreen-btn-hover: #e8e8e8;
+    --adv-offset-val-color: inherit;
   }
-  body.theme-light #tools-panel .apply-btn:hover,
-  body.theme-light #tools-panel .tools-row .apply-btn:hover,
-  body.theme-light #tools-panel .style-row .apply-btn:hover {
-    background: linear-gradient(180deg, #6aad89 0%, #5b9d7a 100%) !important;
-  }
-  body.theme-light #tools-panel .action-label { background: #8a9bae; }
-  body.theme-light .tooltip { background: #4a6a8a; }
-  body.theme-light #calculated-relationship { background: linear-gradient(135deg, #f3f7f5 0%, #e8f0ec 100%); border-color: #b0c8bc !important; }
-  body.theme-light #calculated-relationship .calc-label { color: #5b7a9d; }
-  body.theme-light #calculated-relationship .calc-value { color: #2c3e50; }
-  /* Shortcuts modal */
-  body.theme-light #shortcuts-modal .modal-header { background: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%); }
-  body.theme-light #shortcuts-modal .shortcut-section { background: #f3f5f7; }
-  body.theme-light #shortcuts-modal .shortcut-section-title { color: #5b7a9d; border-bottom-color: #e2e5ea; }
-  body.theme-light .intersection-label.cm-value { fill: #2c3e50; }
-  /* Collapse indicators */
-  body.theme-light .collapse-indicator circle { fill: #d4956a; stroke: #b87a50; }
-  body.theme-light .ancestor-collapse-indicator circle { fill: #5b7a9d; stroke: #3d5a7a; }
-  /* Intersection points */
-  body.theme-light .intersection-point { fill: #e8ecf0; stroke: #b0b8c4; }
-  body.theme-light .intersection-point:hover { fill: #d1d8e0; stroke: #5b7a9d; }
 
-  /* --- Dark Mode --- */
-  body.theme-dark svg { background: #1a1a1a; }
-  body.theme-dark #toolbar { background: #222222; border-bottom: 1px solid #333333; }
-  body.theme-dark #toolbar button { background: #1a1a1a; color: #e0e0e0; border-left: 3px solid #333333; }
-  body.theme-dark #toolbar button:hover { background: #333333; border-left-color: #555555; }
-  body.theme-dark #toolbar .filename-display { color: #e0e0e0; }
-  body.theme-dark #toolbar .filename-display:hover { background-color: rgba(255,255,255,0.08); }
-  body.theme-dark #toolbar p { color: #aaa; }
-  body.theme-dark #toolbar .user-guide-link { color: #ccc; }
-  body.theme-dark #toolbar .user-guide-link:hover { background-color: rgba(255,255,255,0.08); }
-  body.theme-dark .node rect { stroke: #888888; }
-  body.theme-dark .node text { fill: #e0e0e0; }
-  body.theme-dark .link { stroke: #888888; }
-  body.theme-dark .spouse-link { stroke: #888888; }
-  body.theme-dark .cross-link-bezier { stroke: #888888; }
-  body.theme-dark .cross-link { stroke: #888888; }
-  /* Sidebar */
-  body.theme-dark #sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
-  body.theme-dark #sidebar h2 { color: #e0e0e0; }
-  body.theme-dark #sidebar h3 { color: #ccc; }
-  body.theme-dark #sidebar .section { background: #222222; border: 1px solid #333333 !important; }
-  body.theme-dark #sidebar .section-title { color: #aaaaaa; }
-  body.theme-dark #sidebar label { color: #ccc; }
-  body.theme-dark #sidebar input[type="text"],
-  body.theme-dark #sidebar input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
-  body.theme-dark #sidebar input[type="color"] { border-color: #333333 !important; }
-  body.theme-dark #sidebar textarea { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
-  body.theme-dark #sidebar select { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
-  body.theme-dark #sidebar .close-btn { background: rgba(138,180,248,0.15) !important; color: #aaaaaa !important; }
-  body.theme-dark #sidebar .close-btn:hover { background: rgba(138,180,248,0.25) !important; }
-  body.theme-dark #sidebar button.primary { background: #333333 !important; color: #e0e0e0; }
-  body.theme-dark #sidebar button.primary:hover { background: #444444 !important; }
-  body.theme-dark #sidebar button.secondary { background: #2a2a2a; color: #ccc; }
-  body.theme-dark #sidebar button.secondary:hover { background: #3a3a3a; }
-  body.theme-dark #sidebar button.blue { background: #333333 !important; color: #e0e0e0; }
-  body.theme-dark #sidebar button.blue:hover { background: #444444 !important; }
-  body.theme-dark #sidebar button.danger { background: #5a2a2a !important; color: #e0e0e0; }
-  body.theme-dark #sidebar button.danger:hover { background: #6b3333 !important; }
-  .existing-links-box { margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; }
-  body.theme-dark #sidebar .existing-links-box { background: #2a2a2a !important; color: #ccc; }
-  body.theme-dark #sidebar .gender-box { background: #2a2a2a; border-color: #404040; }
-  body.theme-dark #sidebar .gender-box label { color: #ccc; }
-  body.theme-dark #existing-links { color: #ccc; }
-  /* DNA Sidebar */
-  body.theme-dark #dna-sidebar { background-color: #1a1a1a; border-left: 2px solid #333333; }
-  body.theme-dark #dna-sidebar h2 { color: #aaaaaa; }
-  body.theme-dark #dna-sidebar .close-btn { background: rgba(138,180,248,0.15) !important; color: #aaaaaa !important; }
-  body.theme-dark #dna-sidebar .close-btn:hover { background: rgba(138,180,248,0.25) !important; }
-  body.theme-dark #dna-sidebar .comparison-names { background: #222222; border-color: #333333 !important; color: #e0e0e0; }
-  body.theme-dark #dna-sidebar .comparison-names span { color: #ffffff; }
-  body.theme-dark #dna-sidebar input[type="text"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333 !important; }
-  body.theme-dark #dna-sidebar label { color: #ccc; }
-  body.theme-dark #dna-sidebar .style-section { background: #222222; border-color: #333333 !important; }
-  body.theme-dark #dna-sidebar .style-section-title { color: #aaaaaa; }
-  body.theme-dark #dna-sidebar #save-dna { background: #333333 !important; }
-  body.theme-dark #dna-sidebar #save-dna:hover { background: #444444 !important; }
-  body.theme-dark #dna-sidebar #clear-dna { background: #5a2a2a !important; }
-  body.theme-dark #dna-sidebar #clear-dna:hover { background: #6b3333 !important; }
-  body.theme-dark #dna-sidebar .style-row input[type="color"] { border-color: #333333; }
-  body.theme-dark #dna-sidebar .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
-  body.theme-dark #dna-sidebar .checkbox-label { color: #ccc; }
-  /* Tools Panel */
-  body.theme-dark #tools-panel { background: #1a1a1a; }
-  body.theme-dark #tools-panel .tools-header { background: linear-gradient(135deg, #333333 0%, #222222 100%); }
-  body.theme-dark #tools-panel .tools-section { background: #222222; }
-  body.theme-dark #tools-panel .tools-section-title { color: #e0e0e0; }
-  body.theme-dark #tools-panel .tools-row label { color: #ccc; }
-  body.theme-dark #tools-panel .tools-row span { color: #ccc; }
-  body.theme-dark #dna-sidebar span { color: #ccc; }
-  body.theme-dark #tools-panel .tools-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
-  body.theme-dark #tools-panel .tools-row select { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
-  body.theme-dark #tools-panel .tools-row button { background: #1a1a1a; color: #ccc; border-color: #333333; }
-  body.theme-dark #tools-panel .tools-row button:hover { background: #333333; }
-  body.theme-dark #tools-panel .style-row label { color: #ccc; }
-  body.theme-dark #tools-panel .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #333333; }
-  body.theme-dark #tools-panel .style-row button { background: #1a1a1a; color: #ccc; border-color: #333333; }
-  body.theme-dark #tools-panel .style-row button:hover { background: #333333; }
-  body.theme-dark #tools-panel .checkbox-row label { color: #ccc; }
-  body.theme-dark #tools-panel .cm-legend-compact .cm-legend-item { background: #1a1a1a; border-color: #333333; color: #ccc; }
-  body.theme-dark #tools-panel .shade-btn { background: #1a1a1a; color: #ccc; border-color: #4a4a4a; }
-  body.theme-dark #tools-panel .shade-btn:hover { background: #333333; }
-  body.theme-dark #tools-panel .shade-btn.active { background: #4a4a4a; color: white; }
-  body.theme-dark #tools-panel .shade-btn-clear { background: #1a1a1a; color: #ef5350; border-color: #5a2a2a; }
-  body.theme-dark #tools-panel .shade-btn-clear:hover { background: #5a2a2a; color: white; }
-  body.theme-dark #tools-panel .action-label { background: #3a3a3a; }
-  body.theme-dark #tools-panel .apply-btn,
-  body.theme-dark #tools-panel .tools-row .apply-btn,
-  body.theme-dark #tools-panel .style-row .apply-btn {
-    background: linear-gradient(180deg, #333333 0%, #0a254a 100%) !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  body.theme-light {
+    --svg-bg: #ffffff;
+    --intersection-point-fill: #e8ecf0;
+    --intersection-point-stroke: #b0b8c4;
+    --intersection-point-hover-fill: #d1d8e0;
+    --intersection-point-hover-stroke: #5b7a9d;
+    --intersection-cm-fill: #2c3e50;
+    --collapse-fill: #d4956a;
+    --collapse-stroke: #b87a50;
+    --ancestor-collapse-fill: #5b7a9d;
+    --ancestor-collapse-stroke: #3d5a7a;
+    --tooltip-bg: #4a6a8a;
+    --toolbar-bg: #fff;
+    --toolbar-border-bottom: 1px solid #e2e5ea;
+    --toolbar-box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --toolbar-btn-bg: #f0f2f5;
+    --toolbar-btn-border-left: #b0b8c4;
+    --toolbar-btn-hover-bg: #e4e7ec;
+    --toolbar-btn-hover-border: #5b7a9d;
+    --toolbar-filename-color: #2c3e50;
+    --toolbar-filename-hover-bg: rgba(0,0,0,0.04);
+    --toolbar-p-color: #6b7b8d;
+    --toolbar-guide-color: #5b7a9d;
+    --toolbar-guide-hover-bg: rgba(91,122,157,0.08);
+    --modal-header-bg: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%);
+    --shortcut-section-bg: #f3f5f7;
+    --shortcut-section-title-color: #5b7a9d;
+    --shortcut-section-title-border: #e2e5ea;
+    --sidebar-bg: #f7f8fa;
+    --sidebar-border-color: #e2e5ea;
+    --sidebar-h2-color: #2c3e50;
+    --sidebar-h3-color: #4a5568;
+    --sidebar-section-border: #e2e5ea;
+    --sidebar-section-title-color: #5b7a9d;
+    --sidebar-input-border: #d1d8e0;
+    --sidebar-label-color: #4a5568;
+    --sidebar-gender-box-bg: #eef1f5;
+    --sidebar-gender-box-border: #d1d8e0;
+    --sidebar-btn-primary-bg: #5b7a9d;
+    --sidebar-btn-primary-hover: #4a6a8a;
+    --sidebar-btn-secondary-bg: #e2e5ea;
+    --sidebar-btn-secondary-color: #4a5568;
+    --sidebar-btn-secondary-hover: #d1d8e0;
+    --sidebar-btn-blue-bg: #5b7a9d;
+    --sidebar-btn-blue-hover: #4a6a8a;
+    --sidebar-btn-danger-bg: #c0616b;
+    --sidebar-btn-danger-hover: #a8505a;
+    --sidebar-close-btn-bg: rgba(91,122,157,0.12);
+    --sidebar-close-btn-color: #5b7a9d;
+    --sidebar-close-btn-hover: rgba(91,122,157,0.2);
+    --dna-sidebar-bg: #f7f8fa;
+    --dna-sidebar-border-color: #e2e5ea;
+    --dna-h2-color: #2c3e50;
+    --dna-close-btn-bg: rgba(91,122,157,0.12);
+    --dna-close-btn-color: #5b7a9d;
+    --dna-close-btn-hover: rgba(91,122,157,0.2);
+    --dna-comparison-names-border: #e2e5ea;
+    --dna-comparison-names-span-color: #2c3e50;
+    --dna-input-border: #d1d8e0;
+    --dna-label-color: #4a5568;
+    --dna-save-btn-bg: #5b7a9d;
+    --dna-save-btn-hover: #4a6a8a;
+    --dna-clear-btn-bg: #c0616b;
+    --dna-clear-btn-hover: #a8505a;
+    --dna-style-section-border: #e2e5ea;
+    --dna-style-section-title: #5b7a9d;
+    --dna-style-row-border: #d1d8e0;
+    --dna-checkbox-label-color: #4a5568;
+    --calc-rel-bg: linear-gradient(135deg, #f3f7f5 0%, #e8f0ec 100%);
+    --calc-rel-border: #b0c8bc;
+    --calc-label-color: #5b7a9d;
+    --calc-value-color: #2c3e50;
+    --tools-header-bg: linear-gradient(135deg, #5b7a9d 0%, #3d5a7a 100%);
+    --tools-section-bg: #f3f5f7;
+    --tools-section-title-color: #2c3e50;
+    --tools-row-label-color: #4a5568;
+    --tools-action-label-bg: #8a9bae;
+    --tools-apply-bg: linear-gradient(180deg, #5b9d7a 0%, #4a8a6a 100%);
+    --tools-apply-hover: linear-gradient(180deg, #6aad89 0%, #5b9d7a 100%);
+    --tools-apply-shadow: 0 2px 4px rgba(74,138,106,0.3), 0 1px 2px rgba(0,0,0,0.08);
   }
-  body.theme-dark #tools-panel .apply-btn:hover,
-  body.theme-dark #tools-panel .tools-row .apply-btn:hover,
-  body.theme-dark #tools-panel .style-row .apply-btn:hover {
-    background: linear-gradient(180deg, #444444 0%, #333333 100%) !important;
+
+  body.theme-dark {
+    --svg-bg: #1a1a1a;
+    --link-stroke: #888888;
+    --node-rect-stroke: #888888;
+    --node-text-fill: #e0e0e0;
+    --intersection-point-fill: #2a2a2a;
+    --intersection-point-stroke: #4a4a4a;
+    --intersection-point-hover-fill: #3a3a3a;
+    --intersection-point-hover-stroke: #aaaaaa;
+    --intersection-cm-fill: #aaaaaa;
+    --intersection-rel-fill: #ccc;
+    --collapse-fill: #333333;
+    --collapse-stroke: #555555;
+    --ancestor-collapse-fill: #333333;
+    --ancestor-collapse-stroke: #555555;
+    --shade-preview-fill: rgba(255,255,255,0.05);
+    --shade-preview-stroke: rgba(255,255,255,0.15);
+    --shaded-region-fill: rgba(255,255,255,0.05);
+    --tooltip-bg: #333333;
+    --toolbar-bg: #222222;
+    --toolbar-border-bottom: 1px solid #333333;
+    --toolbar-btn-bg: #1a1a1a;
+    --toolbar-btn-color: #e0e0e0;
+    --toolbar-btn-border-left: #333333;
+    --toolbar-btn-hover-bg: #333333;
+    --toolbar-btn-hover-border: #555555;
+    --toolbar-filename-color: #e0e0e0;
+    --toolbar-filename-hover-bg: rgba(255,255,255,0.08);
+    --toolbar-p-color: #aaa;
+    --toolbar-guide-color: #ccc;
+    --toolbar-guide-hover-bg: rgba(255,255,255,0.08);
+    --modal-bg: #1a1a1a;
+    --modal-header-bg: linear-gradient(135deg, #333333 0%, #555555 100%);
+    --modal-body-color: #e0e0e0;
+    --shortcut-section-bg: #222222;
+    --shortcut-section-title-color: #aaaaaa;
+    --shortcut-section-title-border: #333333;
+    --shortcut-desc-color: #ccc;
+    --shortcut-item-border: #333333;
+    --shortcut-kbd-color: #e0e0e0;
+    --shortcut-kbd-bg: #333333;
+    --shortcut-kbd-border: #4a4a4a;
+    --key-plus-color: #666;
+    --modal-footer-bg: #222222;
+    --modal-footer-border: #333333;
+    --modal-footer-color: #999;
+    --sidebar-bg: #1a1a1a;
+    --sidebar-border-color: #333333;
+    --sidebar-h2-color: #e0e0e0;
+    --sidebar-h3-color: #ccc;
+    --sidebar-section-bg: #222222;
+    --sidebar-section-border: #333333;
+    --sidebar-section-title-color: #aaaaaa;
+    --sidebar-input-border: #333333;
+    --sidebar-input-bg: #1a1a1a;
+    --sidebar-input-color: #e0e0e0;
+    --sidebar-label-color: #ccc;
+    --sidebar-gender-box-bg: #2a2a2a;
+    --sidebar-gender-box-border: #404040;
+    --sidebar-btn-primary-bg: #333333;
+    --sidebar-btn-primary-color: #e0e0e0;
+    --sidebar-btn-primary-hover: #444444;
+    --sidebar-btn-secondary-bg: #2a2a2a;
+    --sidebar-btn-secondary-color: #ccc;
+    --sidebar-btn-secondary-hover: #3a3a3a;
+    --sidebar-btn-blue-bg: #333333;
+    --sidebar-btn-blue-hover: #444444;
+    --sidebar-btn-danger-bg: #5a2a2a;
+    --sidebar-btn-danger-hover: #6b3333;
+    --sidebar-close-btn-bg: rgba(138,180,248,0.15);
+    --sidebar-close-btn-color: #aaaaaa;
+    --sidebar-close-btn-hover: rgba(138,180,248,0.25);
+    --existing-links-box-bg: #2a2a2a;
+    --existing-links-box-color: #ccc;
+    --existing-links-color: #ccc;
+    --dna-sidebar-bg: #1a1a1a;
+    --dna-sidebar-border-color: #333333;
+    --dna-h2-color: #aaaaaa;
+    --dna-close-btn-bg: rgba(138,180,248,0.15);
+    --dna-close-btn-color: #aaaaaa;
+    --dna-close-btn-hover: rgba(138,180,248,0.25);
+    --dna-comparison-names-bg: #222222;
+    --dna-comparison-names-border: #333333;
+    --dna-comparison-names-span-color: #ffffff;
+    --dna-input-border: #333333;
+    --dna-input-bg: #1a1a1a;
+    --dna-input-color: #e0e0e0;
+    --dna-label-color: #ccc;
+    --dna-save-btn-bg: #333333;
+    --dna-save-btn-hover: #444444;
+    --dna-clear-btn-bg: #5a2a2a;
+    --dna-clear-btn-hover: #6b3333;
+    --dna-style-section-bg: #222222;
+    --dna-style-section-border: #333333;
+    --dna-style-section-title: #aaaaaa;
+    --dna-style-row-border: #333333;
+    --dna-checkbox-label-color: #ccc;
+    --dna-span-color: #ccc;
+    --calc-rel-bg: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+    --calc-rel-border: #333333;
+    --calc-label-color: #aaaaaa;
+    --calc-value-color: #e0e0e0;
+    --calc-details-color: #999;
+    --cm-legend-bg: #222222;
+    --cm-legend-border: #333333;
+    --cm-legend-item-color: #ccc;
+    --cm-range-color: #e0e0e0;
+    --cm-color-name-color: #999;
+    --tools-panel-bg: #1a1a1a;
+    --tools-overlay-bg: rgba(0,0,0,0.6);
+    --tools-header-bg: linear-gradient(135deg, #333333 0%, #222222 100%);
+    --tools-section-bg: #222222;
+    --tools-section-title-color: #e0e0e0;
+    --tools-row-label-color: #ccc;
+    --tools-row-span-color: #ccc;
+    --tools-row-input-border: #333333;
+    --tools-row-input-bg: #1a1a1a;
+    --tools-row-input-color: #e0e0e0;
+    --tools-row-select-bg: #1a1a1a;
+    --tools-row-select-color: #e0e0e0;
+    --tools-row-select-border: #333333;
+    --tools-row-btn-bg: #1a1a1a;
+    --tools-row-btn-color: #ccc;
+    --tools-row-btn-border: #333333;
+    --tools-row-btn-hover: #333333;
+    --tools-checkbox-row-label-color: #ccc;
+    --tools-action-label-bg: #3a3a3a;
+    --tools-apply-bg: linear-gradient(180deg, #333333 0%, #0a254a 100%);
+    --tools-apply-hover: linear-gradient(180deg, #444444 0%, #333333 100%);
+    --tools-apply-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    --tools-shade-btn-bg: #1a1a1a;
+    --tools-shade-btn-color: #ccc;
+    --tools-shade-btn-border: #4a4a4a;
+    --tools-shade-btn-hover: #333333;
+    --tools-shade-active-bg: #4a4a4a;
+    --tools-shade-active-border: #4a4a4a;
+    --tools-shade-clear-bg: #1a1a1a;
+    --tools-shade-clear-color: #ef5350;
+    --tools-shade-clear-border: #5a2a2a;
+    --tools-shade-clear-hover: #5a2a2a;
+    --tools-cm-item-bg: #1a1a1a;
+    --tools-cm-item-border: #333333;
+    --tools-cm-item-color: #ccc;
+    --tools-style-row-label-color: #ccc;
+    --tools-style-row-input-border: #333333;
+    --tools-style-row-input-bg: #1a1a1a;
+    --tools-style-row-input-color: #e0e0e0;
+    --tools-style-row-btn-bg: #1a1a1a;
+    --tools-style-row-btn-color: #ccc;
+    --tools-style-row-btn-border: #333333;
+    --tools-style-row-btn-hover: #333333;
+    --tools-btn-secondary-bg: #3a3a3a;
+    --tools-btn-secondary-hover: #4a4a4a;
+    --tools-btn-outline-bg: #1a1a1a;
+    --tools-btn-outline-color: #ccc;
+    --tools-btn-outline-border: #555555;
+    --tools-btn-outline-hover: #222222;
+    --adv-tools-bg: #1a1a1a;
+    --adv-tools-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    --adv-tools-scrollbar: #444;
+    --adv-tools-scrollbar-hover: #555;
+    --adv-tools-section-bg: #222222;
+    --adv-tools-section-title: #bb86fc;
+    --adv-placeholder-color: #777;
+    --adv-style-label-color: #ccc;
+    --adv-style-color-border: #444;
+    --adv-style-num-bg: #1a1a1a;
+    --adv-style-num-color: #e0e0e0;
+    --adv-style-num-border: #444;
+    --adv-checkboxes-label-color: #ccc;
+    --adv-divider-color: #333;
+    --adv-select-bg: #1a1a1a;
+    --adv-select-color: #e0e0e0;
+    --adv-select-border: #444;
+    --adv-back-btn-bg: linear-gradient(135deg, #2a3a7a 0%, #111a40 100%);
+    --adv-fullscreen-btn-bg: #2a2a2a;
+    --adv-fullscreen-btn-color: #e0e0e0;
+    --adv-fullscreen-btn-border: #444;
+    --adv-offset-btn-bg: #2a2a2a;
+    --adv-offset-btn-color: #e0e0e0;
+    --adv-offset-btn-border: #444;
+    --adv-offset-val-color: #e0e0e0;
+    --adv-offset-btn-hover: #333;
+    --adv-fullscreen-btn-hover: #333;
   }
-  body.theme-dark #tools-panel .btn-secondary { background: #3a3a3a; }
-  body.theme-dark #tools-panel .btn-secondary:hover { background: #4a4a4a; }
-  body.theme-dark #tools-panel .btn-outline { background: #1a1a1a; color: #ccc; border-color: #555555; }
-  body.theme-dark #tools-panel .btn-outline:hover { background: #222222; }
-  body.theme-dark #tools-panel #tools-home-person { background: #222222; color: #ccc; border-color: #333333; }
-  /* Advanced Tools Panel dark mode */
-  body.theme-dark #advanced-tools-panel { background: #1a1a1a; box-shadow: 0 10px 40px rgba(0,0,0,0.6); scrollbar-color: #444 transparent; }
-  body.theme-dark #advanced-tools-panel::-webkit-scrollbar-thumb { background: #444; }
-  body.theme-dark #advanced-tools-panel::-webkit-scrollbar-thumb:hover { background: #555; }
-  body.theme-dark #advanced-tools-panel .tools-section { background: #222222; }
-  body.theme-dark #advanced-tools-panel .tools-section-title { color: #bb86fc; }
-  body.theme-dark #advanced-tools-panel .advanced-placeholder { color: #777; }
-  body.theme-dark #advanced-tools-panel .style-row label.style-label { color: #ccc; }
-  body.theme-dark #advanced-tools-panel .style-row input[type="color"] { border-color: #444; }
-  body.theme-dark #advanced-tools-panel .style-row input[type="number"] { background: #1a1a1a; color: #e0e0e0; border-color: #444; }
-  body.theme-dark #advanced-tools-panel .adv-checkboxes label { color: #ccc; }
-  body.theme-dark #advanced-tools-panel .adv-divider { border-top-color: #333; }
-  body.theme-dark #advanced-tools-panel select { background: #1a1a1a; color: #e0e0e0; border-color: #444 !important; }
-  body.theme-dark #advanced-tools-panel .back-btn { background: linear-gradient(135deg, #2a3a7a 0%, #111a40 100%); }
-  body.theme-dark #adv-fullscreen-btn { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
-  body.theme-dark #adv-fullscreen-btn:hover { background: #333; }
-  body.theme-dark .adv-offset-btn { background: #2a2a2a !important; color: #e0e0e0 !important; border-color: #444 !important; }
-  body.theme-dark .adv-offset-btn:hover { background: #333 !important; }
-  body.theme-dark .adv-offset-val { color: #e0e0e0 !important; }
-  body.theme-dark .tooltip { background: #333333; }
-  body.theme-dark #calculated-relationship { background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%); border-color: #333333 !important; }
-  body.theme-dark #calculated-relationship .calc-label { color: #aaaaaa; }
-  body.theme-dark #calculated-relationship .calc-value { color: #e0e0e0; }
-  body.theme-dark #calculated-relationship .calc-details { color: #999; }
-  body.theme-dark .cm-legend { background: #222222; border-color: #333333; }
-  body.theme-dark .cm-legend-item { color: #ccc; }
-  body.theme-dark .cm-range { color: #e0e0e0; }
-  body.theme-dark .cm-color-name { color: #999; }
-  /* Shortcuts modal */
-  body.theme-dark #shortcuts-modal { background: #1a1a1a; }
-  body.theme-dark #shortcuts-modal .modal-header { background: linear-gradient(135deg, #333333 0%, #555555 100%); }
-  body.theme-dark #shortcuts-modal .modal-body { color: #e0e0e0; }
-  body.theme-dark #shortcuts-modal .shortcut-section { background: #222222; }
-  body.theme-dark #shortcuts-modal .shortcut-section-title { color: #aaaaaa; border-bottom-color: #333333; }
-  body.theme-dark #shortcuts-modal .shortcut-desc { color: #ccc; }
-  body.theme-dark #shortcuts-modal .shortcut-item:not(:last-child) { border-bottom-color: #333333; }
-  body.theme-dark #shortcuts-modal kbd { background: #333333; color: #e0e0e0; border-color: #4a4a4a; box-shadow: none; }
-  body.theme-dark #shortcuts-modal .key-plus { color: #666; }
-  body.theme-dark #shortcuts-modal .modal-footer { background: #222222; border-top-color: #333333; color: #999; }
-  body.theme-dark #tools-overlay { background: rgba(0,0,0,0.6); }
-  body.theme-dark .shaded-region { fill: rgba(255,255,255,0.05); }
-  body.theme-dark .shade-preview { fill: rgba(255,255,255,0.05); stroke: rgba(255,255,255,0.15); }
-  body.theme-dark .intersection-label.cm-value { fill: #aaaaaa; }
-  body.theme-dark .intersection-label.relationship { fill: #ccc; }
-  /* Collapse indicators */
-  body.theme-dark .collapse-indicator circle { fill: #333333; stroke: #555555; }
-  body.theme-dark .ancestor-collapse-indicator circle { fill: #333333; stroke: #555555; }
-  /* Intersection points */
-  body.theme-dark .intersection-point { fill: #2a2a2a; stroke: #4a4a4a; }
-  body.theme-dark .intersection-point:hover { fill: #3a3a3a; stroke: #aaaaaa; }
 </style>
 </head>
 <body>
@@ -1993,7 +2259,7 @@ the Free Software Foundation, version 3.
     <div class="tools-section">
       <div class="tools-section-title">Beta Features</div>
       <div class="adv-checkboxes">
-        <label><input type="checkbox" id="adv-tree-model" /> <span title="Routes data mutations through a centralized facade with cached indexes. Improves undo/redo reliability and lookup performance.">TreeModel Facade</span></label>
+
       </div>
     </div>
     <div class="tools-section">
@@ -2425,9 +2691,6 @@ let homePersonName = null;
 // Cross-links for relationships spanning across branches
 let crossLinks = [];
 
-// TreeModel facade toggle (Beta)
-let useTreeModel = false;
-
 // ============================================================================
 // TreeModel Facade
 // ============================================================================
@@ -2741,6 +3004,46 @@ function dialogColors() {
   };
 }
 
+function showAlert(message) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  const dialog = document.createElement('div');
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
+  dialog.innerHTML = `
+    <p style="margin: 0 0 15px; color: ${dc.heading};">${message}</p>
+    <div style="text-align: right;">
+      <button class="ok-btn" style="padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">OK</button>
+    </div>
+  `;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  const close = () => document.body.removeChild(overlay);
+  dialog.querySelector('.ok-btn').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+function showConfirm(message, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+  const dialog = document.createElement('div');
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
+  dialog.innerHTML = `
+    <p style="margin: 0 0 15px; color: ${dc.heading};">${message}</p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="cancel-btn" style="padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+      <button class="confirm-btn" style="padding: 8px 16px; border: none; background: #d32f2f; color: white; border-radius: 5px; cursor: pointer;">OK</button>
+    </div>
+  `;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  const close = () => document.body.removeChild(overlay);
+  dialog.querySelector('.cancel-btn').addEventListener('click', close);
+  dialog.querySelector('.confirm-btn').addEventListener('click', () => { close(); onConfirm(); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
 function applyTheme(theme) {
   currentTheme = theme;
   document.body.classList.remove('theme-light', 'theme-dark');
@@ -2834,7 +3137,6 @@ function autoSave() {
       squircleNodes: squircleNodes,
       nodeShape: nodeShape,
       genderShapes: genderShapes,
-      useTreeModel: useTreeModel,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -2855,97 +3157,90 @@ function autoSave() {
 function autoLoad() {
   try {
     const saved = localStorage.getItem('threadwizard-autosave');
-    if (saved) {
-      const loadedData = JSON.parse(saved);
-      if (loadedData.tree) {
-        data = tree.replaceTree(loadedData.tree);
-        tree.replaceDna(loadedData.dnaComparisons || {});
-        dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
-        
-        // Clean up any stale _origColor from saved data
-        delete dnaLabelStyles.cm._origColor;
-        delete dnaLabelStyles.relationship._origColor;
-        
-        const loadedStyle = loadedData.defaultNodeTextStyle || {};
-        Object.keys(defaultNodeTextStyle).forEach(k => delete defaultNodeTextStyle[k]);
-        Object.assign(defaultNodeTextStyle, {
-          fontSize: loadedStyle.fontSize || 12,
-          bold: loadedStyle.bold || false,
-          italic: loadedStyle.italic || false,
-          fontFamily: loadedStyle.fontFamily || "sans-serif",
-          textColor: loadedStyle.textColor || "",
-          textColorExplicit: loadedStyle.textColorExplicit || false,
-          showGender: loadedStyle.showGender || false,
-          showBirthYear: loadedStyle.showBirthYear || false,
-          showBirthLocation: loadedStyle.showBirthLocation || false,
-          showDeathYear: loadedStyle.showDeathYear || false,
-          showDeathLocation: loadedStyle.showDeathLocation || false,
-          showNotes: loadedStyle.showNotes || false
-        });
-        autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
-        autoStrokeWidth = loadedData.autoStrokeWidth || 1;
-        alternateLineColors = loadedData.alternateLineColors || false;
-        showTerminalLines = loadedData.showTerminalLines !== undefined ? loadedData.showTerminalLines : true;
-        showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
-        tooltipsEnabled = loadedData.tooltipsEnabled !== undefined ? loadedData.tooltipsEnabled : true;
-        toolbarEnabled = loadedData.toolbarEnabled !== undefined ? loadedData.toolbarEnabled : true;
-        squircleNodes = loadedData.squircleNodes || false;
-        nodeShape = loadedData.nodeShape || (squircleNodes ? 'squircle' : 'rounded');
-        genderShapes = loadedData.genderShapes || false;
-        useTreeModel = loadedData.useTreeModel || false;
-        shadedRegion = loadedData.shadedRegion || null;
-        tree.replaceCrossLinks(loadedData.crossLinks || []);
-        currentFilename = loadedData.filename || "New Tree";
-        
-        if (loadedData.settings) {
-          verticalSpacing = loadedData.settings.verticalSpacing || 100;
-          horizontalSpacing = loadedData.settings.horizontalSpacing || 140;
-          terminalLineSpacing = loadedData.settings.terminalLineSpacing || 40;
-          nodeWidth = loadedData.settings.nodeWidth || 100;
-          nodeHeight = loadedData.settings.nodeHeight || 30;
-          spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-          
-          // Sync slider UI elements to loaded values
-          document.getElementById("vertical-spacing").value = verticalSpacing;
-          document.getElementById("horizontal-spacing").value = horizontalSpacing;
-          document.getElementById("node-width").value = nodeWidth;
-          document.getElementById("node-height").value = nodeHeight;
-          document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
-          
-          document.getElementById("tools-vertical-spacing").value = verticalSpacing;
-          document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
-          document.getElementById("tools-node-width").value = nodeWidth;
-          document.getElementById("tools-node-height").value = nodeHeight;
-          document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
-          
-          document.getElementById("dna-line-spacing").value = terminalLineSpacing;
-        }
-        
-        // Migrate old single-spouse format to new multi-spouse format
-        migrateToMultiSpouse(data);
-        
-        // Ensure all nodes have IDs
-        ensureAllNodesHaveIds(data);
-        
-        // Migrate old name-based DNA comparisons to ID-based
-        migrateDnaComparisonsToIds();
-        
-        // Update UI elements
-        document.getElementById("filename-display").textContent = currentFilename;
-        document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
-        document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
-        document.getElementById("show-percentile-toggle").checked = showPercentileOnLabels;
-        document.getElementById("adv-tree-model").checked = useTreeModel;
-        if (useTreeModel) {
-          tree.init(data, dnaComparisons, crossLinks, defaultNodeTextStyle, dnaLabelStyles);
-        }
-        return true;
-      }
+    if (!saved) return false;
+
+    const loadedData = JSON.parse(saved);
+
+    if (!loadedData.tree) return false;
+
+    data = tree.replaceTree(loadedData.tree);
+    tree.replaceDna(loadedData.dnaComparisons || {});
+    tree.replaceCrossLinks(loadedData.crossLinks || []);
+
+    dnaLabelStyles = loadedData.dnaLabelStyles || dnaLabelStyles;
+
+    delete dnaLabelStyles.cm._origColor;
+    delete dnaLabelStyles.relationship._origColor;
+
+    const loadedStyle = loadedData.defaultNodeTextStyle || {};
+
+    Object.keys(defaultNodeTextStyle).forEach(k => delete defaultNodeTextStyle[k]);
+    Object.assign(defaultNodeTextStyle, {
+      fontSize: loadedStyle.fontSize || 12,
+      bold: loadedStyle.bold || false,
+      italic: loadedStyle.italic || false,
+      fontFamily: loadedStyle.fontFamily || "sans-serif",
+      textColor: loadedStyle.textColor || "",
+      textColorExplicit: loadedStyle.textColorExplicit || false,
+      showGender: loadedStyle.showGender || false,
+      showBirthYear: loadedStyle.showBirthYear || false,
+      showBirthLocation: loadedStyle.showBirthLocation || false,
+      showDeathYear: loadedStyle.showDeathYear || false,
+      showDeathLocation: loadedStyle.showDeathLocation || false,
+      showNotes: loadedStyle.showNotes || false
+    });
+
+    autoStrokeEnabled = loadedData.autoStrokeEnabled || false;
+    autoStrokeWidth = loadedData.autoStrokeWidth || 1;
+    alternateLineColors = loadedData.alternateLineColors || false;
+    showTerminalLines = loadedData.showTerminalLines ?? true;
+    showPercentileOnLabels = loadedData.showPercentileOnLabels || false;
+    tooltipsEnabled = loadedData.tooltipsEnabled ?? true;
+    toolbarEnabled = loadedData.toolbarEnabled ?? true;
+    squircleNodes = loadedData.squircleNodes || false;
+    nodeShape = loadedData.nodeShape || (squircleNodes ? 'squircle' : 'rounded');
+    genderShapes = loadedData.genderShapes || false;
+    shadedRegion = loadedData.shadedRegion || null;
+
+    currentFilename = loadedData.filename || "New Tree";
+
+    if (loadedData.settings) {
+      verticalSpacing = loadedData.settings.verticalSpacing || 100;
+      horizontalSpacing = loadedData.settings.horizontalSpacing || 140;
+      terminalLineSpacing = loadedData.settings.terminalLineSpacing || 40;
+      nodeWidth = loadedData.settings.nodeWidth || 100;
+      nodeHeight = loadedData.settings.nodeHeight || 30;
+      spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
+
+      document.getElementById("vertical-spacing").value = verticalSpacing;
+      document.getElementById("horizontal-spacing").value = horizontalSpacing;
+      document.getElementById("node-width").value = nodeWidth;
+      document.getElementById("node-height").value = nodeHeight;
+      document.getElementById("terminal-line-spacing").value = terminalLineSpacing;
+
+      document.getElementById("tools-vertical-spacing").value = verticalSpacing;
+      document.getElementById("tools-horizontal-spacing").value = horizontalSpacing;
+      document.getElementById("tools-node-width").value = nodeWidth;
+      document.getElementById("tools-node-height").value = nodeHeight;
+      document.getElementById("tools-terminal-line-spacing").value = terminalLineSpacing;
+
+      document.getElementById("dna-line-spacing").value = terminalLineSpacing;
     }
+
+    migrateToMultiSpouse(data);
+    ensureAllNodesHaveIds(data);
+    migrateDnaComparisonsToIds();
+
+    document.getElementById("filename-display").textContent = currentFilename;
+    document.getElementById("tools-show-terminal-lines-toggle").checked = showTerminalLines;
+    document.getElementById("dna-show-terminal-lines-toggle").checked = showTerminalLines;
+    document.getElementById("show-percentile-toggle").checked = showPercentileOnLabels;
+
+    return true;
   } catch (e) {
     console.error('Auto-load failed:', e);
+    return false;
   }
-  return false;
 }
 
 // Migration function: convert old single spouse format to new multi-spouse format
@@ -3168,31 +3463,7 @@ function getAllPeopleFlat(excludeId = null) {
 
 // Find a person (node or spouse) by ID
 function getPersonById(id) {
-  if (useTreeModel) return tree.getPersonById(id);
-  function search(node) {
-    if (node.id === id) return { person: node, type: 'node', parentNode: null };
-    if (node.spouses) {
-      for (const spouse of node.spouses) {
-        if (spouse.id === id) return { person: spouse, type: 'spouse', parentNode: node };
-      }
-    }
-    if (node.children) {
-      for (const child of node.children) {
-        const result = search(child);
-        if (result) return result;
-      }
-    }
-    return null;
-  }
-  const result = search(data);
-  if (result) return result;
-  if (data._promotedBranches) {
-    for (const branch of data._promotedBranches) {
-      const r = search(branch);
-      if (r) return r;
-    }
-  }
-  return null;
+  return tree.getPersonById(id);
 }
 
 // Apply a color to all descendants of a node (not spouses)
@@ -3207,24 +3478,14 @@ function applyColorToDescendants(node, color) {
 
 // Find the parent node of a given node
 function findParentNode(targetNode) {
-  if (!targetNode || !targetNode.id) return null;
-  if (useTreeModel) return tree.getParentOf(targetNode.id) || null;
-  function search(node) {
-    if (node.children) {
-      for (const child of node.children) {
-        if (child === targetNode || child.id === targetNode.id) return node;
-        const result = search(child);
-        if (result) return result;
-      }
-    }
-    return null;
-  }
-  return search(data);
+  if (!targetNode?.id) return null;
+  return tree.getParentOf(targetNode.id) || null;
 }
 
 // Add a cross-link between two people
 function addCrossLink(type, person1Id, person2Id, options = {}) {
   const link = { type, person1Id, person2Id };
+
   if (options.sharedChildren) {
     link.sharedChildren = options.sharedChildren;
   }
@@ -3234,37 +3495,18 @@ function addCrossLink(type, person1Id, person2Id, options = {}) {
   if (options.keepTerminalLine) {
     link.keepTerminalLineFor = person1Id;
   }
-  if (useTreeModel) {
-    tree.addCrossLink(link);
-  } else {
-    const exists = crossLinks.some(l => 
-      l.type === type && 
-      ((l.person1Id === person1Id && l.person2Id === person2Id) ||
-       (l.person1Id === person2Id && l.person2Id === person1Id))
-    );
-    if (!exists) crossLinks.push(link);
-  }
+
+  tree.addCrossLink(link);
 }
 
 // Remove a cross-link
 function removeCrossLink(type, person1Id, person2Id) {
-  if (useTreeModel) {
-    tree.removeCrossLink(type, person1Id, person2Id);
-  } else {
-    crossLinks = crossLinks.filter(link => 
-      !(link.type === type && 
-        ((link.person1Id === person1Id && link.person2Id === person2Id) ||
-         (link.person1Id === person2Id && link.person2Id === person1Id)))
-    );
-  }
+  tree.removeCrossLink(type, person1Id, person2Id);
 }
 
 // Get cross-links for a specific person
 function getCrossLinksForPerson(personId) {
-  if (useTreeModel) return tree.getCrossLinksForPerson(personId);
-  return crossLinks.filter(link => 
-    link.person1Id === personId || link.person2Id === personId
-  );
+  return tree.getCrossLinksForPerson(personId);
 }
 
 // Populate the "Select Person" dropdown
@@ -4125,103 +4367,69 @@ let historyStack = [];
 let redoStack = [];
 const MAX_HISTORY = 50;
 
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
 
 function saveState() {
-  const snapshot = useTreeModel ? tree.buildSnapshot() : {
-    data: deepClone(data),
-    dnaComparisons: deepClone(dnaComparisons),
-    crossLinks: deepClone(crossLinks),
-    defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
-  };
+  const snapshot = tree.buildSnapshot();
+
   // Deduplicate: don't push if state is identical to the top of the stack
   if (historyStack.length > 0) {
     const top = historyStack[historyStack.length - 1];
     if (JSON.stringify(top) === JSON.stringify(snapshot)) return;
   }
+
   historyStack.push(snapshot);
-  if (historyStack.length > MAX_HISTORY) historyStack.shift();
+
+  if (historyStack.length > MAX_HISTORY) {
+    historyStack.shift();
+  }
+
   redoStack = [];
+
   updateUndoRedoButtons();
   autoSave();
 }
 
 function undo() {
   if (historyStack.length === 0) return;
-  
-  if (useTreeModel) {
-    redoStack.push(tree.buildSnapshot());
-    const previousState = historyStack.pop();
-    tree.restoreSnapshot(previousState);
-    data = tree.data;
-  } else {
-    redoStack.push({
-      data: deepClone(data),
-      dnaComparisons: deepClone(dnaComparisons),
-      crossLinks: deepClone(crossLinks),
-      defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
-    });
-    const previousState = historyStack.pop();
-    data = previousState.data;
-    dnaComparisons = previousState.dnaComparisons;
-    crossLinks = previousState.crossLinks || [];
-    if (previousState.defaultNodeTextStyle) {
-      defaultNodeTextStyle = previousState.defaultNodeTextStyle;
-    }
-  }
-  
+
+  redoStack.push(tree.buildSnapshot());
+
+  const previousState = historyStack.pop();
+  tree.restoreSnapshot(previousState);
+
+  selectedNode = null;
+
   closeSidebar();
   closeDnaSidebar();
-  selectedNode = null;
+
   drawTree(d3.zoomTransform(svg.node()));
   updateUndoRedoButtons();
 }
 
 function redo() {
   if (redoStack.length === 0) return;
-  
-  if (useTreeModel) {
-    historyStack.push(tree.buildSnapshot());
-    const redoState = redoStack.pop();
-    tree.restoreSnapshot(redoState);
-    data = tree.data;
-  } else {
-    historyStack.push({
-      data: deepClone(data),
-      dnaComparisons: deepClone(dnaComparisons),
-      crossLinks: deepClone(crossLinks),
-      defaultNodeTextStyle: deepClone(defaultNodeTextStyle)
-    });
-    const redoState = redoStack.pop();
-    data = redoState.data;
-    dnaComparisons = redoState.dnaComparisons;
-    crossLinks = redoState.crossLinks || [];
-    if (redoState.defaultNodeTextStyle) {
-      defaultNodeTextStyle = redoState.defaultNodeTextStyle;
-    }
-  }
-  
+
+  historyStack.push(tree.buildSnapshot());
+
+  const redoState = redoStack.pop();
+  tree.restoreSnapshot(redoState);
+
+  selectedNode = null;
+
   closeSidebar();
   closeDnaSidebar();
-  selectedNode = null;
+
   drawTree(d3.zoomTransform(svg.node()));
   updateUndoRedoButtons();
 }
 
 // Helper function to find the parent of a node in the tree
 function findParent(tree, targetNode) {
-  if (!tree.children) return null;
-  
-  for (const child of tree.children) {
-    if (child === targetNode) {
-      return tree;
-    }
-    const foundInChild = findParent(child, targetNode);
-    if (foundInChild) return foundInChild;
-  }
-  return null;
+  let result = null;
+  walkTree(tree, (n, parent) => {
+    if (n === targetNode) result = parent;
+  }, { includeSpouses: false });
+  return result;
 }
 
 function updateUndoRedoButtons() {
@@ -5101,42 +5309,38 @@ document.getElementById("sidebar-close-btn").addEventListener("click", closeSide
 document.getElementById("dna-sidebar-close-btn").addEventListener("click", closeDnaSidebar);
 
 document.getElementById("save-dna").addEventListener("click", () => {
-  if (selectedIntersection) {
-    saveState();
-    const cm = document.getElementById("cm-input").value.trim();
-    const relationship = document.getElementById("relationship-input").value.trim();
-    
-    if (useTreeModel) {
-      tree.setDna(selectedIntersection.person1Id, selectedIntersection.person2Id, 
-        (cm || relationship) ? { cm, relationship } : null);
-    } else {
-      const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
-      if (cm || relationship) {
-        dnaComparisons[key] = { cm, relationship };
-      } else {
-        delete dnaComparisons[key];
-      }
-    }
-    
-    drawTree(d3.zoomTransform(svg.node()));
-    autoSave();
-  }
+  if (!selectedIntersection) return;
+
+  saveState();
+
+  const cm = document.getElementById("cm-input").value.trim();
+  const relationship = document.getElementById("relationship-input").value.trim();
+
+  tree.setDna(
+    selectedIntersection.person1Id,
+    selectedIntersection.person2Id,
+    (cm || relationship) ? { cm, relationship } : null
+  );
+
+  drawTree(d3.zoomTransform(svg.node()));
+  autoSave();
 });
 
 document.getElementById("clear-dna").addEventListener("click", () => {
-  if (selectedIntersection) {
-    saveState();
-    if (useTreeModel) {
-      tree.clearDna(selectedIntersection.person1Id, selectedIntersection.person2Id);
-    } else {
-      const key = getDnaKey(selectedIntersection.person1Id, selectedIntersection.person2Id);
-      delete dnaComparisons[key];
-    }
-    document.getElementById("cm-input").value = "";
-    document.getElementById("relationship-input").value = "";
-    drawTree(d3.zoomTransform(svg.node()));
-    autoSave();
-  }
+  if (!selectedIntersection) return;
+
+  saveState();
+
+  tree.clearDna(
+    selectedIntersection.person1Id,
+    selectedIntersection.person2Id
+  );
+
+  document.getElementById("cm-input").value = "";
+  document.getElementById("relationship-input").value = "";
+
+  drawTree(d3.zoomTransform(svg.node()));
+  autoSave();
 });
 
 // Tree-based relationship calculation UI
@@ -5334,40 +5538,52 @@ function deleteNodeFromTree(tree, nodeToDelete) {
   return false;
 }
 
-// Check if home person exists in a subtree
-function findHomePersonInSubtree(node) {
-  if (node.isHomePerson) return node;
-  if (node.spouses) {
-    for (const spouse of node.spouses) {
-      if (spouse.isHomePerson) return spouse;
+// Generic tree walker: visits every node (and optionally spouses) calling fn(node, parent).
+// Spouses are visited after their main node with parent set to the main node.
+function walkTree(node, fn, { includeSpouses = true } = {}) {
+  function walk(n, parent) {
+    fn(n, parent);
+    if (includeSpouses && n.spouses) {
+      for (const spouse of n.spouses) {
+        fn(spouse, n);
+      }
+    }
+    if (n.children) {
+      for (const child of n.children) {
+        walk(child, n);
+      }
     }
   }
-  
-  if (node.children) {
-    for (const child of node.children) {
-      const found = findHomePersonInSubtree(child);
-      if (found) return found;
-    }
-  }
-  return null;
+  walk(node, null);
 }
 
-// Find the path from a node to the home person (returns array of nodes)
+// Check if home person exists in a subtree
+function findHomePersonInSubtree(node) {
+  let result = null;
+  walkTree(node, (n) => { if (n.isHomePerson && !result) result = n; });
+  return result;
+}
+
+// Find the path from a node down to the home person (returns array of nodes).
+// When the home person is a spouse, the path terminates at the containing main node.
 function findPathToHomePerson(node, path = []) {
-  if (node.isHomePerson) return [...path, node];
-  if (node.spouses) {
-    for (const spouse of node.spouses) {
-      if (spouse.isHomePerson) return [...path, node];
-    }
+  const pathMap = new Map();
+  let homeNode = null;
+  walkTree(node, (n, parent) => {
+    pathMap.set(n, parent);
+    if (n.isHomePerson && !homeNode) homeNode = n;
+  });
+  if (!homeNode) return null;
+  const homeParent = pathMap.get(homeNode);
+  const startNode = (homeParent && homeParent.spouses && homeParent.spouses.includes(homeNode))
+    ? homeParent : homeNode;
+  const result = [];
+  let current = startNode;
+  while (current !== null) {
+    result.unshift(current);
+    current = pathMap.get(current);
   }
-  
-  if (node.children) {
-    for (const child of node.children) {
-      const result = findPathToHomePerson(child, [...path, node]);
-      if (result) return result;
-    }
-  }
-  return null;
+  return [...path, ...result];
 }
 
 // Update home person display in Tools panel
@@ -5385,38 +5601,24 @@ function updateToolsHomePerson() {
   }
 }
 
-// Count ancestors of a node
+// Count ancestors (depth) of a node from rootNode. Spouses share depth with their main node.
 function countAncestors(node, rootNode) {
-  // Find the node in the tree starting from root
-  function findNodeInTree(searchNode, target) {
-    if (searchNode === target) return 0;
-    if (searchNode.spouses) {
-      for (const spouse of searchNode.spouses) {
-        if (spouse === target) return 0;
-      }
+  const depthMap = new Map([[rootNode, 0]]);
+  let result = 0;
+  walkTree(rootNode, (n, parent) => {
+    if (parent !== null) {
+      const isSpouse = parent.spouses && parent.spouses.includes(n);
+      depthMap.set(n, isSpouse ? (depthMap.get(parent) || 0) : (depthMap.get(parent) || 0) + 1);
     }
-    
-    if (searchNode.children) {
-      for (const child of searchNode.children) {
-        const result = findNodeInTree(child, target);
-        if (result !== null) return result + 1;
-      }
-    }
-    return null;
-  }
-  
-  const depth = findNodeInTree(rootNode, node);
-  return depth !== null ? depth : 0;
+    if (n === node) result = depthMap.get(n) || 0;
+  });
+  return result;
 }
 
-// Count descendants of a node
+// Count all descendant tree nodes (spouses excluded).
 function countDescendants(node) {
-  if (!node.children || node.children.length === 0) return 0;
-  
-  let count = node.children.length;
-  for (const child of node.children) {
-    count += countDescendants(child);
-  }
+  let count = -1;
+  walkTree(node, () => { count++; }, { includeSpouses: false });
   return count;
 }
 
@@ -5878,11 +6080,32 @@ function computeLayout(root) {
           
           node.x = sumNodeX / count;
           
-          // Update currentX to account for this node's rightmost extent (including right spouses)
+          // Realign each spouse's child group so it centres under the
+          // spouse-pair connector midpoint (parentX + offset/2).
+          // Without this, children drift away from the connector line when
+          // multiple spouses shift the parent's position.
+          for (const gc of spouseGroupCenters) {
+            const connectorMidX = node.x + gc.spouse.offset / 2;
+            const shift = connectorMidX - gc.center;
+            if (Math.abs(shift) > 0.5) {
+              const groupChildren = childrenBySpouse.get(gc.spouse.spouse.id) || [];
+              for (const child of groupChildren) {
+                shiftSubtree(child, shift);
+              }
+              gc.center += shift; // keep bookkeeping up to date
+            }
+          }
+          
+          // Update currentX to account for this node's rightmost extent (including right spouses and shifted children)
           const spousesWithOffsetsForExtent = getSpousesWithOffsets(node.data);
           const rightSpousesForExtent = spousesWithOffsetsForExtent.filter(s => s.side === 'right');
           const totalRightWidthForExtent = rightSpousesForExtent.length * (effectiveNodeWidth() + effectiveSpouseGap());
-          const rightmostExtent = node.x + totalRightWidthForExtent + effectiveNodeWidth() / 2 + effectiveSpouseGap();
+          let rightmostExtent = node.x + totalRightWidthForExtent + effectiveNodeWidth() / 2 + effectiveSpouseGap();
+          // Also consider the rightmost child position (they may have been shifted beyond the spouse extent)
+          for (const child of node.children) {
+            const childRight = child.x + effectiveNodeWidth() / 2 + effectiveSpouseGap();
+            if (childRight > rightmostExtent) rightmostExtent = childRight;
+          }
           if (rightmostExtent > currentX) {
             currentX = rightmostExtent;
           }
@@ -6437,7 +6660,7 @@ function recalcRelationshipLabels() {
 }
 
 function drawTree(savedTransform = null) {
-  if (useTreeModel) tree.reindex(); // Rebuild indexes in case external code mutated data directly
+  tree.reindex();
   recalcRelationshipLabels();
   svg.selectAll("*").remove();
   const g = svg.append("g").attr("transform", "translate(50,80)");
@@ -7063,15 +7286,37 @@ function drawTree(savedTransform = null) {
     });
   });
   
-  // Build dropXMap: vertical drop X per (parentId::spouseId) group = midpoint of children's X range.
+  // Build dropXMap: vertical drop X per (parentId::spouseId) group.
+  // For spouse-assigned children: midpoint of parent–spouse connector (so children
+  // visually hang from both parents regardless of layout shifts).
+  // For unassigned children: midpoint of the children's X range (centered under parent).
   // Must be built before horizontal lines collection so hop detection uses the same X as drawn lines.
   const dropXMap = new Map(); // key: `${parentId}::${spouseId|''}`
-  nodesForLinks.forEach(d => {
-    const key = `${d.parent.data.id}::${d.data.spouseId || ''}`;
-    if (!dropXMap.has(key)) dropXMap.set(key, []);
-    dropXMap.get(key).push(d.x + (crossLinkChildXAdjustments[d.data.id] || 0));
+
+  // First, build spouse-pair midpoints from the rendered positions
+  root.descendants().forEach(d => {
+    if (d.data.spouses && d.data.spouses.length > 0) {
+      const parentAdjX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
+      const spousesWithOffsetsForDrop = getSpousesWithOffsets(d.data);
+      spousesWithOffsetsForDrop.forEach(sp => {
+        const spouseX = parentAdjX + sp.offset;
+        const midX = (parentAdjX + spouseX) / 2;
+        const key = `${d.data.id}::${sp.spouse.id}`;
+        dropXMap.set(key, midX);
+      });
+    }
   });
-  dropXMap.forEach((xs, key) => {
+
+  // For children with no spouseId, use midpoint of their X range (existing behaviour)
+  const _noSpouseChildXs = new Map();
+  nodesForLinks.forEach(d => {
+    if (!d.data.spouseId) {
+      const key = `${d.parent.data.id}::`;
+      if (!_noSpouseChildXs.has(key)) _noSpouseChildXs.set(key, []);
+      _noSpouseChildXs.get(key).push(d.x + (crossLinkChildXAdjustments[d.data.id] || 0));
+    }
+  });
+  _noSpouseChildXs.forEach((xs, key) => {
     dropXMap.set(key, (Math.min(...xs) + Math.max(...xs)) / 2);
   });
 
@@ -7236,7 +7481,8 @@ function drawTree(savedTransform = null) {
         if (childSpouseId) {
           const spouseData = spousesWithOffsets.find(s => s.spouse.id === childSpouseId);
           if (spouseData) {
-            // Use the dropXMap midpoint of this spouse-group's children
+            // Use the parent–spouse connector midpoint so the drop line
+            // visually originates from between both parents
             const dropKey = `${d.parent.data.id}::${childSpouseId}`;
             const spouseX = parentAdjustedX + spouseData.offset;
             px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
@@ -7244,14 +7490,13 @@ function drawTree(savedTransform = null) {
             py = parentAdjustedY;
           }
         }
-        // No spouseId but parent has exactly one spouse: originate from spouse connector
+        // No spouseId but parent has exactly one spouse: originate from spouse connector midpoint
         if (!d.data.spouseId && d.parent.data.spouses && d.parent.data.spouses.length === 1) {
           const spousesWithOffsets2 = getSpousesWithOffsets(d.parent.data);
           if (spousesWithOffsets2.length === 1) {
             const singleSpouse = spousesWithOffsets2[0];
             const spouseX = parentAdjustedX + singleSpouse.offset;
-            const dropKey = `${d.parent.data.id}::`;
-            px = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : (parentAdjustedX + spouseX) / 2;
+            px = (parentAdjustedX + spouseX) / 2;
             py = parentAdjustedY;
           }
         }
@@ -7332,10 +7577,17 @@ function drawTree(savedTransform = null) {
         const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
         const childY = d.children[0].y - nodeHeight/2;
         const branchY = (d.y + nodeHeight/2 + childY) / 2;
-        // Use midpoint of children's X range (from dropXMap) so the vertical drop
-        // bisects the sibling group regardless of node shape (fixes M/F shape misalignment)
-        const dropKey = `${d.data.id}::`;
-        const dropX = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : mainNodeAdjustedX;
+        // When there is exactly one active spouse: use spouse connector midpoint
+        // Otherwise: use midpoint of children's X range (from dropXMap)
+        let dropX;
+        const activeSpouses = getSpousesWithOffsets(d.data);
+        if (activeSpouses.length === 1) {
+          const spouseX = mainNodeAdjustedX + activeSpouses[0].offset;
+          dropX = (mainNodeAdjustedX + spouseX) / 2;
+        } else {
+          const dropKey = `${d.data.id}::`;
+          dropX = dropXMap.has(dropKey) ? dropXMap.get(dropKey) : mainNodeAdjustedX;
+        }
         
         g.append("line")
           .attr("class", "link")
@@ -7539,13 +7791,12 @@ function drawTree(savedTransform = null) {
         if (dnaData.cm) {
           const cmFontSize = dnaLabelStyles.cm.fontSize;
           const relFontSize = dnaLabelStyles.relationship.fontSize;
-          // Smaller base offset to keep cM values close to the line
-          const cmOffset = 2 + (cmFontSize - 11) * 0.15;
           const cmVertOffset = dnaLabelStyles.cm.verticalOffset || 0;
           const cmText = labelGroup.append("text")
             .attr("class", "intersection-label cm-value")
             .attr("x", intersection.x)
-            .attr("y", intersection.y - cmOffset + cmVertOffset)
+            .attr("y", intersection.y)
+            .attr("dy", `${-(2 + (cmFontSize - 11) * 0.15) + cmVertOffset}px`)
             .style("font-size", `${cmFontSize}px`)
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.cm.color))
             .style("font-weight", dnaLabelStyles.cm.bold ? "bold" : "normal")
@@ -7567,11 +7818,8 @@ function drawTree(savedTransform = null) {
         if (dnaData.relationship) {
           const cmFontSize = dnaLabelStyles.cm.fontSize;
           const relFontSize = dnaLabelStyles.relationship.fontSize;
-          // Base offset plus scaling based on both font sizes to prevent overlap
-          // Increased base offset to match the visual gap of the cM label above the line
-          const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
           const relVertOffset = dnaLabelStyles.relationship.verticalOffset || 0;
-          
+
           // Build label text: relationship, optionally with percentile
           let relLabelText = dnaData.relationship;
           if (showPercentileOnLabels && dnaData.cm) {
@@ -7589,11 +7837,12 @@ function drawTree(savedTransform = null) {
               }
             }
           }
-          
+
           labelGroup.append("text")
             .attr("class", "intersection-label relationship")
             .attr("x", intersection.x)
-            .attr("y", intersection.y + relOffset + relVertOffset)
+            .attr("y", intersection.y)
+            .attr("dy", `${15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3 + relVertOffset}px`)
             .style("font-size", `${relFontSize}px`)
             .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
             .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
@@ -7602,10 +7851,8 @@ function drawTree(savedTransform = null) {
             .text(relLabelText);
         } else if (showPercentileOnLabels && dnaData.cm) {
           // No relationship label, but show percentile on its own if calculable
-          // Use the calculated relationship from the tree to determine percentile
           const cmNum = parseFloat(dnaData.cm);
           if (!isNaN(cmNum) && cmNum > 0) {
-            // Try to calculate relationship from tree structure
             const person1Result = getPersonById(intersection.person1Id);
             const person2Result = getPersonById(intersection.person2Id);
             if (person1Result && person2Result) {
@@ -7615,12 +7862,12 @@ function drawTree(savedTransform = null) {
                 if (pctResult) {
                   const cmFontSize = dnaLabelStyles.cm.fontSize;
                   const relFontSize = dnaLabelStyles.relationship.fontSize;
-                  const relOffset = 15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3;
                   const relVertOffset2 = dnaLabelStyles.relationship.verticalOffset || 0;
                   labelGroup.append("text")
                     .attr("class", "intersection-label relationship")
                     .attr("x", intersection.x)
-                    .attr("y", intersection.y + relOffset + relVertOffset2)
+                    .attr("y", intersection.y)
+                    .attr("dy", `${15 + (cmFontSize - 11) * 0.4 + (relFontSize - 11) * 0.3 + relVertOffset2}px`)
                     .style("font-size", `${relFontSize}px`)
                     .style("fill", getEffectiveLabelColor(dnaLabelStyles.relationship.color))
                     .style("font-weight", dnaLabelStyles.relationship.bold ? "bold" : "normal")
@@ -7664,9 +7911,19 @@ function drawTree(savedTransform = null) {
   // Estimate whether a string fits within the node width
   function textFits(text, fontSize, isBold, effectiveWidth) {
     const w = effectiveWidth !== undefined ? effectiveWidth : nodeWidth;
-    const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
-    const availableWidth = w - 10; // padding
-    return text.length <= Math.floor(availableWidth / avgCharWidth);
+    const availableWidth = w - 10;
+    try {
+      const probe = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      probe.style.cssText = `font-size:${fontSize}px;font-weight:${isBold ? 'bold' : 'normal'};font-family:${getEffectiveFontFamily()};`;
+      probe.textContent = text;
+      svg.node().appendChild(probe);
+      const measured = probe.getComputedTextLength();
+      svg.node().removeChild(probe);
+      return measured <= availableWidth;
+    } catch(e) {
+      const avgCharWidth = fontSize * (isBold ? 0.66 : 0.6);
+      return text.length <= Math.floor(availableWidth / avgCharWidth);
+    }
   }
 
   function fitName(name, fontSize, isBold, effectiveWidth) {
@@ -7887,7 +8144,13 @@ function drawTree(savedTransform = null) {
       const lines = getVisibleLines(allLines, fontSize, effH);
       const lineHeight = fontSize * 1.3;
 
+      // Shift so multi-line block is vertically centered at y=0 (node center).
+      // dominant-baseline:central centers each line on its y; translate moves the
+      // whole block up by half the total inter-line height.
+      const totalHeight = (lines.length - 1) * lineHeight;
       const textEl = d3.select(this).append("text")
+        .attr("dominant-baseline", "central")
+        .attr("transform", `translate(0, ${-totalHeight / 2})`)
         .style("font-size", `${fontSize}px`)
         .style("font-weight", isBold ? "bold" : "normal")
         .style("font-style", isItalic ? "italic" : "normal")
@@ -7896,14 +8159,13 @@ function drawTree(savedTransform = null) {
 
       const maxTextWidth = effW - 16; // 8px padding on each side
 
-      // Lay out tspans with simple relative spacing (no vertical offset yet)
       lines.forEach((line, i) => {
         const tspan = textEl.append("tspan")
           .attr("x", 0)
           .attr("dy", i === 0 ? 0 : `${lineHeight}px`)
           .text(line);
 
-        // After rendering, constrain any tspan that exceeds the padded width.
+        // Constrain any tspan that exceeds the padded width.
         // Skip compression for gender shapes — text is allowed to overflow
         // the small shapes rather than being crushed into unreadable glyphs.
         if (!genderShapes) {
@@ -7916,14 +8178,6 @@ function drawTree(savedTransform = null) {
           } catch(e) {}
         }
       });
-
-      // Post-render: measure actual bounding box and shift to center in node
-      try {
-        const bbox = textEl.node().getBBox();
-        const textMidY = bbox.y + bbox.height / 2;
-        // Shift the entire text element so its visual center sits at y=0 (node center)
-        textEl.attr("transform", `translate(0, ${-textMidY})`);
-      } catch(e) {}
     });
   }
 
@@ -7936,9 +8190,7 @@ function drawTree(savedTransform = null) {
   function getEffectiveTextColor() {
     const c = defaultNodeTextStyle.textColor;
     if (defaultNodeTextStyle.textColorExplicit && c) return c;
-    if (currentTheme === 'dark') return '#e0e0e0';
-    if (currentTheme === 'light') return '#000000';
-    return '#000000'; // fullcolor default
+    return getComputedStyle(document.body).getPropertyValue('--node-text-fill').trim() || '#000000';
   }
   
   // Helper: generate a true squircle SVG path (superellipse via cubic Béziers)
@@ -7985,7 +8237,7 @@ function drawTree(savedTransform = null) {
     const gender = d.data.gender;
     const attrs = getNodeShapeAttrs(gender);
     const fill = (d.data.color && d.data.color !== "#ffffff") ? d.data.color : currentTheme === 'dark' ? '#2a2a2a' : '#ffffff';
-    const stroke = currentTheme === 'dark' ? '#888888' : 'black';
+    const stroke = getComputedStyle(document.body).getPropertyValue('--node-rect-stroke').trim() || 'black';
     const strokeWidth = selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2;
     const filter = selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none";
     const el = d3.select(this).append(attrs.tag);
@@ -8070,7 +8322,7 @@ function drawTree(savedTransform = null) {
     const gender = d.spouse.gender;
     const attrs = getNodeShapeAttrs(gender);
     const fill = (d.spouse.color && d.spouse.color !== "#ffffff") ? d.spouse.color : currentTheme === 'dark' ? '#2a2a2a' : '#ffffff';
-    const stroke = currentTheme === 'dark' ? '#888888' : 'black';
+    const stroke = getComputedStyle(document.body).getPropertyValue('--node-rect-stroke').trim() || 'black';
     const strokeWidth = selectedSpouse && selectedSpouse === d.spouse ? 4 : 2;
     const filter = selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none";
     const el = d3.select(this).append(attrs.tag);
@@ -8797,16 +9049,16 @@ document.getElementById("create-link").addEventListener("click", () => {
   const selectedPersonId = document.getElementById("link-person-select").value;
   
   if (!selectedPersonId) {
-    alert("Please select a person to link.");
+    showAlert("Please select a person to link.");
     return;
   }
-  
+
   // Get current person (either selected node or spouse)
   const currentPerson = selectedSpouse || selectedNode.data;
   const currentPersonId = currentPerson.id;
   
   if (!currentPersonId) {
-    alert("Current person has no ID. Please try again.");
+    showAlert("Current person has no ID. Please try again.");
     return;
   }
   
@@ -8860,17 +9112,17 @@ document.getElementById("create-link").addEventListener("click", () => {
     const parentPersonInfo = getPersonById(selectedPersonId);
     
     if (!childPersonInfo || !parentPersonInfo) {
-      alert("Could not find one of the selected people.");
+      showAlert("Could not find one of the selected people.");
       return;
     }
-    
+
     // Get the actual data objects
     const childData = childPersonInfo.person;
     const parentData = parentPersonInfo.person;
-    
+
     // Check for circular reference: can't make someone a parent if they're a descendant of the child
     if (isNodeInSubtree(childData, selectedPersonId)) {
-      alert(`Cannot make "${parentData.name}" a parent of "${childData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
+      showAlert(`Cannot make "${parentData.name}" a parent of "${childData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
       return;
     }
     
@@ -8901,16 +9153,16 @@ document.getElementById("create-link").addEventListener("click", () => {
     const parentPersonInfo = getPersonById(currentPersonId);
     
     if (!childPersonInfo || !parentPersonInfo) {
-      alert("Could not find one of the selected people.");
+      showAlert("Could not find one of the selected people.");
       return;
     }
-    
+
     const childData = childPersonInfo.person;
     const parentData = parentPersonInfo.person;
-    
+
     // Check for circular reference: can't make someone a child if the parent is their descendant
     if (isNodeInSubtree(childData, currentPersonId)) {
-      alert(`Cannot make "${childData.name}" a child of "${parentData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
+      showAlert(`Cannot make "${childData.name}" a child of "${parentData.name}" because "${parentData.name}" is a descendant of "${childData.name}". This would create a circular reference.`);
       return;
     }
     
@@ -9035,45 +9287,35 @@ function showSharedChildrenDialog(person1Id, person2Id, person1Name, person2Name
 
 document.getElementById("set-home-person").addEventListener("click", () => {
   if (!selectedNode) return;
-  
+
   const targetData = selectedSpouse || selectedNode.data;
-  
-  // Clear previous home person flag from all nodes
-  if (useTreeModel) {
-    tree.clearHomePerson();
-  } else {
-    (function clearHP(node) {
-      delete node.isHomePerson;
-      if (node.spouses) node.spouses.forEach(sp => delete sp.isHomePerson);
-      if (node.children) node.children.forEach(clearHP);
-    })(data);
-  }
-  
-  // Set new home person
+
+  tree.clearHomePerson();
+
   targetData.isHomePerson = true;
+
   homePersonName = targetData.name;
-  
-  // Refresh sidebar to hide the button
+
   showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse, selectedSpouseIndex);
 });
 
 document.getElementById("toggle-collapse").addEventListener("click", () => {
   if (!selectedNode) return;
-  
+
   // Only allow collapsing the main node, not spouses
   if (selectedSpouse) return;
-  
+
   const nodeData = selectedNode.data;
-  
+
   // Check if node has children or spouses to collapse
   const hasDescendants = (nodeData.children && nodeData.children.length > 0) || (nodeData.spouses && nodeData.spouses.length > 0);
   if (!hasDescendants) return;
-  
+
   saveState();
-  
+
   // Toggle collapsed state
   nodeData.collapsed = !nodeData.collapsed;
-  
+
   drawTree(d3.zoomTransform(svg.node()));
   showSidebar(selectedNode.data, selectedNode, false);
 });
@@ -9284,20 +9526,20 @@ function showRemoveSpouseDialog(nodeData) {
       showRemoveSpouseWithChildrenDialog(nodeData, spouse, 0, childrenOfSpouse);
     } else {
       // No children - simple confirm
-      if (confirm(`Are you sure you want to remove "${spouse.name}"?`)) {
+      showConfirm(`Are you sure you want to remove "${spouse.name}"?`, () => {
         saveState();
-        
+
         // Clean up DNA comparisons (using ID)
         for (const key in dnaComparisons) {
           if (dnaKeyContainsId(key, spouse.id)) {
             delete dnaComparisons[key];
           }
         }
-        
+
         nodeData.spouses = [];
         drawTree(d3.zoomTransform(svg.node()));
         showSidebar(nodeData, selectedNode, false);
-      }
+      });
     }
     return;
   }
@@ -9444,37 +9686,26 @@ document.getElementById("update-style").addEventListener("click", () => {
 
 document.getElementById("update-style-all").addEventListener("click", () => {
   saveState();
+
   const fontSize = parseInt(document.getElementById("font-size").value);
   const bold = document.getElementById("font-bold").checked;
   const italic = document.getElementById("font-italic").checked;
-  
-  // Update the global default
+
   defaultNodeTextStyle.fontSize = fontSize;
   defaultNodeTextStyle.bold = bold;
   defaultNodeTextStyle.italic = italic;
-  
-  // Sync Tools Panel inputs with new defaults
+
   document.getElementById("tools-font-size").value = fontSize;
   document.getElementById("tools-font-bold").checked = bold;
   document.getElementById("tools-font-italic").checked = italic;
-  document.getElementById("tools-font-family").value = defaultNodeTextStyle.fontFamily || "sans-serif";
-  
-  if (useTreeModel) {
-    tree.applyStyleToAll(fontSize, bold, italic);
-  } else {
-    (function applyAll(node) {
-      node.fontSize = fontSize;
-      node.bold = bold;
-      node.italic = italic;
-      delete node.hasCustomStyle;
-      if (node.spouses) {
-        node.spouses.forEach(sp => { sp.fontSize = fontSize; sp.bold = bold; sp.italic = italic; delete sp.hasCustomStyle; });
-      }
-      if (node.children) node.children.forEach(applyAll);
-    })(data);
-  }
+  document.getElementById("tools-font-family").value =
+    defaultNodeTextStyle.fontFamily || "sans-serif";
+
+  tree.applyStyleToAll(fontSize, bold, italic);
+
   autoSave();
   drawTree(d3.zoomTransform(svg.node()));
+
   if (selectedNode) {
     showSidebar(selectedSpouse || selectedNode.data, selectedNode, !!selectedSpouse, selectedSpouseIndex);
   }
@@ -9494,35 +9725,35 @@ document.getElementById("delete-node").addEventListener("click", () => {
         showRemoveSpouseWithChildrenDialog(selectedNode.data, selectedSpouse, selectedSpouseIndex, childrenOfSpouse);
       } else {
         // No children - simple removal
-        if (confirm(`Are you sure you want to remove "${spouseName}"?`)) {
+        showConfirm(`Are you sure you want to remove "${spouseName}"?`, () => {
           saveState();
-          
+
           // Clean up DNA comparisons (using ID)
           for (const key in dnaComparisons) {
             if (dnaKeyContainsId(key, spouseId)) {
               delete dnaComparisons[key];
             }
           }
-          
+
           // Remove the spouse from the array
           selectedNode.data.spouses.splice(selectedSpouseIndex, 1);
-          
+
           closeSidebar();
           drawTree(d3.zoomTransform(svg.node()));
-        }
+        });
       }
     }
     return;
   }
-  
+
   if (!selectedNode) return;
-  
+
   const nodeName = selectedNode.data.name;
   const nodeToDelete = selectedNode.data;
-  
+
   // Check if the selected node IS the home person
   if (nodeToDelete.isHomePerson) {
-    alert("Cannot delete the home person.");
+    showAlert("Cannot delete the home person.");
     return;
   }
   
@@ -9532,12 +9763,12 @@ document.getElementById("delete-node").addEventListener("click", () => {
   if (!homePerson) {
     // No home person set - use original simple delete behavior
     if (!selectedNode.parent) {
-      alert("Cannot delete the root node. Set a home person first or add a parent.");
+      showAlert("Cannot delete the root node. Set a home person first or add a parent.");
       return;
     }
-    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+    showConfirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`, () => {
       saveState();
-      
+
       // Collect all IDs from the node and its descendants for DNA cleanup
       function collectAllIdsForDelete(node, ids) {
         ids.add(node.id);
@@ -9550,7 +9781,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
       }
       const idsToDelete = new Set();
       collectAllIdsForDelete(nodeToDelete, idsToDelete);
-      
+
       for (const id of idsToDelete) {
         for (const key in dnaComparisons) {
           if (dnaKeyContainsId(key, id)) {
@@ -9561,7 +9792,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
       deleteNodeFromTree(data, nodeToDelete);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
-    }
+    });
     return;
   }
   
@@ -9615,13 +9846,13 @@ document.getElementById("delete-node").addEventListener("click", () => {
   
   if (isDescendantOfHomePerson(nodeToDelete)) {
     // Direct deletion of home person's descendant - simple delete, no protection
-    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+    showConfirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`, () => {
       saveState();
-      
+
       // Collect IDs for DNA cleanup
       const idsToDelete = new Set();
       collectAllIds(nodeToDelete, idsToDelete);
-      
+
       for (const id of idsToDelete) {
         for (const key in dnaComparisons) {
           if (dnaKeyContainsId(key, id)) {
@@ -9629,24 +9860,24 @@ document.getElementById("delete-node").addEventListener("click", () => {
           }
         }
       }
-      
+
       deleteNodeFromTree(data, nodeToDelete);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
-    }
+    });
     return;
   }
-  
+
   // Check if this is actually an ancestor of home person or just a separate branch
   if (!isAncestorOfHomePerson(nodeToDelete)) {
     // Node is in a separate branch - simple delete
-    if (confirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`)) {
+    showConfirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`, () => {
       saveState();
-      
+
       // Collect IDs for DNA cleanup
       const idsToDelete = new Set();
       collectAllIds(nodeToDelete, idsToDelete);
-      
+
       for (const id of idsToDelete) {
         for (const key in dnaComparisons) {
           if (dnaKeyContainsId(key, id)) {
@@ -9654,11 +9885,11 @@ document.getElementById("delete-node").addEventListener("click", () => {
           }
         }
       }
-      
+
       deleteNodeFromTree(data, nodeToDelete);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
-    }
+    });
     return;
   }
   
@@ -9679,24 +9910,23 @@ document.getElementById("delete-node").addEventListener("click", () => {
     // Spouses and children stay, only the node itself goes
     
     let confirmMsg = `Delete "${nodeName}"? ${nodeName} will be removed. Their spouses and descendants will remain.`;
-    
-    if (confirm(confirmMsg)) {
+    showConfirm(confirmMsg, () => {
       saveState();
-      
+
       let newRoot;
-      
+
       if (nodeToDelete.spouses && nodeToDelete.spouses.length > 0) {
         // First spouse becomes new root with other spouses and children
         const firstSpouse = nodeToDelete.spouses[0];
         newRoot = { ...firstSpouse };
-        
+
         // Add remaining spouses to new root
         if (nodeToDelete.spouses.length > 1) {
           newRoot.spouses = nodeToDelete.spouses.slice(1).map(s => ({ ...s }));
         } else {
           delete newRoot.spouses;
         }
-        
+
         if (nodeToDelete.children && nodeToDelete.children.length > 0) {
           newRoot.children = nodeToDelete.children.map(c => cloneNodeWithDescendants(c));
         }
@@ -9713,7 +9943,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
           } else {
             newRoot = {
               name: "Family",
-              color: "#ffffff", 
+              color: "#ffffff",
               fontSize: 12,
               bold: false,
               italic: false,
@@ -9722,16 +9952,16 @@ document.getElementById("delete-node").addEventListener("click", () => {
           }
         }
       } else {
-        alert("Cannot delete - nothing would remain.");
+        showAlert("Cannot delete - nothing would remain.");
         return;
       }
-      
+
       // Clean up DNA (using IDs)
       const allIds = new Set();
       collectAllIds(data, allIds);
       const newIds = new Set();
       collectAllIds(newRoot, newIds);
-      
+
       for (const id of allIds) {
         if (!newIds.has(id)) {
           for (const key in dnaComparisons) {
@@ -9741,41 +9971,40 @@ document.getElementById("delete-node").addEventListener("click", () => {
           }
         }
       }
-      
+
       data = tree.replaceTree(newRoot);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
-    }
+    });
   } else {
     // Deleting a non-root node - rules 1, 2, 3 apply
     // Node goes, ancestors go, ancestors' other branches go
     // Spouse and children stay
-    
+
     let confirmMsg = `Delete "${nodeName}"? This will remove ${nodeName}, their ancestors, and ancestors' other branches. ` +
       `Their spouse and descendants will remain. The home person "${homePerson.name}" is protected.`;
-    
-    if (confirm(confirmMsg)) {
+    showConfirm(confirmMsg, () => {
       saveState();
-      
+
       // Build new root from what survives:
       // - Deleted node's spouse (if any)
       // - Deleted node's children and descendants
       // - Home person's branch (if elsewhere in tree - protected)
-      
+
       // Check if home person is in deleted node's subtree (spouse/children/descendants)
       const homeInSpouse = nodeToDelete.spouse && nodeToDelete.spouse.isHomePerson;
-      const homeInChildren = nodeToDelete.children && 
+      const homeInChildren = nodeToDelete.children &&
         nodeToDelete.children.some(c => findHomePersonInSubtree(c));
       const homeInDeletedSubtree = homeInSpouse || homeInChildren;
-      
+
       let newRoot;
-      
+
       // First, build the surviving part from deleted node
       let survivingFromDeleted = null;
-      
+
       if (nodeToDelete.spouse) {
         survivingFromDeleted = { ...nodeToDelete.spouse };
-        
+
         if (nodeToDelete.children && nodeToDelete.children.length > 0) {
           survivingFromDeleted.children = nodeToDelete.children.map(c => cloneNodeWithDescendants(c));
         }
@@ -9793,7 +10022,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
           };
         }
       }
-      
+
       if (homeInDeletedSubtree) {
         // Home person is in the surviving part - we're good
         newRoot = survivingFromDeleted;
@@ -9802,7 +10031,7 @@ document.getElementById("delete-node").addEventListener("click", () => {
         // Find the home person's branch
         const pathToHome = findPathFromRootToNode(data, homePerson);
         const pathToDeleted = findPathFromRootToNode(data, nodeToDelete);
-        
+
         if (pathToHome && pathToDeleted) {
           // Find divergence point
           let divergeIndex = 0;
@@ -9813,11 +10042,11 @@ document.getElementById("delete-node").addEventListener("click", () => {
               break;
             }
           }
-          
+
           // Clone home person's branch from divergence point
           const homeBranchStart = pathToHome[divergeIndex + 1];
           const homeBranch = homeBranchStart ? cloneNodeWithDescendants(homeBranchStart) : cloneNodeWithDescendants(homePerson);
-          
+
           // Combine surviving parts
           if (survivingFromDeleted) {
             newRoot = {
@@ -9835,18 +10064,18 @@ document.getElementById("delete-node").addEventListener("click", () => {
           newRoot = survivingFromDeleted;
         }
       }
-      
+
       if (!newRoot) {
-        alert("Error: nothing would remain after deletion.");
+        showAlert("Error: nothing would remain after deletion.");
         return;
       }
-      
+
       // Clean up DNA (using IDs)
       const allIds = new Set();
       collectAllIds(data, allIds);
       const newIds = new Set();
       collectAllIds(newRoot, newIds);
-      
+
       for (const id of allIds) {
         if (!newIds.has(id)) {
           for (const key in dnaComparisons) {
@@ -9856,11 +10085,11 @@ document.getElementById("delete-node").addEventListener("click", () => {
           }
         }
       }
-      
+
       data = tree.replaceTree(newRoot);
       closeSidebar();
       drawTree(d3.zoomTransform(svg.node()));
-    }
+    });
   }
 });
 
@@ -9993,41 +10222,41 @@ function showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNodeRef)
 document.getElementById("ripple-delete-node").addEventListener("click", () => {
   // Not applicable for spouses - use regular delete
   if (selectedSpouse) {
-    alert("Use regular Delete for spouses.");
+    showAlert("Use regular Delete for spouses.");
     return;
   }
-  
+
   if (!selectedNode) return;
-  
+
   const nodeToDelete = selectedNode.data;
   const nodeName = nodeToDelete.name;
-  
+
   // Can't ripple-delete the home person
   if (nodeToDelete.isHomePerson) {
-    alert("Cannot delete the home person.");
+    showAlert("Cannot delete the home person.");
     return;
   }
-  
+
   // Must have a parent to ripple into
   if (!selectedNode.parent) {
-    alert("Cannot ripple delete the root node (no parent to adopt children).");
+    showAlert("Cannot ripple delete the root node (no parent to adopt children).");
     return;
   }
-  
+
   const parentData = selectedNode.parent.data;
   const childrenToKeep = nodeToDelete.children || [];
   const parentSpouses = parentData.spouses || [];
-  
+
   const childCount = childrenToKeep.length;
   const childWord = childCount === 1 ? "child" : "children";
   const childNames = childrenToKeep.map(c => c.name).join(", ");
-  
+
   // If the parent has spouses AND there are children to promote, show the assignment dialog
   if (childCount > 0 && parentSpouses.length > 0) {
     showRippleDeleteSpouseDialog(nodeToDelete, parentData, selectedNode);
     return;
   }
-  
+
   // Otherwise, use the simple confirm flow
   let msg;
   if (childCount > 0) {
@@ -10035,11 +10264,11 @@ document.getElementById("ripple-delete-node").addEventListener("click", () => {
   } else {
     msg = `Ripple delete "${nodeName}"? The node has no children, so this is the same as a regular delete.`;
   }
-  
-  if (!confirm(msg)) return;
-  
-  saveState();
-  executeRippleDelete(nodeToDelete, parentData, selectedNode, null);
+
+  showConfirm(msg, () => {
+    saveState();
+    executeRippleDelete(nodeToDelete, parentData, selectedNode, null);
+  });
 });
 
 // Helper: find path from a node down to home person
@@ -10064,61 +10293,31 @@ function findPathFromNodeToHome(node, path = []) {
 
 // Helper: find path from root to a specific node
 function findPathFromRootToNode(root, target, path = []) {
-  const currentPath = [...path, root];
-  
-  if (root === target) return currentPath;
-  if (root.spouses) {
-    for (const spouse of root.spouses) {
-      if (spouse === target) return [...currentPath, target];
-    }
+  const pathMap = new Map();
+  walkTree(root, (n, parent) => { pathMap.set(n, parent); });
+  if (!pathMap.has(target)) return null;
+  const result = [];
+  let current = target;
+  while (current !== null) {
+    result.unshift(current);
+    current = pathMap.get(current);
   }
-  
-  if (root.children) {
-    for (const child of root.children) {
-      const result = findPathFromRootToNode(child, target, currentPath);
-      if (result) return result;
-    }
-  }
-  return null;
+  return result;
 }
 
 // Helper: collect all names in a subtree
 function collectSubtreeNames(node, names) {
-  names.add(node.name);
-  if (node.spouses) {
-    node.spouses.forEach(spouse => names.add(spouse.name));
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      collectSubtreeNames(child, names);
-    }
-  }
+  walkTree(node, (n) => { names.add(n.name); });
 }
 
 // Helper: collect all names in entire tree
 function collectAllNames(node, names) {
-  names.add(node.name);
-  if (node.spouses) {
-    node.spouses.forEach(spouse => names.add(spouse.name));
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      collectAllNames(child, names);
-    }
-  }
+  walkTree(node, (n) => { names.add(n.name); });
 }
 
 // Helper: collect all IDs in entire tree (for DNA cleanup)
 function collectAllIds(node, ids) {
-  ids.add(node.id);
-  if (node.spouses) {
-    node.spouses.forEach(spouse => ids.add(spouse.id));
-  }
-  if (node.children) {
-    for (const child of node.children) {
-      collectAllIds(child, ids);
-    }
-  }
+  walkTree(node, (n) => { ids.add(n.id); });
 }
 
 // Helper: deep clone a node with all descendants
@@ -10326,7 +10525,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
 
 // New button - reset to default tree
 document.getElementById("new-btn").addEventListener("click", () => {
-  if (confirm("Are you sure you want to start a new tree? Any unsaved changes will be lost.")) {
+  showConfirm("Are you sure you want to start a new tree? Any unsaved changes will be lost.", () => {
     // Reset to default data
     const newData = {
       name: "Grandparents",
@@ -10335,23 +10534,23 @@ document.getElementById("new-btn").addEventListener("click", () => {
       bold: false,
       italic: false,
       children: [
-        { name: "Parent A", color: "#ffffff", fontSize: 12, bold: false, italic: false, 
+        { name: "Parent A", color: "#ffffff", fontSize: 12, bold: false, italic: false,
           children: [
-            { name: "Cousin 1", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+            { name: "Cousin 1", color: "#ffffff", fontSize: 12, bold: false, italic: false },
             { name: "Cousin 2", color: "#ffffff", fontSize: 12, bold: false, italic: false }
         ]},
         { name: "Parent B", color: "#ffffff", fontSize: 12, bold: false, italic: false, children: [
-          { name: "Cousin 3", color: "#ffffff", fontSize: 12, bold: false, italic: false }, 
+          { name: "Cousin 3", color: "#ffffff", fontSize: 12, bold: false, italic: false },
           { name: "Cousin 4", color: "#ffffff", fontSize: 12, bold: false, italic: false }
         ]}
       ]
     };
-    
+
     // Reset core state via facade
     data = tree.replaceTree(newData);
     tree.replaceDna({});
     tree.replaceCrossLinks([]);
-    
+
     dnaLabelStyles = {
       cm: { fontSize: 11, color: "#0d47a1", bold: true, italic: false },
       relationship: { fontSize: 11, color: "#000000", bold: false, italic: false }
@@ -10369,7 +10568,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     squircleNodes = false;
     nodeShape = 'rounded';
     genderShapes = false;
-    
+
     // Reset settings to defaults
     verticalSpacing = 100;
     horizontalSpacing = 140;
@@ -10377,7 +10576,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     nodeWidth = 100;
     nodeHeight = 30;
     spouseGap = Math.max(20, horizontalSpacing - nodeWidth);
-    
+
     // Update UI controls
     document.getElementById("filename-display").textContent = currentFilename;
     document.getElementById("vertical-spacing").value = verticalSpacing;
@@ -10403,28 +10602,27 @@ document.getElementById("new-btn").addEventListener("click", () => {
     document.getElementById("adv-shape-sharp").checked = false;
     document.getElementById("adv-shape-squircle").checked = false;
     document.getElementById("adv-gender-shapes").checked = false;
-    document.getElementById("adv-tree-model").checked = useTreeModel;
     applyToolbarVisibility();
-    
+
     // Clear undo/redo history
-    undoStack = [];
+    historyStack = [];
     redoStack = [];
     updateUndoRedoButtons();
-    
+
     // Ensure all nodes have IDs
     ensureAllNodesHaveIds(data);
-    
+
     // Clear localStorage
     localStorage.removeItem('threadwizard-autosave');
-    
+
     // Close sidebars
     closeSidebar();
     closeDnaSidebar();
-    
+
     // Redraw and fit
     drawTree();
     fitTreeToScreen(false);
-  }
+  });
 });
 
 // Undo/Redo button handlers
@@ -10458,7 +10656,7 @@ function isTypingInInput() {
 // Helper: find and center on home person
 function jumpToHomePerson() {
   if (!homePersonName) {
-    alert("No home person set. Click on a node and use 'Set as Home Person' in the sidebar.");
+    showAlert("No home person set. Click on a node and use 'Set as Home Person' in the sidebar.");
     return;
   }
   
@@ -10485,7 +10683,7 @@ function jumpToHomePerson() {
   
   const homeResult = findHomeNode(data);
   if (!homeResult) {
-    alert("Home person not found in tree.");
+    showAlert("Home person not found in tree.");
     return;
   }
   
@@ -10617,15 +10815,9 @@ function resetZoom() {
 // Helper: expand all nodes
 function expandAllNodes() {
   saveState();
-  if (useTreeModel) {
-    tree.expandAll();
-  } else {
-    (function expandAll(node) {
-      delete node.collapsed;
-      delete node.ancestorsCollapsed;
-      if (node.children) node.children.forEach(child => expandAll(child));
-    })(data);
-  }
+
+  tree.expandAll();
+
   drawTree(d3.zoomTransform(svg.node()));
 }
 
@@ -10992,7 +11184,7 @@ document.getElementById("import-input").addEventListener("change", (e) => {
         drawTree();
         fitTreeToScreen(false);
       } catch (err) {
-        alert("Invalid JSON file");
+        showAlert("Invalid JSON file");
       }
     };
     reader.readAsText(file);
@@ -11229,7 +11421,7 @@ function _exportPNG(includeTitle) {
     img.onerror = (err) => {
       console.error("Image load error:", err);
       URL.revokeObjectURL(url);
-      alert("PNG export failed. Try using SVG export instead.");
+      showAlert("PNG export failed. Try using SVG export instead.");
     };
     img.src = url;
   }
@@ -11553,16 +11745,6 @@ document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
 document.getElementById("adv-show-toolbar").addEventListener("change", (e) => {
   toolbarEnabled = e.target.checked;
   applyToolbarVisibility();
-  autoSave();
-});
-
-// TreeModel Facade toggle (Beta)
-document.getElementById("adv-tree-model").addEventListener("change", (e) => {
-  useTreeModel = e.target.checked;
-  if (useTreeModel) {
-    // Re-init facade with current globals in case they've drifted
-    tree.init(data, dnaComparisons, crossLinks, defaultNodeTextStyle, dnaLabelStyles);
-  }
   autoSave();
 });
 
