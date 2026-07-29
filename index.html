@@ -2500,7 +2500,7 @@ the Free Software Foundation, version 3.
     Comparing: <span id="person1-name">Person 1</span> ⟷ <span id="person2-name">Person 2</span>
   </div>
   
-  <label for="cm-input">Shared cM:</label>
+  <label for="cm-input">Shared cM<span style="font-weight: normal; font-size: 0.85em;"> (or percentage with "%" symbol):</span></label>
   <input type="text" id="cm-input" placeholder="e.g., 366 or 366 cM (2.5%)" />
   
   <label for="relationship-input">Relationship:</label>
@@ -2716,6 +2716,23 @@ function parentUsesSoloDrops(parentData) {
 // bars ever collide in a dense layout.)
 function soloGutterYFor(parentY) {
   return parentY + verticalSpacing / 2;
+}
+
+// Layout-side companion to parentUsesSoloDrops. The couple-centering shift
+// (childrenCenter + (totalLeftWidth - totalRightWidth) / 2) places the
+// MARRIAGE MIDPOINT above the children — correct only when the child drop
+// lines originate on the marriage connector. When the parent is in
+// solo-drop mode and NO child is assigned to an active spouse, every drop
+// originates at the parent's OWN box instead (see the _isSoloKid branch in
+// the link renderer), so the parent itself must sit at the children's
+// center. Applying the shift in that case offsets the drop origin from the
+// child and forces a horizontal jog at the gutter level.
+function suppressCoupleShift(parentData) {
+  if (!parentUsesSoloDrops(parentData)) return false;
+  const promotedIds = new Set((parentData.spouses || []).filter(s => s._promoted).map(s => s.id));
+  // Any child assigned to an active spouse still drops from the marriage
+  // line; mixed cases keep the legacy shift so those drops stay sensible.
+  return !(parentData.children || []).some(c => c.spouseId && !promotedIds.has(c.spouseId));
 }
 
 // Shading tool
@@ -4764,7 +4781,7 @@ function showDnaTooltip(event, person1Name, person2Name, person1Id, person2Id) {
     }
     // Calculate and show percentile if both cM and relationship exist
     if (dnaData.cm && dnaData.relationship) {
-      const cmNum = parseFloat(dnaData.cm);
+      const cmNum = parseCmNumber(dnaData.cm);
       if (!isNaN(cmNum) && cmNum === 0) {
         // Zero cM — show no-match probability message
         const zeroMsg = getZeroCmMessage(dnaData.relationship);
@@ -4911,9 +4928,46 @@ function updateUndoRedoButtons() {
   document.getElementById("redo-btn").disabled = false;
 }
 
+// Approximate total autosomal genome length used to convert percent-shared
+// entries to centimorgans (vendors quote ~6800–7400; 7000 is close enough
+// for percentile/color purposes — precision-minded users enter cM directly).
+const TOTAL_GENOME_CM = 7000;
+
+// Parse a stored cM string to a numeric cM value. Handles "366", "366 cM",
+// "366 cM (2.5%)" (leading number wins) and percent-only entries like
+// "2.5%", which are converted via TOTAL_GENOME_CM. Returns NaN when no
+// leading number is found.
+function parseCmNumber(cmValue) {
+  const v = (cmValue || '').toString().trim();
+  const m = v.match(/^(\d+(?:[.,]\d+)?)\s*(%?)/);
+  if (!m) return NaN;
+  const num = parseFloat(m[1].replace(',', '.'));
+  if (isNaN(num)) return NaN;
+  return m[2] === '%' ? (num / 100) * TOTAL_GENOME_CM : num;
+}
+
+// Normalize user input in the Shared cM field so the unit doesn't have to be
+// typed manually: "366" -> "366 cM", "366 (2.5%)" -> "366 cM (2.5%)",
+// "366 2.5%" -> "366 cM (2.5%)". Percent-only entries ("2.5%") carry their
+// own unit and are left untouched, as is anything already containing "cM"
+// or not starting with a number (deliberate free-form text).
+function normalizeCmValue(raw) {
+  const v = (raw || '').toString().trim();
+  if (!v) return v;
+  if (/cm/i.test(v)) return v;
+  const m = v.match(/^(\d+(?:[.,]\d+)?)(\s*)(.*)$/);
+  if (!m) return v;
+  if (m[3].startsWith('%')) return v; // percent-only: its own unit
+  let rest = m[3].trim();
+  const pm = rest.match(/^(\d+(?:[.,]\d+)?)\s*%$/);
+  if (pm) rest = `(${pm[1]}%)`; // trailing bare percentage -> parenthesized
+  return rest ? `${m[1]} cM ${rest}` : `${m[1]} cM`;
+}
+
 function getCmStrokeColor(cmValue) {
-  // Parse numeric value from string (handles "366 cM (2.5%)" format)
-  const num = parseFloat(cmValue);
+  // Parse numeric value from string (handles "366 cM (2.5%)" format,
+  // converting percent-only entries to cM)
+  const num = parseCmNumber(cmValue);
   if (isNaN(num)) return null;
   
   // No color for 0 cM (no DNA shared)
@@ -5155,7 +5209,7 @@ function calculateCmPercentile(cmValue, relationship) {
   const hist = SHARED_CM_HISTOGRAMS[key];
   if (!hist) return null;
   
-  const num = parseFloat(cmValue);
+  const num = parseCmNumber(cmValue);
   if (isNaN(num) || num < 0) return null;
   
   const { bins, counts } = hist;
@@ -5843,12 +5897,19 @@ function closeDnaSidebar() {
 document.getElementById("sidebar-close-btn").addEventListener("click", closeSidebar);
 document.getElementById("dna-sidebar-close-btn").addEventListener("click", closeDnaSidebar);
 
+// Auto-append the cM unit when the user leaves the Shared cM field, so a
+// bare "366" reads "366 cM" without manual typing (see normalizeCmValue).
+document.getElementById("cm-input").addEventListener("blur", (e) => {
+  e.target.value = normalizeCmValue(e.target.value);
+});
+
 document.getElementById("save-dna").addEventListener("click", () => {
   if (!selectedIntersection) return;
 
   saveState();
 
-  const cm = document.getElementById("cm-input").value.trim();
+  const cm = normalizeCmValue(document.getElementById("cm-input").value);
+  document.getElementById("cm-input").value = cm; // reflect normalized form
   const relationship = document.getElementById("relationship-input").value.trim();
 
   tree.setDna(
@@ -6957,7 +7018,9 @@ function computeLayout(root) {
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
           const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
-          node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+          node.x = suppressCoupleShift(node.data)
+            ? childrenCenter // solo drops originate at the parent's own box
+            : childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
           
           // Update currentX to account for this node's rightmost extent (including right spouses)
           // This ensures the next sibling subtree starts far enough to the right
@@ -7203,7 +7266,9 @@ function computeLayout(root) {
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
           const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
-          node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+          node.x = suppressCoupleShift(node.data)
+            ? childrenCenter // solo drops originate at the parent's own box
+            : childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
         } else {
           node.x = childrenCenter;
         }
@@ -7280,7 +7345,9 @@ function computeLayout(root) {
             const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
             const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
             const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
-            node.x = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+            node.x = suppressCoupleShift(node.data)
+              ? childrenCenter // solo drops originate at the parent's own box
+              : childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
           } else {
             node.x = childrenCenter;
           }
@@ -8127,7 +8194,9 @@ function drawTree(savedTransform = null) {
           const rightSpouses = spousesWithOffsets.filter(s => s.side === 'right');
           const totalLeftWidth = leftSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
           const totalRightWidth = rightSpouses.length * (effectiveNodeWidth() + effectiveSpouseGap());
-          targetX = childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
+          targetX = suppressCoupleShift(node.data)
+            ? childrenCenter // solo drops originate at the parent's own box
+            : childrenCenter + (totalLeftWidth - totalRightWidth) / 2;
         } else {
           targetX = childrenCenter;
         }
@@ -8781,7 +8850,7 @@ function drawTree(savedTransform = null) {
           // Build label text: relationship, optionally with percentile
           let relLabelText = dnaData.relationship;
           if (showPercentileOnLabels && dnaData.cm) {
-            const cmNum = parseFloat(dnaData.cm);
+            const cmNum = parseCmNumber(dnaData.cm);
             if (!isNaN(cmNum) && cmNum > 0) {
               const pctResult = calculateCmPercentile(dnaData.cm, dnaData.relationship);
               if (pctResult) {
@@ -8809,7 +8878,7 @@ function drawTree(savedTransform = null) {
             .text(relLabelText);
         } else if (showPercentileOnLabels && dnaData.cm) {
           // No relationship label, but show percentile on its own if calculable
-          const cmNum = parseFloat(dnaData.cm);
+          const cmNum = parseCmNumber(dnaData.cm);
           if (!isNaN(cmNum) && cmNum > 0) {
             const person1Result = getPersonById(intersection.person1Id);
             const person2Result = getPersonById(intersection.person2Id);
@@ -9848,7 +9917,7 @@ function showAssignChildrenDialog(nodeRef, spouseRef) {
     <div style="font-size:16px;font-weight:600;margin-bottom:12px;">Assign Existing Children?</div>
     <div style="font-size:14px;margin-bottom:20px;line-height:1.5;">
       ${nodeRef.data.name} has ${childCount} child${childCount !== 1 ? 'ren' : ''} without a spouse assignment. 
-      Assign them to <strong>${spouseRef.name}</strong>?
+      Assign to <strong>${spouseRef.name}</strong>?
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button id="assign-children-no" style="padding:8px 20px;border-radius:5px;border:1px solid ${isDark ? '#555' : '#ccc'};background:${isDark ? '#3a3a3a' : '#f0f0f0'};color:${isDark ? '#e0e0e0' : '#333'};cursor:pointer;font-size:14px;">No</button>
