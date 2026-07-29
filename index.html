@@ -621,6 +621,20 @@ the Free Software Foundation, version 3.
     font-size: 11px;
     margin: 0;
   }
+  /* Node Location nudge row: no slider to provide spacing, so use flex gap.
+     Arrows are compact; the value stretches between them, keeping Reset
+     clearly separated at the right. */
+  #sidebar .nudge-row {
+    gap: 8px;
+  }
+  #sidebar .nudge-row button {
+    flex: 0 0 auto;
+    min-width: 34px;
+  }
+  #sidebar .nudge-row #node-x-nudge-val {
+    flex: 1;
+    text-align: center;
+  }
   .existing-links-box { margin-top: 8px; padding: 8px; background: var(--existing-links-box-bg); color: var(--existing-links-box-color); border-radius: 4px; }
   #existing-links { color: var(--existing-links-color); }
 
@@ -2454,6 +2468,18 @@ the Free Software Foundation, version 3.
     </div>
   </div>
 
+  <!-- Node Location Section -->
+  <div class="section">
+    <div class="section-title">Node Location</div>
+    <div class="slider-row nudge-row">
+      <label>Position:</label>
+      <button class="secondary" id="node-x-nudge-left" title="Nudge this node 5px left">&#9664;</button>
+      <span id="node-x-nudge-val">0</span>
+      <button class="secondary" id="node-x-nudge-right" title="Nudge this node 5px right">&#9654;</button>
+      <button class="secondary" id="node-x-nudge-reset" title="Return to the automatic position">Reset</button>
+    </div>
+  </div>
+
   <!-- Delete Section -->
   <div class="section" id="delete-section">
     <div class="section-title">Delete</div>
@@ -2654,6 +2680,44 @@ function effectiveSpouseGap() {
   return spouseGap;
 }
 
+// True once per-node xNudge values have been baked into the render
+// adjustments for the current draw. While true, getSpousesWithOffsets
+// subtracts the host's nudge from spouse offsets so nudging a node moves
+// ONLY that node — spouses hold their automatic positions. During layout
+// (flag false) node positions don't include nudges, so no compensation.
+let _nodeNudgesBaked = false;
+
+// "Solo" children are children with no active-spouse assignment whose parent
+// nonetheless has spouses — e.g. a child added via "Gerald only (no second
+// parent)". They hang from the parent's OWN box (never from a marriage
+// midpoint). This treatment applies when the parent has multiple active
+// spouses, or one active spouse plus a mix of assigned and unassigned
+// children. A plain couple whose children carry no spouseId (legacy files)
+// keeps the classic couple-midpoint drop.
+function parentUsesSoloDrops(parentData) {
+  if (!parentData) return false;
+  const spousesArr = parentData.spouses || [];
+  const active = spousesArr.filter(s => !s._promoted);
+  if (active.length === 0) return false;
+  const promotedIds = new Set(spousesArr.filter(s => s._promoted).map(s => s.id));
+  const kids = parentData.children || [];
+  const hasAssigned   = kids.some(c => c.spouseId && !promotedIds.has(c.spouseId));
+  const hasUnassigned = kids.some(c => !c.spouseId || promotedIds.has(c.spouseId));
+  // Children explicitly marked soloParent (user declined spouse assignment,
+  // or "X only (no second parent)") always hang from the parent's own box,
+  // even in the one-spouse case that otherwise keeps the legacy couple drop.
+  const hasExplicitSolo = kids.some(c => c.soloParent && !c.spouseId);
+  return (hasUnassigned && (active.length > 1 || hasAssigned)) || hasExplicitSolo;
+}
+
+// Gutter level for solo-child brackets. Solo children now have their own
+// lane, so their bracket shares the standard gutter level with union
+// brackets. (Kept as a function so the level can be revisited if same-level
+// bars ever collide in a dense layout.)
+function soloGutterYFor(parentY) {
+  return parentY + verticalSpacing / 2;
+}
+
 // Shading tool
 let shadeToolActive = false;
 let shadedRegion = null; // { x, y, width, height } in SVG coordinates
@@ -2680,10 +2744,18 @@ const debouncedDrawTree = debounce(() => {
 
 // Debounced saveState for undo/redo support on live changes
 let sidebarDirty = false;
+let sidebarPreStateSaved = false;
 const debouncedSaveState = debounce(() => {
   saveState();
   sidebarDirty = false;
 }, 500);
+
+function saveSidebarPreState() {
+  if (!sidebarPreStateSaved) {
+    saveState();
+    sidebarPreStateSaved = true;
+  }
+}
 
 // Home person tracking
 let homePersonName = null;
@@ -2708,10 +2780,21 @@ const tree = (function() {
   let _data = null, _dnaComparisons = null, _crossLinks = null;
   let _defaultStyle = null, _dnaLabelStyles = null;
 
-  // Cached indexes
+  // Cached indexes (legacy tree-shaped model)
   let _nodeIndex   = new Map();
   let _spouseIndex = new Map();
   let _parentIndex = new Map();
+
+  // V2 flat model: people + marriages graph. Populated by migrateV1ToV2()
+  // during import, and read by buildRenderTree() at draw time. Coexists with
+  // the legacy _data tree during the cutover.
+  let _peopleStore     = new Map();   // Map<personId, Person>
+  let _marriagesStore  = new Map();   // Map<marriageId, Marriage>
+  let _rootPersonId    = null;
+  let _personIdCounter = 0;
+  let _marriageIdCounter = 0;
+  function _generatePersonId()   { return 'p_' + Date.now() + '_' + (_personIdCounter++); }
+  function _generateMarriageId() { return 'm_' + Date.now() + '_' + (_marriageIdCounter++); }
 
   let _listeners = [];
 
@@ -2960,6 +3043,164 @@ const tree = (function() {
         delete person.hasCustomStyle;
       });
       _notify('applyStyleToAll');
+    },
+
+    // ========================================================================
+    // V2 flat-model API: people + marriages graph
+    // ========================================================================
+    // The legacy tree-shaped model (above) is still authoritative during the
+    // cutover. These methods operate on the flat stores, which are populated
+    // by migrateV1ToV2() and consumed by buildRenderTree(). Eventually the
+    // legacy API above will be removed.
+
+    get peopleStore()    { return _peopleStore; },
+    get marriagesStore() { return _marriagesStore; },
+    get rootPersonId()   { return _rootPersonId; },
+    setRootPersonId(id)  { _rootPersonId = id; },
+
+    getPerson(id)        { return _peopleStore.get(id) || null; },
+    getMarriage(id)      { return _marriagesStore.get(id) || null; },
+
+    addPerson(personData) {
+      const data = Object.assign({}, personData);
+      if (!data.id) data.id = _generatePersonId();
+      _peopleStore.set(data.id, data);
+      _notify('addPerson');
+      return data.id;
+    },
+
+    addMarriage(spouseAId, spouseBId, opts) {
+      opts = opts || {};
+      const id = opts.id || _generateMarriageId();
+      const marriage = {
+        id,
+        spouseIds: [spouseAId, spouseBId],
+        layout: {
+          primaryId: opts.primaryId || spouseAId,
+          side: opts.side || 'right',
+        },
+      };
+      _marriagesStore.set(id, marriage);
+      _notify('addMarriage');
+      return id;
+    },
+
+    removePerson(id) {
+      const person = _peopleStore.get(id);
+      if (!person) return false;
+      // Detach from any marriages they're part of
+      for (const m of _marriagesStore.values()) {
+        if (m.spouseIds.includes(id)) {
+          _marriagesStore.delete(m.id);
+          // Children of that marriage become single-parent under remaining spouse
+          const other = m.spouseIds.find(sid => sid !== id);
+          for (const p of _peopleStore.values()) {
+            if (p.parentMarriageId === m.id) {
+              p.parentMarriageId = null;
+              if (other) p.parentPersonId = other;
+            }
+          }
+        }
+      }
+      // Children attributed directly to this person become orphaned
+      for (const p of _peopleStore.values()) {
+        if (p.parentPersonId === id) p.parentPersonId = null;
+      }
+      _peopleStore.delete(id);
+      _notify('removePerson');
+      return true;
+    },
+
+    removeMarriage(id) {
+      const m = _marriagesStore.get(id);
+      if (!m) return false;
+      const primary = m.layout && m.layout.primaryId;
+      // Joint children get re-attributed to the primary spouse as single-parent
+      for (const p of _peopleStore.values()) {
+        if (p.parentMarriageId === id) {
+          p.parentMarriageId = null;
+          if (primary) p.parentPersonId = primary;
+        }
+      }
+      _marriagesStore.delete(id);
+      _notify('removeMarriage');
+      return true;
+    },
+
+    setMarriageProp(id, prop, value) {
+      const m = _marriagesStore.get(id);
+      if (!m) return false;
+      if (prop === 'layout.side') {
+        m.layout = m.layout || {};
+        m.layout.side = value;
+      } else if (prop === 'layout.primaryId') {
+        m.layout = m.layout || {};
+        m.layout.primaryId = value;
+      } else {
+        if (value === undefined) { delete m[prop]; } else { m[prop] = value; }
+      }
+      _notify('setMarriageProp');
+      return true;
+    },
+
+    walkAllPeople(fn) {
+      for (const person of _peopleStore.values()) fn(person);
+    },
+
+    getMarriagesOf(personId) {
+      const out = [];
+      for (const m of _marriagesStore.values()) {
+        if (m.spouseIds.includes(personId)) out.push(m);
+      }
+      return out;
+    },
+
+    getChildrenOfMarriage(marriageId) {
+      const out = [];
+      for (const p of _peopleStore.values()) {
+        if (p.parentMarriageId === marriageId) out.push(p);
+      }
+      return out;
+    },
+
+    getDirectChildrenOf(personId) {
+      const out = [];
+      for (const p of _peopleStore.values()) {
+        if (p.parentPersonId === personId && !p.parentMarriageId) out.push(p);
+      }
+      return out;
+    },
+
+    getSpouseOf(personId, marriageId) {
+      const m = _marriagesStore.get(marriageId);
+      if (!m) return null;
+      const otherId = m.spouseIds.find(sid => sid !== personId);
+      return otherId ? _peopleStore.get(otherId) || null : null;
+    },
+
+    // Wipe the flat stores. Used before re-running migration on import.
+    resetFlatStores() {
+      _peopleStore.clear();
+      _marriagesStore.clear();
+      _rootPersonId = null;
+      _personIdCounter = 0;
+      _marriageIdCounter = 0;
+    },
+
+    // Fresh ID generators (exposed for migration).
+    freshPersonId()   { return _generatePersonId(); },
+    freshMarriageId() { return _generateMarriageId(); },
+
+    // Direct setters used by migration to install pre-built objects.
+    _installPerson(person) {
+      if (!person.id) person.id = _generatePersonId();
+      _peopleStore.set(person.id, person);
+      return person.id;
+    },
+    _installMarriage(marriage) {
+      if (!marriage.id) marriage.id = _generateMarriageId();
+      _marriagesStore.set(marriage.id, marriage);
+      return marriage.id;
     },
   };
 
@@ -3267,7 +3508,7 @@ function migrateToMultiSpouse(node) {
     // Assign existing children to this spouse pair
     if (node.children) {
       node.children.forEach(child => {
-        if (!child.spouseId) {
+        if (!child.spouseId && !child.soloParent) {
           child.spouseId = spouseData.id;
         }
       });
@@ -3298,6 +3539,203 @@ function migrateToMultiSpouse(node) {
         }
       }
     });
+  }
+}
+
+// ============================================================================
+// migrateV1ToV2
+// ============================================================================
+// Converts the legacy tree-shaped model (root node with .children[] and
+// .spouses[] sub-objects, plus optional _promotedBranches) into the flat
+// V2 model: a people dictionary and a marriages dictionary.
+//
+// Populates tree.peopleStore + tree.marriagesStore via tree._installPerson
+// and tree._installMarriage. Returns { rootPersonId, idRemap }. The remap
+// maps every old node/spouse id to its new person id, so that callers can
+// rewrite references in crossLinks and dnaComparisons.
+//
+// Identity collapse: a "promoted" spouse and its corresponding node in
+// _promotedBranches are the same person and collapse to one Person record.
+// ============================================================================
+function migrateV1ToV2(rootNode) {
+  tree.resetFlatStores();
+  if (!rootNode) return { rootPersonId: null, idRemap: new Map() };
+
+  // Property list copied verbatim from a node or spouse into a Person.
+  const PERSON_PROPS = [
+    'name','color','fontSize','bold','italic','gender',
+    'birth','death','birthLocation','deathLocation','notes',
+    'showGender','hasCustomStyle','isHomePerson','soloParent',
+    'collapsed','ancestorsCollapsed'
+  ];
+
+  // ---- Pass 1: collect promoted-spouse identity pairs (spouseId ↔ promotedNodeId).
+  // Both old IDs must map to the same new person ID.
+  const pairedIds = new Map();   // promotedNodeId → spouseId (the "canonical" old id)
+  (function walk(node) {
+    if (!node) return;
+    if (node.spouses) {
+      for (const sp of node.spouses) {
+        if (sp._promoted && sp._promotedNodeId && sp.id) {
+          pairedIds.set(sp._promotedNodeId, sp.id);
+        }
+      }
+    }
+    if (node.children) node.children.forEach(walk);
+  })(rootNode);
+
+  // ---- ID remap helper. For paired ids, both sides map to the same new id.
+  const idRemap = new Map();    // oldId → newPersonId
+  function getNewId(oldId) {
+    if (!oldId) return null;
+    // If this is a promoted node id, return the same new id as its spouse counterpart.
+    const canonical = pairedIds.get(oldId) || oldId;
+    if (idRemap.has(canonical)) {
+      if (oldId !== canonical) idRemap.set(oldId, idRemap.get(canonical));
+      return idRemap.get(canonical);
+    }
+    const newId = tree.freshPersonId();
+    idRemap.set(canonical, newId);
+    if (oldId !== canonical) idRemap.set(oldId, newId);
+    return newId;
+  }
+
+  // ---- Pass 2: install a Person for each node + each spouse.
+  // For paired (spouse, promotedNode) we install the spouse's data and skip
+  // the promoted node's data on the second encounter (the spouse is the
+  // source of truth; syncPromotedSpouses kept them aligned in v1).
+  function buildPerson(source, newId) {
+    const p = { id: newId };
+    for (const prop of PERSON_PROPS) {
+      if (source[prop] !== undefined) p[prop] = source[prop];
+    }
+    return p;
+  }
+
+  function installFromNode(node) {
+    if (!node) return null;
+    const newId = getNewId(node.id);
+    if (!tree.getPerson(newId)) {
+      tree._installPerson(buildPerson(node, newId));
+    }
+    return newId;
+  }
+
+  function installFromSpouse(sp) {
+    const newId = getNewId(sp.id);
+    // Spouse data wins (it's the v1 source of truth even for promoted pairs).
+    tree._installPerson(buildPerson(sp, newId));
+    return newId;
+  }
+
+  // Walk main tree: install nodes + their spouses + marriages + parent-child links.
+  function walkMain(node, parentNewId, parentMarriageNewId) {
+    const newId = installFromNode(node);
+    // Set parent attribution for this node.
+    const person = tree.getPerson(newId);
+    if (parentMarriageNewId) person.parentMarriageId = parentMarriageNewId;
+    else if (parentNewId)    person.parentPersonId   = parentNewId;
+
+    // Spouses → install Person + Marriage.
+    const spouseMarriageByOldId = new Map(); // old spouse.id → new marriage.id
+    if (node.spouses) {
+      for (const sp of node.spouses) {
+        const spouseNewId = installFromSpouse(sp);
+        const marriageNewId = tree.freshMarriageId();
+        tree._installMarriage({
+          id: marriageNewId,
+          spouseIds: [newId, spouseNewId],
+          layout: {
+            primaryId: newId,
+            side: sp.side || 'right',
+          },
+        });
+        spouseMarriageByOldId.set(sp.id, marriageNewId);
+      }
+    }
+
+    // Children: attribute to either a marriage (via spouseId) or to this person.
+    if (node.children) {
+      for (const child of node.children) {
+        const marriageNewId = child.spouseId ? spouseMarriageByOldId.get(child.spouseId) : null;
+        walkMain(child, newId, marriageNewId);
+      }
+    }
+  }
+  walkMain(rootNode, null, null);
+
+  // ---- Pass 3: promoted branches. Each promoted branch is a separate tree
+  // fragment whose root has no parent in v1. Its leaves include the
+  // "promoted node" which shares identity with a spouse already installed.
+  if (rootNode._promotedBranches) {
+    for (const branch of rootNode._promotedBranches) {
+      walkPromoted(branch, null, null);
+    }
+  }
+
+  function walkPromoted(node, parentNewId, parentMarriageNewId) {
+    // The promoted-node case: identity collapses to a spouse already in the
+    // store. We do NOT overwrite the spouse's data — but we still need to
+    // attribute its parents from the branch above.
+    const isPaired = pairedIds.has(node.id);
+    const newId = getNewId(node.id);
+    if (!tree.getPerson(newId)) {
+      tree._installPerson(buildPerson(node, newId));
+    }
+    const person = tree.getPerson(newId);
+    if (parentMarriageNewId)        person.parentMarriageId = parentMarriageNewId;
+    else if (parentNewId && !isPaired) person.parentPersonId = parentNewId;
+    else if (parentNewId && isPaired)  person.parentPersonId = parentNewId;
+    // (Paired-with-spouse persons typically have only one parent in v1: a
+    // promoted branch built by clicking "Add Parent" once.)
+
+    // Promoted branches may contain their own spouses + nested marriages
+    // (e.g. the user added a partner for the promoted person's parent).
+    const spouseMarriageByOldId = new Map();
+    if (node.spouses) {
+      for (const sp of node.spouses) {
+        const spouseNewId = installFromSpouse(sp);
+        const marriageNewId = tree.freshMarriageId();
+        tree._installMarriage({
+          id: marriageNewId,
+          spouseIds: [newId, spouseNewId],
+          layout: { primaryId: newId, side: sp.side || 'right' },
+        });
+        spouseMarriageByOldId.set(sp.id, marriageNewId);
+      }
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        const marriageNewId = child.spouseId ? spouseMarriageByOldId.get(child.spouseId) : null;
+        walkPromoted(child, newId, marriageNewId);
+      }
+    }
+  }
+
+  const rootPersonId = idRemap.get(rootNode.id) || null;
+  tree.setRootPersonId(rootPersonId);
+  return { rootPersonId, idRemap };
+}
+
+// Helper: rewrite ID references in crossLinks and dnaComparisons after
+// migrateV1ToV2. Mutates both arguments in place.
+function remapV1ToV2References(crossLinksArr, dnaCompObj, idRemap) {
+  if (Array.isArray(crossLinksArr)) {
+    for (const link of crossLinksArr) {
+      if (link.person1Id && idRemap.has(link.person1Id)) link.person1Id = idRemap.get(link.person1Id);
+      if (link.person2Id && idRemap.has(link.person2Id)) link.person2Id = idRemap.get(link.person2Id);
+    }
+  }
+  if (dnaCompObj && typeof dnaCompObj === 'object') {
+    const rewritten = {};
+    for (const oldKey of Object.keys(dnaCompObj)) {
+      const parts = oldKey.split('|').map(p => idRemap.has(p) ? idRemap.get(p) : p);
+      const newKey = parts.sort().join('|');
+      rewritten[newKey] = dnaCompObj[oldKey];
+    }
+    for (const k of Object.keys(dnaCompObj)) delete dnaCompObj[k];
+    Object.assign(dnaCompObj, rewritten);
   }
 }
 
@@ -3350,12 +3788,18 @@ function getSpousesWithOffsets(node) {
       positionOnSide = rightCount++;
     }
     
-    const offset = (effectiveNodeWidth() + effectiveSpouseGap()) * (positionOnSide + 1);
+    const defaultOffset = (effectiveNodeWidth() + effectiveSpouseGap()) * (positionOnSide + 1);
+    const offset = (spouse._layoutOffset !== undefined) ? spouse._layoutOffset : defaultOffset;
     result.push({
       spouse: spouse,
       index: index,
       side: side,
-      offset: side === 'left' ? -offset : offset
+      // Manual per-spouse nudge (Edit Node panel) rides on top of the
+      // computed offset; positive = rightward regardless of side. When the
+      // HOST node has been nudged (and that nudge is baked into the render
+      // adjustments), subtract it so spouses hold their own positions —
+      // nudging Gerald moves only Gerald.
+      offset: (side === 'left' ? -offset : offset) + (spouse.xNudge || 0) - (_nodeNudgesBaked ? (node.xNudge || 0) : 0)
     });
   });
   
@@ -3474,6 +3918,19 @@ function applyColorToDescendants(node, color) {
       applyColorToDescendants(child, color);
     });
   }
+}
+
+// Apply a color to a spouse's descendants. A spouse has no children array of
+// her own — her children live in the host node's list tagged with her id —
+// so "descendants of Ella" means the host's children assigned to her union,
+// plus everything below them. Solo children and other unions are untouched.
+function applyColorToSpouseDescendants(hostNodeData, spouse, color) {
+  (hostNodeData.children || []).forEach(child => {
+    if (child.spouseId === spouse.id) {
+      child.color = color;
+      applyColorToDescendants(child, color);
+    }
+  });
 }
 
 // Find the parent node of a given node
@@ -4099,12 +4556,26 @@ function drawCrossLinks(g, root, yAdjustments = {}, xAdjustments = {}) {
           }
         }
       } else {
-        // Horizontal line at the same Y level (they should now be at the same Y after adjustments)
+        // Horizontal line at the same Y level (they should now be at the same Y after adjustments).
+        // Anchor each end at the OUTER edge of that person's in-place spouses
+        // on the connecting side (if any), so the line starts past e.g. a
+        // second spouse's box instead of striking through it.
+        const outerEdgeX = (personId, pos, towardRight) => {
+          let edge = pos.x + (towardRight ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2);
+          const nd = getPersonById(personId);
+          if (nd && nd.spouses) {
+            for (const sp of getSpousesWithOffsets(nd)) {
+              const spOuter = pos.x + sp.offset + (towardRight ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2);
+              if (towardRight ? spOuter > edge : spOuter < edge) edge = spOuter;
+            }
+          }
+          return edge;
+        };
         crossLinkGroup.append("line")
           .attr("class", "cross-link")
-          .attr("x1", pos1.x + (pos1.x < pos2.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2))
+          .attr("x1", outerEdgeX(link.person1Id, pos1, pos1.x < pos2.x))
           .attr("y1", pos1.y)
-          .attr("x2", pos2.x + (pos2.x < pos1.x ? effectiveNodeWidth()/2 : -effectiveNodeWidth()/2))
+          .attr("x2", outerEdgeX(link.person2Id, pos2, pos2.x < pos1.x))
           .attr("y2", pos2.y);
       }
     }
@@ -4396,6 +4867,7 @@ function undo() {
 
   const previousState = historyStack.pop();
   tree.restoreSnapshot(previousState);
+  data = tree.data;
 
   selectedNode = null;
 
@@ -4413,6 +4885,7 @@ function redo() {
 
   const redoState = redoStack.pop();
   tree.restoreSnapshot(redoState);
+  data = tree.data;
 
   selectedNode = null;
 
@@ -5062,11 +5535,42 @@ function findPersonIdByName(name, rootData = data) {
   return searchNode(rootData);
 }
 
-// Migrate old name-based dnaComparisons keys to ID-based keys
+// Count how many people (nodes + spouses) share each name.
+// Used by migrateDnaComparisonsToIds to detect ambiguous name-based keys.
+function buildNameCountMap(rootData = data) {
+  const counts = new Map();
+  const bump = (name) => {
+    if (!name) return;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  };
+  function walk(node) {
+    bump(node.name);
+    if (node.spouses) {
+      for (const spouse of node.spouses) bump(spouse.name);
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child);
+    }
+  }
+  walk(rootData);
+  return counts;
+}
+
+// Migrate old name-based dnaComparisons keys to ID-based keys.
+// Safety rules:
+//   - A name shared by 2+ people is AMBIGUOUS: the entry is kept under its
+//     original name key (never guessed, never destroyed) and the user is warned.
+//   - Names not found in the tree are also kept under the original key
+//     (person may have been deleted or renamed) and the user is warned.
+//   - An ID-key collision (two name entries mapping to the same pair) never
+//     silently overwrites; the later entry is kept under its name key.
 function migrateDnaComparisonsToIds() {
   const migrated = {};
   let migratedCount = 0;
-  let skippedCount = 0;
+  const ambiguousNames = new Set();
+  const missingNames = new Set();
+  let collisionCount = 0;
+  const nameCounts = buildNameCountMap();
   
   for (const key in dnaComparisons) {
     // Check if key is already ID-based (IDs start with "node_" or "spouse_")
@@ -5077,35 +5581,67 @@ function migrateDnaComparisonsToIds() {
     
     // This is a name-based key, try to migrate it
     const [name1, name2] = key.split("|");
+    
+    // Refuse to guess when either name is shared by multiple people
+    const dup1 = (nameCounts.get(name1) || 0) > 1;
+    const dup2 = (nameCounts.get(name2) || 0) > 1;
+    if (dup1 || dup2) {
+      if (dup1) ambiguousNames.add(name1);
+      if (dup2) ambiguousNames.add(name2);
+      migrated[key] = dnaComparisons[key]; // preserve as-is
+      continue;
+    }
+    
     const id1 = findPersonIdByName(name1);
     const id2 = findPersonIdByName(name2);
     
     if (id1 && id2) {
       const newKey = getDnaKey(id1, id2);
-      migrated[newKey] = dnaComparisons[key];
-      migratedCount++;
+      if (migrated[newKey] !== undefined) {
+        // Two entries resolved to the same ID pair - keep the first,
+        // preserve this one under its original name key instead of overwriting
+        collisionCount++;
+        migrated[key] = dnaComparisons[key];
+        console.warn(`Migration collision: "${key}" maps to existing key "${newKey}"; kept under name key`);
+      } else {
+        migrated[newKey] = dnaComparisons[key];
+        migratedCount++;
+      }
     } else {
-      // Can't find IDs - person may have been deleted or name changed
-      // Skip this entry
-      skippedCount++;
-      console.log(`Migration skipped: could not find IDs for "${name1}" and/or "${name2}"`);
+      // Can't find IDs - person may have been deleted or name changed.
+      // Preserve the entry under its name key so no data is destroyed.
+      if (!id1) missingNames.add(name1);
+      if (!id2) missingNames.add(name2);
+      migrated[key] = dnaComparisons[key];
+      console.log(`Migration deferred: could not find IDs for "${name1}" and/or "${name2}"`);
     }
   }
   
   if (migratedCount > 0) {
     console.log(`Migrated ${migratedCount} DNA comparisons to ID-based keys`);
   }
-  if (skippedCount > 0) {
-    console.log(`Skipped ${skippedCount} DNA comparisons (people not found)`);
-  }
   
   tree.replaceDna(migrated);
+  
+  // Surface problems to the user instead of failing silently
+  const warnings = [];
+  if (ambiguousNames.size > 0) {
+    warnings.push(`Some DNA comparisons could not be migrated because more than one person shares these names: ${[...ambiguousNames].join(", ")}. Those comparisons were kept in the file but will not display. To fix: give the people distinct names (e.g. add a middle initial), then re-enter the affected DNA values.`);
+  }
+  if (missingNames.size > 0) {
+    warnings.push(`Some DNA comparisons reference people not found in this tree (deleted or renamed?): ${[...missingNames].join(", ")}. Those comparisons were kept in the file but will not display.`);
+  }
+  if (collisionCount > 0) {
+    warnings.push(`${collisionCount} duplicate DNA ${collisionCount === 1 ? "comparison was" : "comparisons were"} found for the same pair of people; the first value was kept.`);
+  }
+  if (warnings.length > 0 && typeof showAlert === "function") {
+    showAlert(warnings.join("\n\n"));
+  }
 }
 
 function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   closeDnaSidebar();
-  // Save pre-edit state so any change (including clearing the name) can be undone
-  saveState();
+  sidebarPreStateSaved = false;
   sidebarDirty = false;
   selectedNode = d3Node;
   selectedSpouse = isSpouse ? nodeData : null;
@@ -5156,7 +5692,7 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   }
   
   // Ripple delete: show only for non-spouse, non-root nodes
-  const canRippleDelete = !isSpouse && d3Node.parent;
+  const canRippleDelete = !isSpouse && d3Node.parent && !(d3Node.parent.data && d3Node.parent.data._isSuperRoot);
   rippleDeleteBtn.style.display = canRippleDelete ? "inline-block" : "none";
   
   const spouseSection = document.getElementById("spouse-section");
@@ -5237,15 +5773,14 @@ function showSidebar(nodeData, d3Node, isSpouse = false, spouseIndex = -1) {
   document.getElementById("link-relationship-type").value = "spouse";
   document.getElementById("link-person-select").value = "";
   
+  updateNodeNudgeDisplay();
+  
   document.getElementById("sidebar").classList.add("visible");
   drawTree(d3.zoomTransform(svg.node()));
 }
 
 function closeSidebar() {
-  if (selectedNode && sidebarDirty) {
-    saveState();
-    sidebarDirty = false;
-  }
+  sidebarDirty = false;
   document.getElementById("sidebar").classList.remove("visible");
   selectedNode = null;
   selectedSpouse = null;
@@ -5517,6 +6052,29 @@ function syncSidebarDnaLabels() {
 ["cm-font-bold", "cm-font-italic", "rel-font-bold", "rel-font-italic"].forEach(id => {
   document.getElementById(id).addEventListener("change", syncSidebarDnaLabels);
 });
+
+// Locate a node inside data._promotedBranches (standalone spouse trees).
+// Returns { branchIndex, parent } — parent is the containing node within the
+// branch, or null when the node IS the branch root. Returns null if the node
+// isn't in any promoted branch.
+function findPromotedBranchLocation(nodeData) {
+  if (!data._promotedBranches) return null;
+  for (let i = 0; i < data._promotedBranches.length; i++) {
+    const branch = data._promotedBranches[i];
+    if (branch === nodeData) return { branchIndex: i, parent: null };
+    const stack = [branch];
+    while (stack.length) {
+      const cur = stack.pop();
+      if (cur.children) {
+        for (const child of cur.children) {
+          if (child === nodeData) return { branchIndex: i, parent: cur };
+          stack.push(child);
+        }
+      }
+    }
+  }
+  return null;
+}
 
 function deleteNodeFromTree(tree, nodeToDelete) {
   if (!tree.children) return false;
@@ -5956,9 +6514,109 @@ function getAllTerminalPositions(root, xAdjustments = {}) {
   return positions;
 }
 
+// How far the marriage-midpoint drop must land inside a union's children bar,
+// measured from the nearer end. Prevents the drop from landing on (or hugging)
+// the outermost child's stub. Margin = min(barWidth/2, max(MIN_PX, FRAC * barWidth)).
+const DROP_MARGIN_FRAC   = 0.15;
+const DROP_MARGIN_MIN_PX = 12;
+
+// Shared solver for a multi-spouse parent's position and spouse offsets.
+// childXOf lets callers supply either raw layout X (computeLayout) or
+// adjusted X (drawTree's post-adjustment re-centering), so both stages agree.
+// Returns { x, offsets: Map(spouseId -> offset magnitude) } or null when the
+// node isn't a multi-spouse parent with spouse-assigned children.
+function solveBalancedSpouseAnchor(node, childXOf) {
+  const spousesArr = node.data.spouses || [];
+  const activeSpouses = spousesArr.filter(s => !s._promoted);
+  if (activeSpouses.length <= 1 || !node.children || node.children.length === 0) return null;
+  const promotedIds = new Set(spousesArr.filter(s => s._promoted).map(s => s.id));
+
+  const sideOf = new Map();
+  spousesArr.forEach((s, i) => sideOf.set(s.id, s.side || (i % 2 === 0 ? 'right' : 'left')));
+
+  const bySpouse = new Map();
+  const noSpouseXs = [];
+  const allXs = [];
+  for (const c of node.children) {
+    const x = childXOf(c);
+    allXs.push(x);
+    const sid = c.data.spouseId;
+    if (sid && !promotedIds.has(sid) && sideOf.has(sid)) {
+      if (!bySpouse.has(sid)) bySpouse.set(sid, []);
+      bySpouse.get(sid).push(x);
+    } else {
+      noSpouseXs.push(x);
+    }
+  }
+  if (bySpouse.size === 0) return null;
+
+  const defaultGap = effectiveNodeWidth() + effectiveSpouseGap();
+  const halfW = effectiveNodeWidth() / 2;
+  const attachMargin = Math.min(DROP_MARGIN_MIN_PX, effectiveSpouseGap() / 2);
+
+  // RULE: every drop is centered over the children it serves.
+  // - The node itself sits over its solo children's center (straight solo
+  //   drop). With no solo children it sits at the combined children center,
+  //   kept clear of each union's drop point so drops attach to marriage
+  //   lines rather than under the node's own box.
+  // - Each spouse sits ideally edge-aligned above the union's outermost
+  //   child (equal node widths, so centers align). The spouse pulls tighter
+  //   toward the node when the union's children already sit within the
+  //   marriage span, and moves just past the drop point when a narrow union
+  //   (e.g. a single child) would otherwise put the drop inside the
+  //   spouse's own box. Equidistant spouses are NOT expected; each union
+  //   solves independently, so spouses land where their children are.
+  const unions = [];
+  bySpouse.forEach((xs, sid) => {
+    const sign = (sideOf.get(sid) === 'right') ? 1 : -1;
+    unions.push({
+      sid, sign,
+      dropX: (Math.min(...xs) + Math.max(...xs)) / 2,
+      outermost: sign === 1 ? Math.max(...xs) : Math.min(...xs)
+    });
+  });
+
+  let x;
+  if (noSpouseXs.length > 0) {
+    x = (Math.min(...noSpouseXs) + Math.max(...noSpouseXs)) / 2;
+  } else {
+    x = (Math.min(...allXs) + Math.max(...allXs)) / 2;
+  }
+  // Keep the node clear of every union's drop point.
+  let loX = -Infinity, hiX = Infinity;
+  for (const u of unions) {
+    if (u.sign === -1) loX = Math.max(loX, u.dropX + halfW + attachMargin);
+    else               hiX = Math.min(hiX, u.dropX - halfW - attachMargin);
+  }
+  if (loX <= hiX) {
+    x = Math.max(loX, Math.min(hiX, x));
+  } else {
+    x = (loX + hiX) / 2; // conflicting unions: split the difference
+  }
+
+  const offsets = new Map();
+  for (const u of unions) {
+    // Ideal: directly above the outermost child. Constraint: far enough out
+    // that the drop point lands on the marriage line, clear of the spouse box.
+    let sx = u.outermost;
+    if (u.sign === -1) sx = Math.min(sx, u.dropX - halfW - attachMargin);
+    else               sx = Math.max(sx, u.dropX + halfW + attachMargin);
+    let offset = u.sign === -1 ? (x - sx) : (sx - x);
+    if (offset < defaultGap) offset = defaultGap; // never tighter than a normal spouse slot
+    offsets.set(u.sid, offset);
+  }
+  return { x, offsets };
+}
+
 function computeLayout(root) {
   let currentX = 0;
-  
+  _nodeNudgesBaked = false; // layout positions never include manual nudges
+
+  // Clear any stale dynamic offsets stored from a previous layout pass
+  root.descendants().forEach(n => {
+    if (n.data.spouses) n.data.spouses.forEach(s => { delete s._layoutOffset; });
+  });
+
   // ============================================
   // PHASE 1: Initial layout (standard bottom-up)
   // ============================================
@@ -6021,87 +6679,249 @@ function computeLayout(root) {
         
         const spouseGroupCenters = [];
         let unassignedChildrenCenter = null;
-        
-        // Process left spouse children
-        for (const sp of leftSpouses) {
-          const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
-          if (spouseChildren.length > 0) {
-            for (const child of spouseChildren) {
-              assignX(child);
-            }
-            const groupXPositions = spouseChildren.map(c => c.x);
+        let anyGroupLaidOut = false; // tracks whether any union group has been placed yet
+        const enterCurrentX = currentX;
+
+        if (hasMultipleSpouses) {
+          // PRIMARY-FIRST LAYOUT
+          // The primary union's children are laid out in the normal global currentX
+          // flow, taking their natural packed extent.  Every other union's children
+          // are laid out in a local frame and translated to sit just outside the
+          // primary group's left or right edge, with effectiveSpouseGap() inter-union
+          // padding.  This guarantees each additional union's children occupy a
+          // clean "lane" adjacent to the primary group, so the derived spouse
+          // position (solved below for a straight vertical descent) lands at a
+          // sensible distance from the parent node.
+          const leftWithChildren  = leftSpouses .filter(sp => (childrenBySpouse.get(sp.spouse.id) || []).length > 0);
+          const rightWithChildren = rightSpouses.filter(sp => (childrenBySpouse.get(sp.spouse.id) || []).length > 0);
+          const primarySpouseInfo = rightWithChildren[0] || leftWithChildren[0];
+
+          let leftBoundary  = Infinity;
+          let rightBoundary = -Infinity;
+
+          if (primarySpouseInfo) {
+            const primaryChildren = childrenBySpouse.get(primarySpouseInfo.spouse.id);
+            for (const child of primaryChildren) assignX(child);
+            anyGroupLaidOut = true;
+            const ext = getSubtreeExtent(primaryChildren);
+            leftBoundary  = ext.minX;
+            rightBoundary = ext.maxX;
+            const xs = primaryChildren.map(c => c.x);
             spouseGroupCenters.push({
-              spouse: sp,
-              center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+              spouse: primarySpouseInfo,
+              center: (Math.min(...xs) + Math.max(...xs)) / 2,
+              children: primaryChildren
             });
           }
-        }
-        
-        // Process unassigned children
-        if (childrenNoSpouse.length > 0) {
-          for (const child of childrenNoSpouse) {
-            assignX(child);
-          }
-          const groupXPositions = childrenNoSpouse.map(c => c.x);
-          unassignedChildrenCenter = {
-            center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
-          };
-        }
-        
-        // Process right spouse children
-        for (const sp of rightSpouses) {
-          const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
-          if (spouseChildren.length > 0) {
-            for (const child of spouseChildren) {
-              assignX(child);
+
+          // Unassigned (solo) children: place them on the parent's FREE side —
+          // opposite the primary spouse — so a solo child sits near the parent
+          // instead of beyond the primary union's children (where it would
+          // land under the far spouse's box).
+          if (childrenNoSpouse.length > 0) {
+            if (!anyGroupLaidOut) {
+              // No union children at all: flow normally.
+              for (const child of childrenNoSpouse) assignX(child);
+              const ext = getSubtreeExtent(childrenNoSpouse);
+              leftBoundary  = ext.minX;
+              rightBoundary = ext.maxX;
+            } else {
+              const soloSide = (primarySpouseInfo && primarySpouseInfo.side === 'right') ? 'left' : 'right';
+              const savedCurrentX = currentX;
+              currentX = 0;
+              for (const child of childrenNoSpouse) assignX(child);
+              currentX = savedCurrentX;
+              const ext = getSubtreeExtent(childrenNoSpouse);
+              let shift;
+              if (soloSide === 'left') {
+                shift = (leftBoundary - effectiveSpouseGap()) - ext.maxX;
+              } else {
+                shift = (rightBoundary + effectiveSpouseGap()) - ext.minX;
+              }
+              if (shift !== 0) {
+                for (const child of childrenNoSpouse) shiftSubtree(child, shift);
+              }
+              if (ext.minX + shift < leftBoundary)  leftBoundary  = ext.minX + shift;
+              if (ext.maxX + shift > rightBoundary) rightBoundary = ext.maxX + shift;
             }
-            const groupXPositions = spouseChildren.map(c => c.x);
+            anyGroupLaidOut = true;
+            const xs = childrenNoSpouse.map(c => c.x);
+            unassignedChildrenCenter = {
+              center: (Math.min(...xs) + Math.max(...xs)) / 2
+            };
+          }
+
+          // Right-side additional unions: smallest offset = closest to primary.
+          // Lay out in a local frame, then translate to sit just right of rightBoundary.
+          const rightAdditional = rightWithChildren.filter(sp => sp !== primarySpouseInfo);
+          for (const sp of rightAdditional) {
+            const spouseChildren = childrenBySpouse.get(sp.spouse.id);
+            const savedCurrentX = currentX;
+            currentX = 0;
+            for (const child of spouseChildren) assignX(child);
+            currentX = savedCurrentX;
+            const ext = getSubtreeExtent(spouseChildren);
+            const targetLeft = (rightBoundary === -Infinity ? enterCurrentX : rightBoundary + effectiveSpouseGap());
+            const shift = targetLeft - ext.minX;
+            if (shift !== 0) {
+              for (const child of spouseChildren) shiftSubtree(child, shift);
+            }
+            rightBoundary = ext.maxX + shift;
+            if (leftBoundary === Infinity) leftBoundary = ext.minX + shift;
+            const xs = spouseChildren.map(c => c.x);
             spouseGroupCenters.push({
               spouse: sp,
-              center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+              center: (Math.min(...xs) + Math.max(...xs)) / 2,
+              children: spouseChildren
             });
           }
+
+          // Left-side additional unions: leftSpouses is sorted most-negative first
+          // (furthest from node), so reverse to process closest-to-primary first —
+          // each new group then anchors against the previous group's left edge.
+          const leftAdditional = leftWithChildren.filter(sp => sp !== primarySpouseInfo).reverse();
+          for (const sp of leftAdditional) {
+            const spouseChildren = childrenBySpouse.get(sp.spouse.id);
+            const savedCurrentX = currentX;
+            currentX = 0;
+            for (const child of spouseChildren) assignX(child);
+            currentX = savedCurrentX;
+            const ext = getSubtreeExtent(spouseChildren);
+            const targetRight = (leftBoundary === Infinity ? enterCurrentX : leftBoundary - effectiveSpouseGap());
+            const shift = targetRight - ext.maxX;
+            if (shift !== 0) {
+              for (const child of spouseChildren) shiftSubtree(child, shift);
+            }
+            leftBoundary = ext.minX + shift;
+            if (rightBoundary === -Infinity) rightBoundary = ext.maxX + shift;
+            const xs = spouseChildren.map(c => c.x);
+            spouseGroupCenters.push({
+              spouse: sp,
+              center: (Math.min(...xs) + Math.max(...xs)) / 2,
+              children: spouseChildren
+            });
+          }
+
+          // Prevent overlap with the parent's already-placed left siblings: if
+          // left-additional groups landed below enterCurrentX, shift the whole
+          // batch right so the leftmost edge sits at enterCurrentX.
+          if (leftBoundary !== Infinity && leftBoundary < enterCurrentX) {
+            const shift = enterCurrentX - leftBoundary;
+            const allPlaced = [];
+            for (const gc of spouseGroupCenters) allPlaced.push(...gc.children);
+            if (childrenNoSpouse.length > 0) allPlaced.push(...childrenNoSpouse);
+            for (const child of allPlaced) shiftSubtree(child, shift);
+            for (const gc of spouseGroupCenters) gc.center += shift;
+            if (unassignedChildrenCenter) unassignedChildrenCenter.center += shift;
+            leftBoundary  += shift;
+            rightBoundary += shift;
+          }
+
+          // Advance currentX past everything placed so the parent's right
+          // siblings start in the clear (the rightmost-extent code further down
+          // bases its math on node.x + spouse offsets, not translated children).
+          if (rightBoundary !== -Infinity && rightBoundary > currentX) currentX = rightBoundary;
+
+        } else {
+          // hasMixedChildren without hasMultipleSpouses: keep the original
+          // left → unassigned → right packing flow unchanged.
+          for (const sp of leftSpouses) {
+            const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
+            if (spouseChildren.length > 0) {
+              for (const child of spouseChildren) {
+                assignX(child);
+              }
+              anyGroupLaidOut = true;
+              const groupXPositions = spouseChildren.map(c => c.x);
+              spouseGroupCenters.push({
+                spouse: sp,
+                center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2,
+                children: spouseChildren
+              });
+            }
+          }
+
+          if (childrenNoSpouse.length > 0) {
+            for (const child of childrenNoSpouse) {
+              assignX(child);
+            }
+            anyGroupLaidOut = true;
+            const groupXPositions = childrenNoSpouse.map(c => c.x);
+            unassignedChildrenCenter = {
+              center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2
+            };
+          }
+
+          for (const sp of rightSpouses) {
+            const spouseChildren = childrenBySpouse.get(sp.spouse.id) || [];
+            if (spouseChildren.length > 0) {
+              for (const child of spouseChildren) {
+                assignX(child);
+              }
+              anyGroupLaidOut = true;
+              const groupXPositions = spouseChildren.map(c => c.x);
+              spouseGroupCenters.push({
+                spouse: sp,
+                center: (Math.min(...groupXPositions) + Math.max(...groupXPositions)) / 2,
+                children: spouseChildren
+              });
+            }
+          }
         }
-        
+
         // Position parent node
         if (spouseGroupCenters.length > 0 || unassignedChildrenCenter) {
           let sumNodeX = 0;
           let count = 0;
-          
-          for (const gc of spouseGroupCenters) {
-            sumNodeX += gc.center - gc.spouse.offset / 2;
-            count++;
-          }
-          
-          if (unassignedChildrenCenter) {
-            sumNodeX += unassignedChildrenCenter.center;
-            count++;
-          }
-          
-          node.x = sumNodeX / count;
-          
-          // Realign each spouse's child group so it centres under the
-          // spouse-pair connector midpoint (parentX + offset/2).
-          // Without this, children drift away from the connector line when
-          // multiple spouses shift the parent's position.
-          for (const gc of spouseGroupCenters) {
-            const connectorMidX = node.x + gc.spouse.offset / 2;
-            const shift = connectorMidX - gc.center;
-            if (Math.abs(shift) > 0.5) {
-              const groupChildren = childrenBySpouse.get(gc.spouse.spouse.id) || [];
-              for (const child of groupChildren) {
-                shiftSubtree(child, shift);
+
+          if (hasMultipleSpouses && spouseGroupCenters.length > 0) {
+            // BALANCED ANCHOR — delegated to solveBalancedSpouseAnchor (defined
+            // above computeLayout) so this stage and drawTree's post-adjustment
+            // re-centering use identical math and can never disagree. Children
+            // are never moved here; uniform leaf spacing is preserved by
+            // construction. See the helper for the full algorithm notes.
+            const solved = solveBalancedSpouseAnchor(node, c => c.x);
+            if (solved) {
+              node.x = solved.x;
+              for (const gc of spouseGroupCenters) {
+                const mag = solved.offsets.get(gc.spouse.spouse.id);
+                if (mag !== undefined) gc.spouse.spouse._layoutOffset = mag;
               }
-              gc.center += shift; // keep bookkeeping up to date
+            }
+          } else {
+            // hasMixedChildren (single spouse, some assigned + some unassigned):
+            // keep the original fixed-offset logic unchanged.
+            for (const gc of spouseGroupCenters) {
+              sumNodeX += gc.center - gc.spouse.offset / 2;
+              count++;
+            }
+            if (unassignedChildrenCenter) {
+              sumNodeX += unassignedChildrenCenter.center;
+              count++;
+            }
+            node.x = sumNodeX / count;
+
+            for (const gc of spouseGroupCenters) {
+              const connectorMidX = node.x + gc.spouse.offset / 2;
+              const shift = connectorMidX - gc.center;
+              if (Math.abs(shift) > 0.5) {
+                const groupChildren = childrenBySpouse.get(gc.spouse.spouse.id) || [];
+                for (const child of groupChildren) shiftSubtree(child, shift);
+                gc.center += shift;
+              }
             }
           }
-          
-          // Update currentX to account for this node's rightmost extent (including right spouses and shifted children)
+
+          // Update currentX: account for rightmost extent across all right spouses
+          // and any shifted children.  getSpousesWithOffsets now returns dynamic
+          // offsets (via _layoutOffset) for the multi-spouse case.
           const spousesWithOffsetsForExtent = getSpousesWithOffsets(node.data);
           const rightSpousesForExtent = spousesWithOffsetsForExtent.filter(s => s.side === 'right');
-          const totalRightWidthForExtent = rightSpousesForExtent.length * (effectiveNodeWidth() + effectiveSpouseGap());
-          let rightmostExtent = node.x + totalRightWidthForExtent + effectiveNodeWidth() / 2 + effectiveSpouseGap();
-          // Also consider the rightmost child position (they may have been shifted beyond the spouse extent)
+          let rightmostExtent = node.x + effectiveNodeWidth() / 2 + effectiveSpouseGap();
+          for (const sp of rightSpousesForExtent) {
+            const spouseEdge = node.x + sp.offset + effectiveNodeWidth() / 2 + effectiveSpouseGap();
+            if (spouseEdge > rightmostExtent) rightmostExtent = spouseEdge;
+          }
           for (const child of node.children) {
             const childRight = child.x + effectiveNodeWidth() / 2 + effectiveSpouseGap();
             if (childRight > rightmostExtent) rightmostExtent = childRight;
@@ -6193,7 +7013,30 @@ function computeLayout(root) {
       }
     }
   }
-  
+
+  // Return the bounding box of a set of d3 hierarchy nodes and all their descendants,
+  // including each node's spouses at their current computed offsets.
+  // Used to measure a union's child-group width for dynamic spouse-offset calculation.
+  function getSubtreeExtent(treeNodes) {
+    let minX = Infinity, maxX = -Infinity;
+    const hw = effectiveNodeWidth() / 2;
+    for (const tn of treeNodes) {
+      tn.descendants().forEach(n => {
+        minX = Math.min(minX, n.x - hw);
+        maxX = Math.max(maxX, n.x + hw);
+        if (n.data.spouses && !n.data.collapsed) {
+          getSpousesWithOffsets(n.data).forEach(sp => {
+            const sx = n.x + sp.offset;
+            minX = Math.min(minX, sx - hw);
+            maxX = Math.max(maxX, sx + hw);
+          });
+        }
+      });
+    }
+    if (!isFinite(minX)) return { minX: 0, maxX: 0, width: 0 };
+    return { minX, maxX, width: maxX - minX };
+  }
+
   // Find the root-level subtree that contains a given node
   // (i.e., which child of root is the ancestor of this node)
   function findRootSubtree(node) {
@@ -6337,14 +7180,23 @@ function computeLayout(root) {
   
   for (let depth = maxDepth - 1; depth >= 0; depth--) {
     const nodesAtDepth = allNodes.filter(n => n.depth === depth);
-    
+
     for (const node of nodesAtDepth) {
       if (node.children && node.children.length > 0) {
+        // Skip multi-spouse parents with assigned children: Phase 1's
+        // primary-anchor algorithm has already positioned them so the
+        // child-descent connectors drop straight. The naive childrenCenter
+        // formula below uses static spouse widths and would clobber that.
+        const _activeSpouses = (node.data.spouses || []).filter(s => !s._promoted);
+        const _promotedIds   = new Set((node.data.spouses || []).filter(s => s._promoted).map(s => s.id));
+        const _hasAssignedChildren = node.children.some(c => c.data.spouseId && !_promotedIds.has(c.data.spouseId));
+        if (_activeSpouses.length > 1 && _hasAssignedChildren) continue;
+
         const childXPositions = node.children.map(c => c.x);
         const minX = Math.min(...childXPositions);
         const maxX = Math.max(...childXPositions);
         const childrenCenter = (minX + maxX) / 2;
-        
+
         if (node.data.spouses && node.data.spouses.length > 0) {
           const spousesWithOffsets = getSpousesWithOffsets(node.data);
           const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
@@ -6358,7 +7210,7 @@ function computeLayout(root) {
       }
     }
   }
-  
+
   // ============================================
   // PHASE 4: Run collision detection again after re-centering
   // (Re-centering might have caused new collisions)
@@ -6412,9 +7264,16 @@ function computeLayout(root) {
       const nodesAtDepth = allNodes.filter(n => n.depth === depth);
       for (const node of nodesAtDepth) {
         if (node.children && node.children.length > 0) {
+          // Same skip as Phase 3: preserve Phase 1's primary-anchor positioning
+          // for multi-spouse parents with assigned children.
+          const _activeSpouses = (node.data.spouses || []).filter(s => !s._promoted);
+          const _promotedIds   = new Set((node.data.spouses || []).filter(s => s._promoted).map(s => s.id));
+          const _hasAssignedChildren = node.children.some(c => c.data.spouseId && !_promotedIds.has(c.data.spouseId));
+          if (_activeSpouses.length > 1 && _hasAssignedChildren) continue;
+
           const childXPositions = node.children.map(c => c.x);
           const childrenCenter = (Math.min(...childXPositions) + Math.max(...childXPositions)) / 2;
-          
+
           if (node.data.spouses && node.data.spouses.length > 0) {
             const spousesWithOffsets = getSpousesWithOffsets(node.data);
             const leftSpouses = spousesWithOffsets.filter(s => s.side === 'left');
@@ -6716,7 +7575,12 @@ function drawTree(savedTransform = null) {
   let _superRootIds = null; // set of direct child IDs of the super-root (to suppress their parent links)
   if (data._promotedBranches && data._promotedBranches.length > 0) {
     _superRootIds = new Set();
-    const wrapperChildren = [effectiveRoot, ...data._promotedBranches];
+    // Branches promoted from a left-side spouse sit to the LEFT of the main
+    // tree; everything else (right-side or legacy files without a side
+    // marker) keeps the historical position on the right.
+    const _leftBranches  = data._promotedBranches.filter(b => b._promotedSide === 'left');
+    const _rightBranches = data._promotedBranches.filter(b => b._promotedSide !== 'left');
+    const wrapperChildren = [..._leftBranches, effectiveRoot, ..._rightBranches];
     wrapperChildren.forEach(c => { if (c.id) _superRootIds.add(c.id); });
     effectiveRoot = {
       name: '', id: '__superroot__', _isSuperRoot: true,
@@ -7220,6 +8084,33 @@ function drawTree(savedTransform = null) {
     
     for (const node of nodesAtDepth) {
       if (node.children && node.children.length > 0) {
+        // Multi-spouse parents with assigned children: the naive static-width
+        // formula below disagrees with the balanced anchor whenever unions have
+        // unequal widths, and silently overrode Phase 1's result. Instead,
+        // re-run the SAME solver against the ADJUSTED child positions so the
+        // node and its marriage midpoints track any post-layout shifts, and
+        // update spouse offsets to match.
+        {
+          const _activeSp = (node.data.spouses || []).filter(s => !s._promoted);
+          const _promSp = new Set((node.data.spouses || []).filter(s => s._promoted).map(s => s.id));
+          const _hasAssigned = node.children.some(c => c.data.spouseId && !_promSp.has(c.data.spouseId));
+          if (_activeSp.length > 1 && _hasAssigned && !node.data.collapsed) {
+            const solved = solveBalancedSpouseAnchor(node, c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+            if (solved) {
+              const currentAdjustedX = node.x + (crossLinkChildXAdjustments[node.data.id] || 0);
+              const adjustmentNeeded = solved.x - currentAdjustedX;
+              if (Math.abs(adjustmentNeeded) > 0.1) {
+                crossLinkChildXAdjustments[node.data.id] = (crossLinkChildXAdjustments[node.data.id] || 0) + adjustmentNeeded;
+              }
+              solved.offsets.forEach((mag, sid) => {
+                const sp = (node.data.spouses || []).find(s => s.id === sid);
+                if (sp) sp._layoutOffset = mag;
+              });
+              continue;
+            }
+          }
+        }
+
         // Calculate children's adjusted X positions
         const childAdjustedXPositions = node.children.map(c => 
           c.x + (crossLinkChildXAdjustments[c.data.id] || 0)
@@ -7252,6 +8143,21 @@ function drawTree(savedTransform = null) {
       }
     }
   }
+
+  // Apply manual per-node X nudges (Edit Node panel → Layout Spacing →
+  // Position). Applied AFTER every automatic positioning pass so the nudge is
+  // a stable relative correction on top of the computed layout: re-layouts
+  // won't erase it, and downstream drop/bracket math (which reads adjusted
+  // positions) follows the nudged node automatically. Node-only scope: a
+  // nudge moves the node and its attached in-place spouses (spouse x derives
+  // from the node's x), never its descendants. Spouse-specific nudges are
+  // applied inside getSpousesWithOffsets.
+  root.descendants().forEach(n => {
+    if (n.data && n.data.xNudge) {
+      crossLinkChildXAdjustments[n.data.id] = (crossLinkChildXAdjustments[n.data.id] || 0) + n.data.xNudge;
+    }
+  });
+  _nodeNudgesBaked = true; // from here on, spouse offsets compensate for host nudges
 
   // For collapsed nodes, also hide spouses
   const nodesWithSpouses = root.descendants().filter(d => d.data.spouses && d.data.spouses.some(s => !s._promoted) && !d.data.collapsed);
@@ -7293,16 +8199,30 @@ function drawTree(savedTransform = null) {
   // Must be built before horizontal lines collection so hop detection uses the same X as drawn lines.
   const dropXMap = new Map(); // key: `${parentId}::${spouseId|''}`
 
-  // First, build spouse-pair midpoints from the rendered positions
+  // Drop X per union: RULE — the drop is centered over the children it
+  // serves. It is clamped onto the marriage line (between the couple's inner
+  // edges) so the attachment never lands under either box. Unions without
+  // assigned children fall back to the marriage midpoint (no drop is drawn
+  // for those, but the key can participate in bracket spans).
   root.descendants().forEach(d => {
     if (d.data.spouses && d.data.spouses.length > 0) {
       const parentAdjX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
       const spousesWithOffsetsForDrop = getSpousesWithOffsets(d.data);
+      const _halfWDrop = effectiveNodeWidth() / 2;
       spousesWithOffsetsForDrop.forEach(sp => {
         const spouseX = parentAdjX + sp.offset;
-        const midX = (parentAdjX + spouseX) / 2;
         const key = `${d.data.id}::${sp.spouse.id}`;
-        dropXMap.set(key, midX);
+        const unionKids = (d.children || []).filter(c => c.data.spouseId === sp.spouse.id);
+        if (unionKids.length > 0) {
+          const kidXs = unionKids.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+          let dropX = (Math.min(...kidXs) + Math.max(...kidXs)) / 2;
+          const innerLo = Math.min(parentAdjX, spouseX) + _halfWDrop;
+          const innerHi = Math.max(parentAdjX, spouseX) - _halfWDrop;
+          if (innerLo < innerHi) dropX = Math.max(innerLo, Math.min(innerHi, dropX));
+          dropXMap.set(key, dropX);
+        } else {
+          dropXMap.set(key, (parentAdjX + spouseX) / 2);
+        }
       });
     }
   });
@@ -7332,45 +8252,68 @@ function drawTree(savedTransform = null) {
     childrenByParent.get(parentId).push(d);
   });
   
-  // For each parent with multiple children, the gutter line spans from leftmost to rightmost child
+  // For each parent: emit one gutter segment per union (spouse group) so that
+  // children from different unions get separate descent brackets, not a merged one.
+  // For single-spouse / no-spouse parents the original single-segment logic is kept.
   childrenByParent.forEach((children, parentId) => {
     if (children.length > 0) {
       const parent = children[0].parent;
       const gutterY = parent.y + verticalSpacing / 2;
-      
-      // Get all X positions involved (all children)
-      const xPositions = children.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
-      
-      // Also include each spouse-group's drop X (midpoint of that group's children),
-      // which is what the vertical drop line actually uses
       const parentAdjustedX = parent.x + (crossLinkChildXAdjustments[parent.data.id] || 0);
-      if (parent.data.spouses && parent.data.spouses.length > 0) {
-        const spousesWithOffsets = getSpousesWithOffsets(parent.data);
-        spousesWithOffsets.forEach(sp => {
-          const groupKey = `${parent.data.id}::${sp.spouse.id}`;
-          if (dropXMap.has(groupKey)) {
-            xPositions.push(dropXMap.get(groupKey));
+
+      const activeSpouses = (parent.data.spouses || []).filter(s => !s._promoted);
+      const _parentSolo = parentUsesSoloDrops(parent.data);
+
+      if (activeSpouses.length > 1 || _parentSolo) {
+        // Multi-spouse and/or solo children: one gutter segment per union so
+        // brackets stay separate. Children referencing a promoted spouse are
+        // grouped with the unassigned (solo) children, matching the layout.
+        const _promotedIdsHL = new Set((parent.data.spouses || []).filter(s => s._promoted).map(s => s.id));
+        const childrenBySpouseId = new Map();
+        children.forEach(c => {
+          const sid = (c.data.spouseId && !_promotedIdsHL.has(c.data.spouseId)) ? c.data.spouseId : '';
+          if (!childrenBySpouseId.has(sid)) childrenBySpouseId.set(sid, []);
+          childrenBySpouseId.get(sid).push(c);
+        });
+
+        childrenBySpouseId.forEach((spouseChildren, spouseId) => {
+          const xPositions = spouseChildren.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+          const isSoloGroup = spouseId === '' && _parentSolo;
+          if (isSoloGroup) {
+            // Solo bracket runs from the parent's own drop point.
+            xPositions.push(parentAdjustedX);
+          } else {
+            const dropKey = `${parentId}::${spouseId}`;
+            if (dropXMap.has(dropKey)) xPositions.push(dropXMap.get(dropKey));
+          }
+
+          const minX = Math.min(...xPositions);
+          const maxX = Math.max(...xPositions);
+          if (minX !== maxX) {
+            horizontalLines.push({ y: isSoloGroup ? soloGutterYFor(parent.y) : gutterY, xStart: minX, xEnd: maxX, type: 'sibling' });
           }
         });
-        // Also include drop X for children with no spouseId
-        const noSpouseKey = `${parent.data.id}::`;
-        if (dropXMap.has(noSpouseKey)) {
-          xPositions.push(dropXMap.get(noSpouseKey));
-        }
       } else {
-        xPositions.push(parentAdjustedX);
-      }
-      
-      const minX = Math.min(...xPositions);
-      const maxX = Math.max(...xPositions);
-      
-      if (minX !== maxX) {
-        horizontalLines.push({
-          y: gutterY,
-          xStart: minX,
-          xEnd: maxX,
-          type: 'sibling'
-        });
+        // Single-spouse or no-spouse: original single-segment logic.
+        const xPositions = children.map(c => c.x + (crossLinkChildXAdjustments[c.data.id] || 0));
+
+        if (parent.data.spouses && parent.data.spouses.length > 0) {
+          const spousesWithOffsets = getSpousesWithOffsets(parent.data);
+          spousesWithOffsets.forEach(sp => {
+            const groupKey = `${parent.data.id}::${sp.spouse.id}`;
+            if (dropXMap.has(groupKey)) xPositions.push(dropXMap.get(groupKey));
+          });
+          const noSpouseKey = `${parent.data.id}::`;
+          if (dropXMap.has(noSpouseKey)) xPositions.push(dropXMap.get(noSpouseKey));
+        } else {
+          xPositions.push(parentAdjustedX);
+        }
+
+        const minX = Math.min(...xPositions);
+        const maxX = Math.max(...xPositions);
+        if (minX !== maxX) {
+          horizontalLines.push({ y: gutterY, xStart: minX, xEnd: maxX, type: 'sibling' });
+        }
       }
     }
   });
@@ -7475,6 +8418,12 @@ function drawTree(savedTransform = null) {
         }
       }
 
+      // Solo children (unassigned, parent in solo-drop mode) hang from the
+      // parent's own box on the lower solo gutter — never a marriage midpoint.
+      const _activeSpWO = (d.parent.data.spouses && d.parent.data.spouses.length > 0) ? getSpousesWithOffsets(d.parent.data) : [];
+      const _isUnassignedKid = !d.data.spouseId || !_activeSpWO.some(s => s.spouse.id === d.data.spouseId);
+      const _isSoloKid = _isUnassignedKid && parentUsesSoloDrops(d.parent.data);
+
       if (d.parent.data.spouses && d.parent.data.spouses.length > 0) {
         const childSpouseId = d.data.spouseId;
         const spousesWithOffsets = getSpousesWithOffsets(d.parent.data);
@@ -7491,7 +8440,8 @@ function drawTree(savedTransform = null) {
           }
         }
         // No spouseId but parent has exactly one spouse: originate from spouse connector midpoint
-        if (!d.data.spouseId && d.parent.data.spouses && d.parent.data.spouses.length === 1) {
+        // (classic couple's-child look) — unless this is an explicit solo child.
+        if (!d.data.spouseId && !_isSoloKid && d.parent.data.spouses && d.parent.data.spouses.length === 1) {
           const spousesWithOffsets2 = getSpousesWithOffsets(d.parent.data);
           if (spousesWithOffsets2.length === 1) {
             const singleSpouse = spousesWithOffsets2[0];
@@ -7510,14 +8460,18 @@ function drawTree(savedTransform = null) {
       const childAdjustedY = crossLinkYAdjustments[d.data.id] !== undefined ? crossLinkYAdjustments[d.data.id] : d.y;
       const cy = childAdjustedY - nodeHeight/2;
       
-      // Use consistent gutter level below parent (not midpoint between parent and child)
-      const gutterY = d.parent.y + verticalSpacing / 2;
+      // Use consistent gutter level below parent (not midpoint between parent and child).
+      // Solo children use their own slightly lower gutter so brackets don't merge.
+      const gutterY = _isSoloKid ? soloGutterYFor(d.parent.y) : d.parent.y + verticalSpacing / 2;
       
       // Check for crossings on the vertical drop from gutter to child
       const crossings = findHopCrossings(cx, gutterY, cy);
       
+      // Solo drops descend past the union gutter bar — hop over it if crossed.
+      const parentDropCrossings = _isSoloKid ? findHopCrossings(px, py, gutterY) : [];
+      
       // Build path with hops if needed
-      let path = `M${px},${py} V${gutterY} H${cx}`;
+      let path = `M${px},${py}` + buildVerticalPathWithHops(px, py, gutterY, parentDropCrossings) + ` H${cx}`;
       path += buildVerticalPathWithHops(cx, gutterY, cy, crossings);
       
       return path;
@@ -7569,9 +8523,13 @@ function drawTree(savedTransform = null) {
     });
   });
   
-  // Draw vertical line from main node for children without spouseId
+  // Draw vertical line from main node for children without spouseId.
+  // Skipped in solo-drop mode: the per-child link paths already draw a
+  // hop-aware vertical from the parent's own box, and this extra line was
+  // drawn at the children's midpoint — which could emerge from underneath a
+  // spouse's box (e.g. appearing to hang a solo child from the wrong parent).
   nodesWithSpouses.forEach(d => {
-    if (d.children && d.children.length > 0) {
+    if (d.children && d.children.length > 0 && !parentUsesSoloDrops(d.data)) {
       const childrenWithNoSpouse = d.children.filter(c => !c.data.spouseId);
       if (childrenWithNoSpouse.length > 0) {
         const mainNodeAdjustedX = d.x + (crossLinkChildXAdjustments[d.data.id] || 0);
@@ -8357,6 +9315,7 @@ function drawTree(savedTransform = null) {
 // Live update for name field
 document.getElementById("node-name").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     editData.name = document.getElementById("node-name").value;
@@ -8367,6 +9326,7 @@ document.getElementById("node-name").addEventListener("input", () => {
 // Live update for birth field
 document.getElementById("node-birth").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     const newBirth = document.getElementById("node-birth").value.trim();
@@ -8378,6 +9338,7 @@ document.getElementById("node-birth").addEventListener("input", () => {
 // Live update for birth location field
 document.getElementById("node-birth-location").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     const newBirthLocation = document.getElementById("node-birth-location").value.trim();
@@ -8389,6 +9350,7 @@ document.getElementById("node-birth-location").addEventListener("input", () => {
 // Live update for gender checkboxes (mutually exclusive)
 document.getElementById("node-male").addEventListener("change", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     if (document.getElementById("node-male").checked) {
@@ -8405,6 +9367,7 @@ document.getElementById("node-male").addEventListener("change", () => {
 
 document.getElementById("node-female").addEventListener("change", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     if (document.getElementById("node-female").checked) {
@@ -8426,6 +9389,7 @@ document.getElementById("node-show-gender").addEventListener("change", () => {
       document.getElementById("node-show-gender").checked = false;
       return;
     }
+    saveSidebarPreState();
     sidebarDirty = true;
     editData.showGender = document.getElementById("node-show-gender").checked;
     drawTree(d3.zoomTransform(svg.node()));
@@ -8435,6 +9399,7 @@ document.getElementById("node-show-gender").addEventListener("change", () => {
 // Live update for death field
 document.getElementById("node-death").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     const newDeath = document.getElementById("node-death").value.trim();
@@ -8446,6 +9411,7 @@ document.getElementById("node-death").addEventListener("input", () => {
 // Live update for death location field
 document.getElementById("node-death-location").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     const newDeathLocation = document.getElementById("node-death-location").value.trim();
@@ -8457,6 +9423,7 @@ document.getElementById("node-death-location").addEventListener("input", () => {
 // Live update for notes field
 document.getElementById("node-notes").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
     const editData = selectedSpouse || selectedNode.data;
     const newNotes = document.getElementById("node-notes").value.trim();
@@ -8534,27 +9501,9 @@ document.getElementById("add-child").addEventListener("click", () => {
   const addToLeft = document.getElementById("add-child-left").checked;
   
   if (selectedSpouse && selectedNode) {
-    saveState();
-    const mainNodeData = selectedNode.data;
-    if (!mainNodeData.children) mainNodeData.children = [];
-    const newChild = { 
-      name: newName, 
-      color: "#ffffff", 
-      fontSize: 12, 
-      bold: false, 
-      italic: false,
-      id: generateNodeId(),
-      spouseId: selectedSpouse.id
-    };
-    mainNodeData.children.push(newChild);
-    document.getElementById("child-name").value = "";
-    document.getElementById("add-child-left").checked = false;
-    if (addToLeft) {
-      moveChildToVisualLeft(newChild, mainNodeData);
-    } else {
-      drawTree(d3.zoomTransform(svg.node()));
-    }
-    showSidebar(selectedSpouse, selectedNode, true, selectedSpouseIndex);
+    // Ask which second parent applies (union with the host node, or the
+    // spouse alone) instead of silently assuming the union.
+    showSecondParentDialogForSpouse(newName, selectedNode.data, selectedSpouse, selectedSpouseIndex);
   } else if (selectedNode) {
     const nodeData = selectedNode.data;
     const spouses = nodeData.spouses || [];
@@ -8636,6 +9585,10 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
       const spouseId = btn.getAttribute('data-spouse-id');
       if (spouseId) {
         newChild.spouseId = spouseId;
+      } else {
+        // "X only (no second parent)": record the choice explicitly so the
+        // renderer treats this as the parent's solo child, not the couple's.
+        newChild.soloParent = true;
       }
       
       parentNode.children.push(newChild);
@@ -8664,6 +9617,128 @@ function showSpouseSelectionDialog(childName, parentNode, spouses) {
   });
 }
 
+// Dialog for selecting the second parent when a child is added via a SPOUSE's
+// sidebar. Mirrors showSpouseSelectionDialog, but from the spouse's
+// perspective: the child can belong to the (spouse & host) union — the old
+// silent behavior — or to the spouse alone. "Spouse only" promotes the spouse
+// into a standalone branch (same bookkeeping as adding a parent to a spouse)
+// and hangs the child beneath the promoted node.
+function showSecondParentDialogForSpouse(childName, hostNodeData, spouse, spouseIndex) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+
+  const dialog = document.createElement('div');
+  const dc = dialogColors();
+  dialog.style.cssText = `background: ${dc.bg}; padding: 20px; border-radius: 8px; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
+
+  dialog.innerHTML = `
+    <h3 style="margin-top: 0; margin-bottom: 15px; color: ${dc.heading};">Select Second Parent for "${childName}"</h3>
+    <p style="margin-bottom: 15px; color: ${dc.text};">Which spouse is ${childName}'s other parent?</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="spouse-select-btn" data-choice="solo" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
+        ${spouse.name} only (no second parent)
+      </button>
+      <button class="spouse-select-btn" data-choice="union" style="padding: 10px; border: 1px solid ${dc.btnBorder}; border-radius: 5px; background: ${dc.btnBg}; color: ${dc.heading}; cursor: pointer;">
+        ${spouse.name} & ${hostNodeData.name}
+      </button>
+    </div>
+    <button class="cancel-btn" style="margin-top: 15px; padding: 8px 16px; border: none; background: ${dc.cancelBg}; color: white; border-radius: 5px; cursor: pointer;">Cancel</button>
+  `;
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  dialog.querySelectorAll('.spouse-select-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => btn.style.background = dc.btnHover);
+    btn.addEventListener('mouseleave', () => btn.style.background = dc.btnBg);
+  });
+
+  dialog.querySelector('[data-choice="union"]').addEventListener('click', () => {
+    saveState();
+    if (!hostNodeData.children) hostNodeData.children = [];
+    const newChild = {
+      name: childName, color: "#ffffff", fontSize: 12, bold: false, italic: false,
+      id: generateNodeId(),
+      spouseId: spouse.id
+    };
+    hostNodeData.children.push(newChild);
+    document.getElementById("child-name").value = "";
+    document.body.removeChild(overlay);
+    if (document.getElementById("add-child-left").checked) {
+      document.getElementById("add-child-left").checked = false;
+      moveChildToVisualLeft(newChild, hostNodeData);
+    } else {
+      drawTree(d3.zoomTransform(svg.node()));
+    }
+    showSidebar(spouse, selectedNode, true, spouseIndex);
+  });
+
+  dialog.querySelector('[data-choice="solo"]').addEventListener('click', () => {
+    saveState();
+    // Promote the spouse into a standalone branch — same bookkeeping as the
+    // add-parent-to-spouse flow, except the spouse itself is the branch root.
+    const newNodeId = generateNodeId();
+    const promotedNode = {
+      id: newNodeId, name: spouse.name || 'Unknown', color: spouse.color || '#ffffff',
+      fontSize: spouse.fontSize || 12, bold: spouse.bold || false, italic: spouse.italic || false,
+    };
+    ['gender','birth','death','birthLocation','deathLocation','notes','showGender','hasCustomStyle','isHomePerson']
+      .forEach(p => { if (spouse[p] !== undefined) promotedNode[p] = spouse[p]; });
+
+    const newChild = { name: childName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId() };
+    promotedNode.children = [newChild];
+
+    // Remember which side of the host this spouse sat on, so the promoted
+    // branch can be placed on the same side of the tree (left spouses stay
+    // left of the main tree instead of being appended to the far right).
+    promotedNode._promotedSide = spouse.side || (spouseIndex % 2 === 0 ? 'right' : 'left');
+
+    if (!data._promotedBranches) data._promotedBranches = [];
+    data._promotedBranches.push(promotedNode);
+
+    // sharedChildren only if this union actually has children — otherwise the
+    // renderer would wrongly treat ALL of the host's children (other unions
+    // included) as co-parented by the promoted spouse and draw a phantom drop
+    // from the host↔promoted midpoint.
+    // The link renders as a plain solid spouse line (same as an in-place
+    // spouse); the branch sits on the spouse's original side so the path to
+    // the host is short. useBezier only when a shared-children drop must be
+    // drawn, since that rendering lives in the bezier code path.
+    const unionHasChildren = (hostNodeData.children || []).some(c => c.spouseId === spouse.id);
+    const promotionLink = { type: 'spouse', person1Id: hostNodeData.id, person2Id: newNodeId };
+    if (unionHasChildren) { promotionLink.sharedChildren = 'person1'; promotionLink.useBezier = true; }
+    crossLinks.push(promotionLink);
+
+    spouse._promoted = true;
+    spouse._promotedNodeId = newNodeId;
+
+    // Re-key DNA comparisons and existing cross-links to the promoted node id
+    const oldId = spouse.id;
+    for (const key of Object.keys(dnaComparisons)) {
+      if (key.includes(oldId)) { dnaComparisons[key.replace(oldId, newNodeId)] = dnaComparisons[key]; }
+    }
+    for (const link of crossLinks) {
+      if (link.person1Id === oldId) link.person1Id = newNodeId;
+      if (link.person2Id === oldId) link.person2Id = newNodeId;
+    }
+
+    document.getElementById("child-name").value = "";
+    document.getElementById("add-child-left").checked = false;
+    document.body.removeChild(overlay);
+    drawTree(d3.zoomTransform(svg.node()));
+    closeSidebar();
+  });
+
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+    }
+  });
+}
+
 document.getElementById("add-parent").addEventListener("click", () => {
   const newName = document.getElementById("parent-name").value.trim();
   if (!newName || !selectedNode) return;
@@ -8682,7 +9757,12 @@ document.getElementById("add-parent").addEventListener("click", () => {
           if (node.id === spouse._promotedNodeId) {
             const newParent = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId(), children: [node] };
             if (parentArr) { parentArr[idx] = newParent; }
-            else { data._promotedBranches[i] = newParent; }
+            else {
+              // Replacing the branch root: carry the side marker up so the
+              // branch stays on its original side of the main tree.
+              if (node._promotedSide) { newParent._promotedSide = node._promotedSide; delete node._promotedSide; }
+              data._promotedBranches[i] = newParent;
+            }
             return true;
           }
           if (node.children) {
@@ -8706,10 +9786,21 @@ document.getElementById("add-parent").addEventListener("click", () => {
       
       const newParent = { name: newName, color: "#ffffff", fontSize: 12, bold: false, italic: false, id: generateNodeId(), children: [promotedNode] };
       
+      // Keep the promoted branch on the spouse's original side of the host.
+      const _spIdx = (hostNode.spouses || []).indexOf(spouse);
+      newParent._promotedSide = spouse.side || (_spIdx % 2 === 0 ? 'right' : 'left');
+      
       if (!data._promotedBranches) data._promotedBranches = [];
       data._promotedBranches.push(newParent);
       
-      crossLinks.push({ type: 'spouse', person1Id: hostNode.id, person2Id: newNodeId, sharedChildren: 'person1' });
+      // Match the add-child-to-spouse promotion pattern: sharedChildren only
+      // if this union actually has children, and useBezier so the cross-link
+      // stays in place instead of dragging the host's entire subtree to the
+      // marriage midpoint (which mangles the layout after collision passes).
+      const unionHasChildren = (hostNode.children || []).some(c => c.spouseId === spouse.id);
+      const promotionLink = { type: 'spouse', person1Id: hostNode.id, person2Id: newNodeId };
+      if (unionHasChildren) { promotionLink.sharedChildren = 'person1'; promotionLink.useBezier = true; }
+      crossLinks.push(promotionLink);
       
       spouse._promoted = true;
       spouse._promotedNodeId = newNodeId;
@@ -8771,6 +9862,7 @@ function showAssignChildrenDialog(nodeRef, spouseRef) {
     nodeRef.data.children.forEach(child => {
       if (!child.spouseId) {
         child.spouseId = spouseRef.id;
+        delete child.soloParent;
       }
     });
     document.body.removeChild(overlay);
@@ -8778,6 +9870,14 @@ function showAssignChildrenDialog(nodeRef, spouseRef) {
   });
 
   document.getElementById('assign-children-no').addEventListener('click', () => {
+    // Record the choice explicitly: these children hang from the parent's own
+    // box, not the marriage midpoint. (Without this flag, the legacy one-spouse
+    // fallback would draw them as the couple's children anyway.)
+    nodeRef.data.children.forEach(child => {
+      if (!child.spouseId) {
+        child.soloParent = true;
+      }
+    });
     document.body.removeChild(overlay);
     drawTree(d3.zoomTransform(svg.node()));
   });
@@ -8861,6 +9961,8 @@ function moveNodeToNewParent(nodeToMove, newParentData, spouseId) {
   } else {
     delete nodeToMove.spouseId;
   }
+  // Either way the old solo choice no longer applies in the new context
+  delete nodeToMove.soloParent;
   
   // 3. Insert into new parent's children
   if (!newParentData.children) {
@@ -9355,9 +10457,14 @@ document.getElementById("node-color").addEventListener("input", () => {
     const editData = selectedSpouse || selectedNode.data;
     editData.color = document.getElementById("node-color").value;
     
-    // Apply to all descendants if checkbox is checked
-    if (document.getElementById("apply-color-descendants").checked && !selectedSpouse) {
-      applyColorToDescendants(selectedNode.data, editData.color);
+    // Apply to all descendants if checkbox is checked. For a selected spouse,
+    // "descendants" means her union's children (and their subtrees).
+    if (document.getElementById("apply-color-descendants").checked) {
+      if (selectedSpouse) {
+        applyColorToSpouseDescendants(selectedNode.data, selectedSpouse, editData.color);
+      } else {
+        applyColorToDescendants(selectedNode.data, editData.color);
+      }
     }
     
     debouncedDrawTree();
@@ -9370,10 +10477,15 @@ document.getElementById("node-color").addEventListener("change", () => {
 
 // Apply color to descendants immediately when checkbox is checked
 document.getElementById("apply-color-descendants").addEventListener("change", (e) => {
-  if (e.target.checked && selectedNode && !selectedSpouse) {
+  if (e.target.checked && selectedNode) {
     saveState();
-    const color = selectedNode.data.color || document.getElementById("node-color").value;
-    applyColorToDescendants(selectedNode.data, color);
+    if (selectedSpouse) {
+      const color = selectedSpouse.color || document.getElementById("node-color").value;
+      applyColorToSpouseDescendants(selectedNode.data, selectedSpouse, color);
+    } else {
+      const color = selectedNode.data.color || document.getElementById("node-color").value;
+      applyColorToDescendants(selectedNode.data, color);
+    }
     autoSave();
     drawTree(d3.zoomTransform(svg.node()));
   }
@@ -9633,8 +10745,8 @@ function showRemoveSpouseDialog(nodeData) {
 // Live update for font size
 document.getElementById("font-size").addEventListener("input", () => {
   if (selectedNode) {
+    saveSidebarPreState();
     sidebarDirty = true;
-    debouncedSaveState();
     const editData = selectedSpouse || selectedNode.data;
     editData.fontSize = parseInt(document.getElementById("font-size").value);
     editData.hasCustomStyle = true;
@@ -9754,6 +10866,71 @@ document.getElementById("delete-node").addEventListener("click", () => {
   // Check if the selected node IS the home person
   if (nodeToDelete.isHomePerson) {
     showAlert("Cannot delete the home person.");
+    return;
+  }
+
+  // Promoted-branch nodes (standalone spouse trees) live outside the main
+  // tree, so the main-tree delete paths below can never find them and would
+  // silently no-op. Handle them here with the same confirm/cleanup flow.
+  const promotedLoc = findPromotedBranchLocation(nodeToDelete);
+  if (promotedLoc) {
+    if (findHomePersonInSubtree(nodeToDelete)) {
+      showAlert("Cannot delete: this branch contains the home person.");
+      return;
+    }
+    showConfirm(`Are you sure you want to delete "${nodeName}" and all their descendants?`, () => {
+      saveState();
+
+      // Collect ids (node + descendants + their spouses) for cleanup
+      const idsToDelete = new Set();
+      (function collect(n) {
+        if (n.id) idsToDelete.add(n.id);
+        if (n.spouses) n.spouses.forEach(s => { if (s.id) idsToDelete.add(s.id); });
+        if (n.children) n.children.forEach(collect);
+      })(nodeToDelete);
+
+      // Remove from its branch — or remove the whole branch if it's the root
+      if (promotedLoc.parent) {
+        const idx = promotedLoc.parent.children.indexOf(nodeToDelete);
+        if (idx !== -1) promotedLoc.parent.children.splice(idx, 1);
+        if (promotedLoc.parent.children.length === 0) delete promotedLoc.parent.children;
+      } else {
+        data._promotedBranches.splice(promotedLoc.branchIndex, 1);
+        if (data._promotedBranches.length === 0) delete data._promotedBranches;
+      }
+
+      // Any spouse record pointing at a deleted promoted node is now dead:
+      // remove it, and unassign children that referenced that union so they
+      // remain visible as children of the host.
+      function sweepDeadPromotedSpouses(n) {
+        if (n.spouses) {
+          for (let i = n.spouses.length - 1; i >= 0; i--) {
+            const s = n.spouses[i];
+            if (s._promotedNodeId && idsToDelete.has(s._promotedNodeId)) {
+              if (s.id) idsToDelete.add(s.id);
+              if (n.children) n.children.forEach(c => { if (c.spouseId === s.id) delete c.spouseId; });
+              n.spouses.splice(i, 1);
+            }
+          }
+        }
+        if (n.children) n.children.forEach(sweepDeadPromotedSpouses);
+      }
+      sweepDeadPromotedSpouses(data);
+      if (data._promotedBranches) data._promotedBranches.forEach(sweepDeadPromotedSpouses);
+
+      // Drop cross-links touching anything deleted
+      crossLinks = crossLinks.filter(l => !idsToDelete.has(l.person1Id) && !idsToDelete.has(l.person2Id));
+
+      // DNA cleanup
+      for (const id of idsToDelete) {
+        for (const key in dnaComparisons) {
+          if (dnaKeyContainsId(key, id)) delete dnaComparisons[key];
+        }
+      }
+
+      closeSidebar();
+      drawTree(d3.zoomTransform(svg.node()));
+    });
     return;
   }
   
@@ -10134,6 +11311,8 @@ function executeRippleDelete(nodeToDelete, parentData, selectedNodeRef, childSpo
     } else {
       delete child.spouseId;
     }
+    // Old solo choice was relative to the deleted parent; doesn't carry over
+    delete child.soloParent;
   });
   
   // Clean up empty children array
@@ -10237,8 +11416,9 @@ document.getElementById("ripple-delete-node").addEventListener("click", () => {
     return;
   }
 
-  // Must have a parent to ripple into
-  if (!selectedNode.parent) {
+  // Must have a REAL parent to ripple into (promoted branch roots hang from
+  // the synthetic super-root, which is not a person and cannot adopt children)
+  if (!selectedNode.parent || (selectedNode.parent.data && selectedNode.parent.data._isSuperRoot)) {
     showAlert("Cannot ripple delete the root node (no parent to adopt children).");
     return;
   }
@@ -10417,6 +11597,40 @@ function syncLayoutSetting(settingName, value, extraFn) {
 }
 
 // Sidebar layout sliders
+// Per-node horizontal position nudge (Edit Node panel → Layout Spacing →
+// Position). Acts on the currently selected node, or the selected spouse if
+// the panel is showing one. Node-only scope: descendants stay put.
+const NODE_X_NUDGE_STEP = 5;
+function currentNudgeTarget() {
+  if (selectedSpouse) return selectedSpouse;
+  return selectedNode ? selectedNode.data : null;
+}
+function updateNodeNudgeDisplay() {
+  const t = currentNudgeTarget();
+  document.getElementById("node-x-nudge-val").textContent = t ? (t.xNudge || 0) : 0;
+}
+function nudgeNodeX(delta) {
+  const t = currentNudgeTarget();
+  if (!t) return;
+  saveState();
+  t.xNudge = (t.xNudge || 0) + delta;
+  if (t.xNudge === 0) delete t.xNudge;
+  updateNodeNudgeDisplay();
+  autoSave();
+  drawTree(d3.zoomTransform(svg.node()));
+}
+document.getElementById("node-x-nudge-left").addEventListener("click", () => nudgeNodeX(-NODE_X_NUDGE_STEP));
+document.getElementById("node-x-nudge-right").addEventListener("click", () => nudgeNodeX(NODE_X_NUDGE_STEP));
+document.getElementById("node-x-nudge-reset").addEventListener("click", () => {
+  const t = currentNudgeTarget();
+  if (!t || !t.xNudge) return;
+  saveState();
+  delete t.xNudge;
+  updateNodeNudgeDisplay();
+  autoSave();
+  drawTree(d3.zoomTransform(svg.node()));
+});
+
 document.getElementById("vertical-spacing").addEventListener("input", (e) => {
   verticalSpacing = parseFloat(e.target.value);
   syncLayoutSetting("verticalSpacing", verticalSpacing);
@@ -10660,38 +11874,47 @@ function jumpToHomePerson() {
     return;
   }
   
-  // Find home person node
-  function findHomeNode(node, parent = null) {
-    if (node.name === homePersonName || node.isHomePerson) {
+  // Find home person node.
+  // The isHomePerson flag is authoritative (unique by construction);
+  // name matching is only a fallback for legacy files saved before the
+  // flag existed, since names can be shared by multiple people.
+  function findHomeNode(node, matcher, parent = null) {
+    if (matcher(node)) {
       return { node, parent };
     }
     if (node.spouses) {
       for (const spouse of node.spouses) {
-        if (spouse.name === homePersonName || spouse.isHomePerson) {
+        if (matcher(spouse)) {
           return { node: spouse, parent: node };
         }
       }
     }
     if (node.children) {
       for (const child of node.children) {
-        const result = findHomeNode(child, node);
+        const result = findHomeNode(child, matcher, node);
         if (result) return result;
       }
     }
     return null;
   }
   
-  const homeResult = findHomeNode(data);
+  const homeResult = findHomeNode(data, p => p.isHomePerson) ||
+                     findHomeNode(data, p => p.name === homePersonName);
   if (!homeResult) {
     showAlert("Home person not found in tree.");
     return;
   }
   
   // Trigger fit to screen and then center on home person
-  // Find the node's position from the drawn tree
+  // Find the node's position from the drawn tree.
+  // Match by unique data-id (names can be duplicated across the tree);
+  // fall back to data-name only for legacy data lacking an id.
   const g = svg.select("g");
+  const homeId = homeResult.node.id;
   const homeNode = g.selectAll(".node").filter(function() {
-    return d3.select(this).attr("data-name") === homePersonName;
+    const sel = d3.select(this);
+    if (homeId) return sel.attr("data-id") === homeId;
+    return sel.attr("data-name") === homePersonName;
   });
   
   if (!homeNode.empty()) {
