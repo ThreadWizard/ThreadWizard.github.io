@@ -10,7 +10,7 @@ the Free Software Foundation, version 3.
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ThreadWizard</title>
+<title>ThreadWizard — build 2026-08-02a</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <!-- Google tag (gtag.js) --> <script async src="https://www.googletagmanager.com/gtag/js?id=G-6KMQC2ZW88"></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-6KMQC2ZW88'); </script>
@@ -76,8 +76,14 @@ the Free Software Foundation, version 3.
     stroke-width: 4px !important;
     filter: drop-shadow(0 0 5px orange);
   }
-  .dna-compare-highlight rect {
-    filter: drop-shadow(0 0 15px rgba(0, 100, 255, 1)) drop-shadow(0 0 30px rgba(0, 100, 255, 1)) drop-shadow(0 0 50px rgba(0, 100, 255, 0.9)) drop-shadow(0 0 70px rgba(0, 100, 255, 0.7));
+  /* Matches on the .node-shape marker class rather than on tag names. The shape
+     element is whatever getNodeShapeAttrs() decides to emit — rect (rounded / sharp /
+     gender-male), circle (gender-female), polygon (gender-diamond), or path (squircle) —
+     and both render loops stamp .node-shape on it at creation time. Enumerating tags
+     here instead meant the outline silently vanished for any shape the list had drifted
+     away from; the marker class cannot drift. Direct-child combinator keeps the
+     collapse-indicator circles (nested in their own <g>) excluded. */
+  .dna-compare-highlight > .node-shape {
     stroke: #0066ff !important;
     stroke-width: 5px !important;
   }
@@ -1043,6 +1049,18 @@ the Free Software Foundation, version 3.
     font-size: 12px;
     color: var(--adv-offset-val-color);
   }
+  /* Editable sibling of .adv-offset-val — same footprint, but typeable, so large
+     jumps don't require holding an arrow. Sits between the nudge buttons. */
+  .adv-offset-input {
+    width: 56px;
+    text-align: center;
+    font-size: 12px;
+    padding: 3px 4px;
+    border: 1px solid var(--adv-style-num-border);
+    border-radius: 4px;
+    background: var(--adv-style-num-bg);
+    color: var(--adv-style-num-color);
+  }
   #advanced-tools-panel .back-btn {
     display: block;
     width: 100%;
@@ -1080,7 +1098,8 @@ the Free Software Foundation, version 3.
     border-radius: 4px;
     cursor: pointer;
   }
-  #advanced-tools-panel .style-row input[type="number"] {
+  #advanced-tools-panel .style-row input[type="number"],
+  #advanced-tools-panel .style-row input[type="text"] {
     padding: 4px 6px;
     border: 1px solid var(--adv-style-num-border);
     border-radius: 4px;
@@ -1903,7 +1922,7 @@ the Free Software Foundation, version 3.
   <button id="fit-btn">Fit</button>
   <button id="undo-btn">Undo</button>
   <button id="redo-btn">Redo</button>
-  <p>ThreadWizard</p>
+  <p title="Build 2026-08-02a">ThreadWizard <span style="opacity: 0.45; font-size: 0.7em; font-weight: normal;">2026-08-02a</span></p>
   <div class="filename-container">
     <span id="filename-display" class="filename-display" title="Click to rename">New Tree</span>
     <input type="text" id="filename-input" class="filename-input" style="display: none;" />
@@ -2273,7 +2292,46 @@ the Free Software Foundation, version 3.
     <div class="tools-section">
       <div class="tools-section-title">Beta Features</div>
       <div class="adv-checkboxes">
-
+        <label><input type="checkbox" id="adv-show-title" /> <span title="Show a title above the tree. Appears in PNG/SVG exports.">Show Title</span></label>
+      </div>
+      <div id="adv-title-controls" style="display: none;">
+        <div class="style-row">
+          <label class="style-label">Title:</label>
+          <input type="text" id="adv-title-text" placeholder="(uses file name)" style="flex: 1; min-width: 0;" />
+        </div>
+        <div class="style-row">
+          <label class="style-label">Size:</label>
+          <input type="number" id="adv-title-size" min="8" max="120" value="28" style="width: 60px;" />
+        </div>
+        <div class="style-row">
+          <label class="style-label">Font:</label>
+          <select id="adv-title-font" style="flex: 1; min-width: 0;">
+            <option value="sans-serif">Sans-serif</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+            <option value="'Courier New', Courier, monospace">Courier New</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="Tahoma, sans-serif">Tahoma</option>
+            <option value="'Lucida Console', monospace">Lucida Console</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+            <option value="Garamond, serif">Garamond</option>
+            <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+            <option value="Baskerville, 'Baskerville Old Face', 'Hoefler Text', Garamond, serif">Baskerville</option>
+            <option value="'Bookman Old Style', Bookman, 'URW Bookman L', 'Palatino Linotype', serif">Bookman Old Style</option>
+            <option value="Copperplate, 'Copperplate Gothic Light', 'Copperplate Gothic Bold', 'Copperplate Gothic', serif">Copperplate</option>
+            <option value="'Old English Text MT', 'Blackadder ITC', 'Lucida Blackletter', 'UnifrakturMaguntia', serif">Old English Text</option>
+          </select>
+        </div>
+        <div class="style-row" style="align-items: center;">
+          <label class="style-label">Pos.:</label>
+          <button id="adv-title-offset-up" class="adv-offset-btn" title="Move title up (hold to repeat)">&#9650;</button>
+          <input type="number" id="adv-title-offset-val" class="adv-offset-input" value="0" step="5" title="Type a value for larger jumps" />
+          <button id="adv-title-offset-down" class="adv-offset-btn" title="Move title down (hold to repeat)">&#9660;</button>
+          <button id="adv-title-offset-reset" class="adv-offset-btn" title="Reset">Reset</button>
+        </div>
       </div>
     </div>
     <div class="tools-section">
@@ -2645,6 +2703,22 @@ let toolbarEnabled = true;
 let squircleNodes = false;
 let nodeShape = 'rounded'; // 'rounded' | 'sharp' | 'squircle'
 let genderShapes = false;
+
+// On-canvas chart title (Beta). Drawn inside the zoom group in drawTree(), so it
+// pans, zooms, and lands in PNG/SVG exports along with everything else.
+// text === "" means "follow the filename"; a non-empty value overrides it.
+let chartTitle = {
+  show: false,
+  text: "",
+  fontSize: 28,
+  fontFamily: "sans-serif",
+  verticalOffset: 0
+};
+
+// The title the user actually sees: their custom text, or the filename by default.
+function getEffectiveChartTitle() {
+  return (chartTitle.text && chartTitle.text.trim()) ? chartTitle.text.trim() : currentFilename;
+}
 
 // Returns the effective node width for layout purposes.
 // When gender shapes are enabled, shapes are sized to nodeHeight (not nodeWidth),
@@ -3395,6 +3469,7 @@ function autoSave() {
       squircleNodes: squircleNodes,
       nodeShape: nodeShape,
       genderShapes: genderShapes,
+      chartTitle: chartTitle,
       shadedRegion: shadedRegion,
       crossLinks: crossLinks,
       filename: currentFilename,
@@ -3458,6 +3533,17 @@ function autoLoad() {
     squircleNodes = loadedData.squircleNodes || false;
     nodeShape = loadedData.nodeShape || (squircleNodes ? 'squircle' : 'rounded');
     genderShapes = loadedData.genderShapes || false;
+
+    // Files saved before the title feature existed simply won't have this key.
+    const loadedTitle = loadedData.chartTitle || {};
+    chartTitle = {
+      show: loadedTitle.show || false,
+      text: loadedTitle.text || "",
+      fontSize: loadedTitle.fontSize || 28,
+      fontFamily: loadedTitle.fontFamily || "sans-serif",
+      verticalOffset: loadedTitle.verticalOffset || 0
+    };
+
     shadedRegion = loadedData.shadedRegion || null;
 
     currentFilename = loadedData.filename || "New Tree";
@@ -4658,6 +4744,10 @@ function finishFilenameEdit() {
   if (newName) {
     currentFilename = newName;
     filenameDisplay.textContent = currentFilename;
+    // If the on-canvas title is following the filename, it needs to follow this too
+    if (chartTitle.show && !(chartTitle.text && chartTitle.text.trim())) {
+      drawTree(d3.zoomTransform(svg.node()));
+    }
     autoSave(); // Save when filename changes
   }
   filenameInput.style.display = "none";
@@ -7585,6 +7675,42 @@ function recalcRelationshipLabels() {
   }
 }
 
+// Draws the on-canvas chart title centered above the tree's bounding box.
+// Called at the very end of drawTree() so the bbox reflects finished content.
+function drawChartTitle(g) {
+  if (!chartTitle.show) return;
+  const label = getEffectiveChartTitle();
+  if (!label) return;
+
+  let bbox;
+  try {
+    bbox = g.node().getBBox();
+  } catch (e) {
+    return; // getBBox throws if the group isn't rendered yet
+  }
+  if (!bbox || !isFinite(bbox.width)) return;
+
+  const fontSize = chartTitle.fontSize || 28;
+  const gap = fontSize * 0.8; // breathing room between title baseline and tree top
+  const fill = getComputedStyle(document.body).getPropertyValue('--node-text-fill').trim() || '#000000';
+  // Baseline position with zero offset, stashed on the element so moveTitleLive()
+  // can reposition during press-and-hold without rebuilding the whole tree.
+  const baseY = bbox.y - gap;
+
+  g.append("text")
+    .attr("class", "chart-title")
+    .attr("data-base-y", baseY)
+    .attr("x", bbox.x + bbox.width / 2)
+    .attr("y", baseY + (chartTitle.verticalOffset || 0))
+    .attr("text-anchor", "middle")
+    .style("font-size", `${fontSize}px`)
+    .style("font-family", chartTitle.fontFamily || "sans-serif")
+    .style("font-weight", "bold")
+    .style("fill", fill)
+    .style("pointer-events", "none")
+    .text(label);
+}
+
 function drawTree(savedTransform = null) {
   tree.reindex();
   recalcRelationshipLabels();
@@ -9267,7 +9393,7 @@ function drawTree(savedTransform = null) {
     const stroke = getComputedStyle(document.body).getPropertyValue('--node-rect-stroke').trim() || 'black';
     const strokeWidth = selectedNode && d.data === selectedNode.data && !selectedSpouse ? 4 : 2;
     const filter = selectedNode && d.data === selectedNode.data && !selectedSpouse ? "drop-shadow(0 0 5px orange)" : "none";
-    const el = d3.select(this).append(attrs.tag);
+    const el = d3.select(this).append(attrs.tag).classed("node-shape", true);
     if (attrs.tag === 'circle') {
       el.attr("cx", 0).attr("cy", 0).attr("r", attrs.r);
     } else if (attrs.tag === 'polygon') {
@@ -9352,7 +9478,7 @@ function drawTree(savedTransform = null) {
     const stroke = getComputedStyle(document.body).getPropertyValue('--node-rect-stroke').trim() || 'black';
     const strokeWidth = selectedSpouse && selectedSpouse === d.spouse ? 4 : 2;
     const filter = selectedSpouse && selectedSpouse === d.spouse ? "drop-shadow(0 0 5px orange)" : "none";
-    const el = d3.select(this).append(attrs.tag);
+    const el = d3.select(this).append(attrs.tag).classed("node-shape", true);
     if (attrs.tag === 'circle') {
       el.attr("cx", 0).attr("cy", 0).attr("r", attrs.r);
     } else if (attrs.tag === 'polygon') {
@@ -9376,7 +9502,12 @@ function drawTree(savedTransform = null) {
   
   // Draw cross-links (spouse connections across branches)
   drawCrossLinks(g, root, crossLinkYAdjustments, crossLinkChildXAdjustments);
-  
+
+  // Draw the chart title last, so getBBox() measures the finished tree.
+  // Lives inside g (the zoom group), so it pans/zooms with the tree and is
+  // picked up automatically by the PNG/SVG exporters' bbox calculation.
+  drawChartTitle(g);
+
   // Auto-save after any tree changes
   autoSave();
 }
@@ -11783,6 +11914,7 @@ document.getElementById("export-btn").addEventListener("click", () => {
     autoStrokeWidth: autoStrokeWidth,
     alternateLineColors: alternateLineColors,
     showPercentileOnLabels: showPercentileOnLabels,
+    chartTitle: chartTitle,
     shadedRegion: shadedRegion,
     crossLinks: crossLinks,
     homePersonName: homePersonName,
@@ -11851,6 +11983,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     squircleNodes = false;
     nodeShape = 'rounded';
     genderShapes = false;
+    chartTitle = { show: false, text: "", fontSize: 28, fontFamily: "sans-serif", verticalOffset: 0 };
 
     // Reset settings to defaults
     verticalSpacing = 100;
@@ -11885,6 +12018,7 @@ document.getElementById("new-btn").addEventListener("click", () => {
     document.getElementById("adv-shape-sharp").checked = false;
     document.getElementById("adv-shape-squircle").checked = false;
     document.getElementById("adv-gender-shapes").checked = false;
+    syncChartTitleControls();
     applyToolbarVisibility();
 
     // Clear undo/redo history
@@ -12410,6 +12544,15 @@ document.getElementById("import-input").addEventListener("change", (e) => {
           // Always default to showing terminal lines on import
           showTerminalLines = true;
           
+          const importedTitle = imported.chartTitle || {};
+          chartTitle = {
+            show: importedTitle.show || false,
+            text: importedTitle.text || "",
+            fontSize: importedTitle.fontSize || 28,
+            fontFamily: importedTitle.fontFamily || "sans-serif",
+            verticalOffset: importedTitle.verticalOffset || 0
+          };
+          
           if (imported.shadedRegion !== undefined) {
             shadedRegion = imported.shadedRegion;
           } else {
@@ -12485,7 +12628,17 @@ document.getElementById("import-input").addEventListener("change", (e) => {
   }
 });
 
+// When the Beta on-canvas title is active it's already inside the zoom group and
+// therefore already in the export bbox — asking again would stack a second title
+// on top of it, so we skip the prompt and export with the header title off.
 function showExportDialog(exportType) {
+  if (chartTitle.show && getEffectiveChartTitle()) {
+    return Promise.resolve(false);
+  }
+  return _showExportDialog(exportType);
+}
+
+function _showExportDialog(exportType) {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
@@ -12629,6 +12782,13 @@ function _exportPNG(includeTitle) {
         textEl.setAttribute("font-family", relFont);
         textEl.style.fontFamily = relFont;
       }
+    } else if (textEl.classList.contains("chart-title")) {
+      // The title carries its own font. Without this branch the fallback below
+      // rewrites it to nodeFont whenever the title is left on the "sans-serif"
+      // default, so an exported title silently inherits the node text font.
+      const titleFont = chartTitle.fontFamily || "sans-serif";
+      textEl.setAttribute("font-family", titleFont);
+      textEl.style.fontFamily = titleFont;
     } else {
       // Node text and other text uses the node font
       const existingFont = textEl.style.fontFamily || textEl.getAttribute("font-family");
@@ -12953,6 +13113,21 @@ function syncAdvancedToolsToState() {
   document.getElementById("adv-shape-sharp").checked = !genderShapes && nodeShape === 'sharp';
   document.getElementById("adv-shape-squircle").checked = !genderShapes && nodeShape === 'squircle';
   document.getElementById("adv-gender-shapes").checked = genderShapes;
+  // Restore chart title controls (Beta)
+  syncChartTitleControls();
+}
+
+// Pushes chartTitle state into the Beta Features inputs and shows/hides the sub-controls.
+function syncChartTitleControls() {
+  const showBox = document.getElementById("adv-show-title");
+  if (!showBox) return;
+  showBox.checked = chartTitle.show;
+  document.getElementById("adv-title-controls").style.display = chartTitle.show ? "block" : "none";
+  document.getElementById("adv-title-text").value = chartTitle.text || "";
+  document.getElementById("adv-title-text").placeholder = `(uses file name: ${currentFilename})`;
+  document.getElementById("adv-title-size").value = chartTitle.fontSize || 28;
+  document.getElementById("adv-title-font").value = chartTitle.fontFamily || "sans-serif";
+  document.getElementById("adv-title-offset-val").value = chartTitle.verticalOffset || 0;
 }
 
 let advDirty = false;
@@ -13029,6 +13204,122 @@ nodeShapeCheckboxes.forEach(({ id, value }) => {
     autoSave();
   });
 });
+
+// Chart title controls (Beta Features)
+function redrawForTitle() {
+  drawTree(d3.zoomTransform(svg.node()));
+  autoSave();
+}
+document.getElementById("adv-show-title").addEventListener("change", (e) => {
+  chartTitle.show = e.target.checked;
+  document.getElementById("adv-title-controls").style.display = chartTitle.show ? "block" : "none";
+  if (chartTitle.show) {
+    document.getElementById("adv-title-text").placeholder = `(uses file name: ${currentFilename})`;
+  }
+  redrawForTitle();
+});
+document.getElementById("adv-title-text").addEventListener("input", (e) => {
+  chartTitle.text = e.target.value;
+  redrawForTitle();
+});
+document.getElementById("adv-title-size").addEventListener("input", (e) => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v) && v >= 8 && v <= 120) {
+    chartTitle.fontSize = v;
+    redrawForTitle();
+  }
+});
+document.getElementById("adv-title-font").addEventListener("change", (e) => {
+  chartTitle.fontFamily = e.target.value;
+  redrawForTitle();
+});
+// Vertical position: negative moves the title up, matching the arrow direction.
+// Nudging repositions the existing <text> in place rather than calling drawTree()
+// on every tick — a full rebuild per frame stutters badly on large trees and would
+// hammer autosave. One real redraw commits when the interaction ends.
+const TITLE_STEP = 5;
+const TITLE_HOLD_DELAY = 400;  // ms before a press turns into a repeat
+const TITLE_REPEAT_MS = 60;    // ms between repeats while held
+let titleHoldDelayTimer = null;
+let titleHoldRepeatTimer = null;
+let titleHoldPending = false;  // moved since last commit?
+
+function moveTitleLive() {
+  const el = document.querySelector("text.chart-title");
+  if (!el) return false;
+  const base = parseFloat(el.getAttribute("data-base-y"));
+  if (isNaN(base)) return false;
+  el.setAttribute("y", base + (chartTitle.verticalOffset || 0));
+  return true;
+}
+
+function commitTitleOffset() {
+  titleHoldPending = false;
+  drawTree(d3.zoomTransform(svg.node()));
+  autoSave();
+}
+
+function setTitleOffset(v, { commit }) {
+  chartTitle.verticalOffset = v;
+  const input = document.getElementById("adv-title-offset-val");
+  // Don't fight the user's cursor while they're typing in the field
+  if (document.activeElement !== input) input.value = v;
+  if (commit || !moveTitleLive()) {
+    commitTitleOffset();
+  } else {
+    titleHoldPending = true;
+  }
+}
+
+function stopTitleHold(commit = true) {
+  if (titleHoldDelayTimer) { clearTimeout(titleHoldDelayTimer); titleHoldDelayTimer = null; }
+  if (titleHoldRepeatTimer) { clearInterval(titleHoldRepeatTimer); titleHoldRepeatTimer = null; }
+  if (commit && titleHoldPending) commitTitleOffset();
+}
+
+function startTitleHold(dir) {
+  stopTitleHold(false);
+  const step = () => setTitleOffset((chartTitle.verticalOffset || 0) + dir * TITLE_STEP, { commit: false });
+  step(); // a plain click still yields exactly one 5px nudge
+  titleHoldDelayTimer = setTimeout(() => {
+    titleHoldRepeatTimer = setInterval(step, TITLE_REPEAT_MS);
+  }, TITLE_HOLD_DELAY);
+}
+
+[["adv-title-offset-up", -1], ["adv-title-offset-down", 1]].forEach(([id, dir]) => {
+  const btn = document.getElementById(id);
+  btn.addEventListener("pointerdown", (e) => { e.preventDefault(); startTitleHold(dir); });
+  btn.addEventListener("pointerup", () => stopTitleHold());
+  btn.addEventListener("pointerleave", () => stopTitleHold());
+  btn.addEventListener("pointercancel", () => stopTitleHold());
+});
+// Safety net: if the pointer is lost (tab switch, alt-tab mid-press) the repeat
+// must not keep running in the background.
+window.addEventListener("blur", () => stopTitleHold());
+
+const titleOffsetInput = document.getElementById("adv-title-offset-val");
+titleOffsetInput.addEventListener("input", () => {
+  const v = parseInt(titleOffsetInput.value, 10);
+  if (!isNaN(v)) {           // tolerate the transient empty / "-" states while typing
+    chartTitle.verticalOffset = v;
+    if (!moveTitleLive()) commitTitleOffset();
+    else titleHoldPending = true;
+  }
+});
+function commitTitleOffsetInput() {
+  const v = parseInt(titleOffsetInput.value, 10);
+  chartTitle.verticalOffset = isNaN(v) ? 0 : v;
+  titleOffsetInput.value = chartTitle.verticalOffset;
+  commitTitleOffset();
+}
+titleOffsetInput.addEventListener("blur", commitTitleOffsetInput);
+titleOffsetInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); titleOffsetInput.blur(); }
+});
+document.getElementById("adv-title-offset-reset").addEventListener("click", () => {
+  setTitleOffset(0, { commit: true });
+});
+
 document.getElementById("adv-show-tooltips").addEventListener("change", (e) => {
   tooltipsEnabled = e.target.checked;
   if (!tooltipsEnabled) { hideNodeTooltip(); hideDnaTooltip(); }
@@ -13486,6 +13777,9 @@ function _exportSVG(includeTitle) {
       } else if (textEl.classList.contains("relationship")) {
         textEl.style.fontFamily = relFont;
       }
+    } else if (textEl.classList.contains("chart-title")) {
+      // Same guard as the PNG exporter — keep the title's own font.
+      textEl.style.fontFamily = chartTitle.fontFamily || "sans-serif";
     } else {
       const existingFont = textEl.style.fontFamily || textEl.getAttribute("font-family");
       if (!existingFont || existingFont === "sans-serif") {
