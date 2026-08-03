@@ -9187,8 +9187,24 @@ function drawTree(savedTransform = null) {
     return !/^\d{4}$/.test(dateStr.trim());
   }
 
+  // Extract a 4-digit year from a date string, if one is present.
+  // "March 12, 1834" -> "1834";  "abt 1790" -> "1790";  "unk" -> null
+  function extractYear(dateStr) {
+    if (!dateStr) return null;
+    const m = String(dateStr).match(/\b(\d{4})\b/);
+    return m ? m[1] : null;
+  }
+
+  // How many text lines fit inside a node of the given height
+  function lineCapacity(fontSize, effectiveHeight) {
+    const h = effectiveHeight !== undefined ? effectiveHeight : nodeHeight;
+    const lineHeight = fontSize * 1.3;
+    const availableHeight = h - 8;
+    return Math.max(1, Math.floor(availableHeight / lineHeight));
+  }
+
   // Build an array of display lines for a node
-  function buildNodeDisplayLines(nodeData, fontSize, isBold, effectiveWidth) {
+  function buildNodeDisplayLines(nodeData, fontSize, isBold, effectiveWidth, effectiveHeight) {
     const style = defaultNodeTextStyle;
     const lines = [];
 
@@ -9205,53 +9221,100 @@ function drawTree(savedTransform = null) {
     const hasDeathYear = style.showDeathYear && nodeData.death;
     const hasDeathLoc = style.showDeathLocation && nodeData.deathLocation;
     const anyLocationToggled = style.showBirthLocation || style.showDeathLocation;
+    const hasNotes = style.showNotes && nodeData.notes;
 
-    // Compact mode: only birth year + death year toggled, no locations toggled,
-    // and both dates are simple years (4 digits)
+    // The compact "birth-death" string, built from arbitrary birth/death values.
+    function compactFrom(birth, death) {
+      if (hasBirthYear && hasDeathYear) return birth + "-" + death;
+      if (hasBirthYear) return birth + "-";
+      if (hasDeathYear) return "-" + death;
+      return "";
+    }
+    const compactText = compactFrom(nodeData.birth, nodeData.death);
+
+    // Fast path: both values are plain 4-digit years, so compact is sure to fit
+    // and needs no measuring.
+    const plainYears = (!nodeData.birth || !isMoreThanYear(nodeData.birth))
+                    && (!nodeData.death || !isMoreThanYear(nodeData.death));
+
+    // Compact mode: only birth + death toggled, no locations toggled, and the
+    // combined string is displayable. Qualifiers such as "unk", "abt 1834" or
+    // "bef 1840" stay compact because they fit — the abbreviation convention
+    // never changes based on the content of the field, only on whether it fits.
     const compactMode = style.showBirthYear && style.showDeathYear
                      && !anyLocationToggled
-                     && (!nodeData.birth || !isMoreThanYear(nodeData.birth))
-                     && (!nodeData.death || !isMoreThanYear(nodeData.death));
+                     && compactText.length > 0
+                     && (plainYears || textFits(compactText, fontSize, isBold, effectiveWidth));
 
     if (compactMode) {
-      if (hasBirthYear && hasDeathYear) {
-        lines.push(truncateLine(nodeData.birth + "-" + nodeData.death, fontSize, isBold, effectiveWidth));
-      } else if (hasBirthYear) {
-        lines.push(truncateLine(nodeData.birth + "-", fontSize, isBold, effectiveWidth));
-      } else if (hasDeathYear) {
-        lines.push(truncateLine("-" + nodeData.death, fontSize, isBold, effectiveWidth));
-      }
-    } else {
-      // Birth line: combine date + location on one line with b. prefix
-      if (hasBirthYear || hasBirthLoc) {
-        let birthLine = "b.";
-        if (hasBirthYear) birthLine += nodeData.birth;
-        if (hasBirthYear && hasBirthLoc) birthLine += ", ";
-        if (hasBirthLoc) birthLine += formatLocationForNode(nodeData.birthLocation);
-        lines.push(truncateLine(birthLine, fontSize, isBold, effectiveWidth));
-      }
-
-      // Death line: combine date + location on one line with d. prefix
-      if (hasDeathYear || hasDeathLoc) {
-        let deathLine = "d.";
-        if (hasDeathYear) deathLine += nodeData.death;
-        if (hasDeathYear && hasDeathLoc) deathLine += ", ";
-        if (hasDeathLoc) deathLine += formatLocationForNode(nodeData.deathLocation);
-        lines.push(truncateLine(deathLine, fontSize, isBold, effectiveWidth));
-      }
+      lines.push(truncateLine(compactText, fontSize, isBold, effectiveWidth));
+      if (hasNotes) lines.push(truncateLine(nodeData.notes, fontSize, isBold, effectiveWidth));
+      return lines;
     }
 
-    if (style.showNotes && nodeData.notes) lines.push(truncateLine(nodeData.notes, fontSize, isBold, effectiveWidth));
+    // --- Verbose layout, as a longest-to-shortest cascade (mirrors fitName) ---
+    // Rung 1: b.<date>, <loc> / d.<date>, <loc>   full detail, 2 lines
+    // Rung 2: b.<date> / d.<date>                 gives up locations
+    // Rung 3: <birth>-<death>                     gives up prefixes, 1 line
+    // Rung 4: <birthYear>-<deathYear>             gives up qualifier text
+    // Each rung trades one named piece of detail for fit, so the death value is
+    // never silently dropped the way a blind slice would drop it.
+    function datePair(withLoc) {
+      const out = [];
+      if (hasBirthYear || (withLoc && hasBirthLoc)) {
+        let s = "b.";
+        if (hasBirthYear) s += nodeData.birth;
+        if (hasBirthYear && withLoc && hasBirthLoc) s += ", ";
+        if (withLoc && hasBirthLoc) s += formatLocationForNode(nodeData.birthLocation);
+        out.push(s);
+      }
+      if (hasDeathYear || (withLoc && hasDeathLoc)) {
+        let s = "d.";
+        if (hasDeathYear) s += nodeData.death;
+        if (hasDeathYear && withLoc && hasDeathLoc) s += ", ";
+        if (withLoc && hasDeathLoc) s += formatLocationForNode(nodeData.deathLocation);
+        out.push(s);
+      }
+      return out;
+    }
+
+    const candidates = [];
+    candidates.push(datePair(true));
+    if (anyLocationToggled) candidates.push(datePair(false));
+    if (compactText) {
+      candidates.push([compactText]);
+      const yearsOnly = compactFrom(extractYear(nodeData.birth) || nodeData.birth,
+                                    extractYear(nodeData.death) || nodeData.death);
+      if (yearsOnly !== compactText) candidates.push([yearsOnly]);
+    }
+
+    // Budget: total capacity minus the name line and any notes line.
+    const budget = Math.max(0, lineCapacity(fontSize, effectiveHeight) - 1 - (hasNotes ? 1 : 0));
+
+    let chosen = null;
+    for (const cand of candidates) {
+      if (cand.length === 0 || cand.length > budget) continue;
+      if (cand.every(l => textFits(l, fontSize, isBold, effectiveWidth))) { chosen = cand; break; }
+    }
+    // Nothing fit cleanly: take the shortest candidate within the line budget and
+    // let truncateLine ellipsize it, so both dates are still represented.
+    if (!chosen) {
+      for (let i = candidates.length - 1; i >= 0; i--) {
+        if (candidates[i].length > 0 && candidates[i].length <= budget) { chosen = candidates[i]; break; }
+      }
+    }
+    if (chosen) {
+      for (const l of chosen) lines.push(truncateLine(l, fontSize, isBold, effectiveWidth));
+    }
+
+    if (hasNotes) lines.push(truncateLine(nodeData.notes, fontSize, isBold, effectiveWidth));
 
     return lines;
   }
 
   // Calculate how many lines fit in the node, and apply ellipsis to the last visible line if truncated
   function getVisibleLines(lines, fontSize, effectiveHeight) {
-    const h = effectiveHeight !== undefined ? effectiveHeight : nodeHeight;
-    const lineHeight = fontSize * 1.3;
-    const availableHeight = h - 8;
-    const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+    const maxLines = lineCapacity(fontSize, effectiveHeight);
 
     if (lines.length <= maxLines) return lines;
 
@@ -9293,7 +9356,7 @@ function drawTree(savedTransform = null) {
       const isItalic = custom.hasCustomStyle ? (custom.italic !== undefined ? custom.italic : defaultNodeTextStyle.italic) : defaultNodeTextStyle.italic;
 
       const [effW, effH] = getEffectiveNodeDimensions(nodeData.gender);
-      const allLines = buildNodeDisplayLines(nodeData, fontSize, isBold, effW);
+      const allLines = buildNodeDisplayLines(nodeData, fontSize, isBold, effW, effH);
       const lines = getVisibleLines(allLines, fontSize, effH);
       const lineHeight = fontSize * 1.3;
 
